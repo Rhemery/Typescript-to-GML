@@ -38,3 +38,4 @@ jobs:
           name: typescript-to-gml-yymps
           path: release/*.yymps
           if-no-files-found: error
+          retention-days: 7

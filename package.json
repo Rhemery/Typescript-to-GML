@@ -3,6 +3,14 @@
   "version": "0.2.0-beta.2",
   "description": "GameMaker declarations and a TypeScript-to-GML compiler.",
   "author": "Rhemery",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rhemery/Typescript-to-GML.git"
+  },
+  "homepage": "https://github.com/Rhemery/Typescript-to-GML#readme",
+  "bugs": {
+    "url": "https://github.com/Rhemery/Typescript-to-GML/issues"
+  },
   "type": "module",
   "types": "dist/src/index.d.ts",
   "sideEffects": false,
@@ -30,7 +38,7 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "check:runtime-types": "tsc -p tsconfig.runtime-types.json --noEmit",
     "declarations": "npm run build:code --silent && node dist/src/cli.js declarations && npm run bundle --silent",
-    "test": "npm run build --silent && node --test \"dist/test/*.test.js\"",
+    "test": "npm run build --silent && node scripts/run-tests.mjs",
     "check:game": "tsc -p TestProject/typescript/tsconfig.json",
     "smoke:distribution": "node scripts/smoke-distribution.mjs",
     "smoke:gamemaker": "node scripts/smoke-gamemaker.mjs",

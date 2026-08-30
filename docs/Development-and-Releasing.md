@@ -91,4 +91,4 @@ Inspect `git status`, the changelog, generated TestProject changes, and the pack
 
 The manual GitHub Actions workflow builds a validated YYMPS artifact without publishing a release. Download it, perform the IDE import check, then attach the tested file to a prerelease with the matching version tag.
 
-Before the first public push, set the canonical remote. Once its URL is known, add `repository`, `homepage`, and `bugs` fields to `package.json` before publishing to npm. The current checkout deliberately omits them because no remote is configured and inventing a URL would publish incorrect metadata.
+The canonical source repository is [Rhemery/Typescript-to-GML](https://github.com/Rhemery/Typescript-to-GML). Keep the `repository`, `homepage`, and `bugs` fields in `package.json` pointed at that repository when publishing to npm.
