@@ -1,0 +1,51 @@
+name: Compiler or project bug
+description: Report a crash, invalid GML, runtime difference, or project-generation problem.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not upload proprietary projects or secrets. Reduce the issue to the smallest safe reproduction.
+  - type: input
+    id: version
+    attributes:
+      label: TypeScript to GML version
+      placeholder: 0.2.0-beta.2
+    validations:
+      required: true
+  - type: input
+    id: gamemaker
+    attributes:
+      label: GameMaker IDE, runtime, and target
+      placeholder: IDE 2026.0.0.16, runtime 2026.0.0.23, Windows VM
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Minimal TypeScript reproduction
+      render: typescript
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and first relevant log error
+      description: Include the full TS2GML diagnostic or minimal generated GML when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I read the known-issues page and searched existing issues.
+          required: true
+        - label: I removed secrets and proprietary assets from this report.
+          required: true

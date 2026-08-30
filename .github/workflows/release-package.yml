@@ -1,0 +1,40 @@
+name: Build YYMPS package
+
+on:
+  workflow_dispatch:
+    inputs:
+      ide_version:
+        description: GameMaker IDE version recorded in package metadata
+        required: true
+        default: 2026.0.0.16
+        type: string
+      publisher:
+        description: Publisher recorded in package metadata
+        required: true
+        default: Rhemery
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:release
+      - name: Rebuild package metadata
+        env:
+          IDE_VERSION: ${{ inputs.ide_version }}
+          PACKAGE_PUBLISHER: ${{ inputs.publisher }}
+        run: npm run build:yymps -- --ide-version "$env:IDE_VERSION" --publisher "$env:PACKAGE_PUBLISHER"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: typescript-to-gml-yymps
+          path: release/*.yymps
+          if-no-files-found: error

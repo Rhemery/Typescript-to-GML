@@ -1,0 +1,61 @@
+{
+  "files": [
+    "objects/obj_scope_runner/Alarm_0.gml",
+    "objects/obj_scope_runner/Collision_obj_scope_target.gml",
+    "objects/obj_scope_runner/Create_0.gml",
+    "objects/obj_scope_runner/obj_scope_runner.yy",
+    "objects/obj_scope_target/Create_0.gml",
+    "objects/obj_scope_target/obj_scope_target.yy",
+    "objects/obj_test_player/Create_0.gml",
+    "objects/obj_test_player/Step_0.gml",
+    "objects/obj_test_player/obj_test_player.yy",
+    "rooms/TestRoom/RoomCreationCode.gml",
+    "scripts/lowering_matrix/lowering_matrix.gml",
+    "scripts/lowering_matrix/lowering_matrix.yy",
+    "scripts/math_helpers/math_helpers.gml",
+    "scripts/math_helpers/math_helpers.yy",
+    "scripts/scope_context/scope_context.gml",
+    "scripts/scope_context/scope_context.yy"
+  ],
+  "generatedFileHashes": {
+    "objects/obj_scope_runner/Alarm_0.gml": "780dc3fe0f4c4d76b6d5337c4c203c5531fdad8ea13d75800592ac06a7bb6059",
+    "objects/obj_scope_runner/Collision_obj_scope_target.gml": "2e8ce7e11adf3485be0ec013009e2932ee72197862789415d2ea17b1223a44fd",
+    "objects/obj_scope_runner/Create_0.gml": "6c1392176f160f9a152dc69b2f421fafdceb9e3eeee27787835860c2f7e79154",
+    "objects/obj_scope_target/Create_0.gml": "8e51324ff03201e7b12320e4e2d1b1d0a80c6214122add13f7a22c3ba60a7086",
+    "objects/obj_test_player/Create_0.gml": "35abf1293cda3b66de62de9e48cbcf183c48b6bb24a7bcd04be00e63557c1a94",
+    "objects/obj_test_player/Step_0.gml": "e6492d1a8359ab86d5f8c947d45273572fc5e105546998227a0da41e5627cbe3",
+    "rooms/TestRoom/RoomCreationCode.gml": "33cdd13916bcff012f0759026d8f44fc8bfbdcce51e5a72e0b7cd354e17377ec",
+    "scripts/lowering_matrix/lowering_matrix.gml": "41d6714cc9763c4b8e0ff8c473af1e1793e291b3c6e204f9ad79ec600314f9f2",
+    "scripts/lowering_matrix/lowering_matrix.yy": "e60b5a0c6c9534bb590696dbc37574a066d4bf77acff7c7ea8b422edf3426d97",
+    "scripts/math_helpers/math_helpers.gml": "b688d3968f086d66de8aafe39eec18b18929e8255cdc8e75eb75da07773342a3",
+    "scripts/math_helpers/math_helpers.yy": "a241a78d08340f07771bba0f0d0e0993a8ef3375cbe1acbdc450f0cf3cd0ad60",
+    "scripts/scope_context/scope_context.gml": "a5ae654beab64a62f9bd71e162f6af08ad3a21a129380cf23eb2278d5afb17f3",
+    "scripts/scope_context/scope_context.yy": "af77f116f9f597d0405c4575291f5f067d1f6e9a9990419f49a035829f71bfcb"
+  },
+  "folders": [
+    "folders/gameplay.yy"
+  ],
+  "objectVariables": {
+    "objects/obj_scope_runner/obj_scope_runner.yy": [
+      "collisionContextPassed",
+      "value"
+    ],
+    "objects/obj_scope_target/obj_scope_target.yy": [
+      "value"
+    ],
+    "objects/obj_test_player/obj_test_player.yy": [
+      "health"
+    ]
+  },
+  "resources": [
+    "objects/obj_scope_runner/obj_scope_runner.yy",
+    "objects/obj_scope_target/obj_scope_target.yy",
+    "objects/obj_test_player/obj_test_player.yy",
+    "scripts/lowering_matrix/lowering_matrix.yy",
+    "scripts/math_helpers/math_helpers.yy",
+    "scripts/scope_context/scope_context.yy"
+  ],
+  "roomCreationCodes": [
+    "rooms/TestRoom/TestRoom.yy"
+  ]
+}

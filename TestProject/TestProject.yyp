@@ -1,0 +1,1112 @@
+{
+  "$GMProject": "v1",
+  "%Name": "TestProject",
+  "AudioGroups": [
+    {
+      "$GMAudioGroup": "v1",
+      "%Name": "audiogroup_default",
+      "exportDir": "",
+      "name": "audiogroup_default",
+      "resourceType": "GMAudioGroup",
+      "resourceVersion": "2.0",
+      "targets": -1
+    }
+  ],
+  "configs": {
+    "children": [],
+    "name": "Default"
+  },
+  "defaultScriptType": 1,
+  "Folders": [
+    {
+      "$GMFolder": "",
+      "%Name": "gameplay",
+      "folderPath": "folders/gameplay.yy",
+      "name": "gameplay",
+      "resourceType": "GMFolder",
+      "resourceVersion": "2.0"
+    }
+  ],
+  "ForcedPrefabProjectReferences": [],
+  "IncludedFiles": [
+    {
+      "$GMIncludedFile": "",
+      "%Name": "cli.cjs",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml",
+      "name": "cli.cjs",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "LICENSE",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml",
+      "name": "LICENSE",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "fast-xml-parser-LICENSE",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/licenses",
+      "name": "fast-xml-parser-LICENSE",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "json5-LICENSE.md",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/licenses",
+      "name": "json5-LICENSE.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "strnum-LICENSE",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/licenses",
+      "name": "strnum-LICENSE",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "typescript-LICENSE.txt",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/licenses",
+      "name": "typescript-LICENSE.txt",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "typescript-ThirdPartyNoticeText.txt",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/licenses",
+      "name": "typescript-ThirdPartyNoticeText.txt",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "ts2gml.bat",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml",
+      "name": "ts2gml.bat",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "core.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/types",
+      "name": "core.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "gamemaker.project.generated.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/types",
+      "name": "gamemaker.project.generated.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "index.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/types",
+      "name": "index.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.decorators.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.decorators.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.decorators.legacy.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.decorators.legacy.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.dom.asynciterable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.dom.asynciterable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.dom.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.dom.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.dom.iterable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.dom.iterable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.collection.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.collection.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.core.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.core.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.generator.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.generator.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.iterable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.iterable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.promise.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.promise.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.proxy.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.proxy.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.reflect.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.reflect.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.symbol.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.symbol.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2015.symbol.wellknown.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2015.symbol.wellknown.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2016.array.include.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2016.array.include.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2016.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2016.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2016.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2016.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2016.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2016.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.arraybuffer.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.arraybuffer.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.date.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.date.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.object.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.object.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.sharedmemory.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.sharedmemory.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.string.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.string.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2017.typedarrays.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2017.typedarrays.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.asyncgenerator.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.asyncgenerator.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.asynciterable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.asynciterable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.promise.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.promise.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2018.regexp.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2018.regexp.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.array.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.array.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.object.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.object.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.string.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.string.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2019.symbol.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2019.symbol.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.bigint.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.bigint.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.date.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.date.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.number.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.number.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.promise.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.promise.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.sharedmemory.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.sharedmemory.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.string.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.string.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2020.symbol.wellknown.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2020.symbol.wellknown.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2021.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2021.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2021.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2021.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2021.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2021.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2021.promise.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2021.promise.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2021.string.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2021.string.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2021.weakref.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2021.weakref.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.array.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.array.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.error.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.error.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.object.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.object.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.regexp.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.regexp.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2022.string.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2022.string.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2023.array.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2023.array.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2023.collection.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2023.collection.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2023.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2023.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2023.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2023.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2023.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2023.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.arraybuffer.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.arraybuffer.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.collection.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.collection.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.object.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.object.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.promise.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.promise.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.regexp.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.regexp.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.sharedmemory.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.sharedmemory.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es2024.string.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es2024.string.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es5.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es5.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.es6.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.es6.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.array.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.array.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.collection.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.collection.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.decorators.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.decorators.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.disposable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.disposable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.error.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.error.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.float16.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.float16.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.full.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.full.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.intl.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.intl.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.iterator.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.iterator.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.promise.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.promise.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.esnext.sharedmemory.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.esnext.sharedmemory.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.scripthost.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.scripthost.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.webworker.asynciterable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.webworker.asynciterable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.webworker.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.webworker.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.webworker.importscripts.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.webworker.importscripts.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "lib.webworker.iterable.d.ts",
+      "CopyToMask": 0,
+      "filePath": "datafiles/ts2gml/typescript/lib",
+      "name": "lib.webworker.iterable.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    }
+  ],
+  "isEcma": false,
+  "LibraryEmitters": [],
+  "MetaData": {
+    "IDEVersion": "2026.0.0.16"
+  },
+  "name": "TestProject",
+  "resources": [
+    {
+      "id": {
+        "name": "obj_scope_runner",
+        "path": "objects/obj_scope_runner/obj_scope_runner.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "obj_scope_target",
+        "path": "objects/obj_scope_target/obj_scope_target.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "obj_test_player",
+        "path": "objects/obj_test_player/obj_test_player.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "TestRoom",
+        "path": "rooms/TestRoom/TestRoom.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "lowering_matrix",
+        "path": "scripts/lowering_matrix/lowering_matrix.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "math_helpers",
+        "path": "scripts/math_helpers/math_helpers.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "scope_context",
+        "path": "scripts/scope_context/scope_context.yy"
+      }
+    }
+  ],
+  "resourceType": "GMProject",
+  "resourceVersion": "2.0",
+  "RoomOrderNodes": [
+    {
+      "roomId": {
+        "name": "TestRoom",
+        "path": "rooms/TestRoom/TestRoom.yy"
+      }
+    }
+  ],
+  "templateType": "game",
+  "TextureGroups": [
+    {
+      "$GMTextureGroup": "",
+      "%Name": "Default",
+      "autocrop": true,
+      "border": 2,
+      "compressFormat": "bz2",
+      "customOptions": "",
+      "directory": "",
+      "groupParent": null,
+      "isScaled": true,
+      "loadType": "default",
+      "mipsToGenerate": 0,
+      "name": "Default",
+      "resourceType": "GMTextureGroup",
+      "resourceVersion": "2.0",
+      "targets": -1
+    }
+  ]
+}

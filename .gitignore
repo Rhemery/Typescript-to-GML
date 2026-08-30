@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build and package output
+dist/
+output/
+release/
+.gmbuild/
+*.tgz
+*.yymps
+*.tsbuildinfo
+types/gamemaker.generated.d.ts
+
+# Compiler state and copied distributions
+.ts2gml/
+!TestProject/.ts2gml/
+!TestProject/.ts2gml/manifest.json
+TestProject/datafiles/ts2gml/
+
+# Tool and test output
+.fallow/
+coverage/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+npm-debug.log*

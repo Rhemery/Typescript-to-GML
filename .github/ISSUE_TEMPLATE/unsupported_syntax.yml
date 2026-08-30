@@ -1,0 +1,32 @@
+name: Supported-subset proposal
+description: Propose a TypeScript or JavaScript construct with a safe GML lowering.
+title: "[Lowering]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: source
+    attributes:
+      label: TypeScript example
+      render: typescript
+    validations:
+      required: true
+  - type: textarea
+    id: semantics
+    attributes:
+      label: Required runtime semantics
+      description: Explain observable JavaScript behavior, including scope, evaluation order, and edge cases.
+    validations:
+      required: true
+  - type: textarea
+    id: gml
+    attributes:
+      label: Proposed GML
+      render: gml
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Known limitations or alternatives
+    validations:
+      required: true
