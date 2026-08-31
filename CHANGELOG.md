@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-- Expose GameMaker constants as their GML-named global values, including time-source constants, and repair stale or incomplete runtime declaration caches automatically.
+- Expose GameMaker constants as their GML-named global values, including time-source constants; strongly distinguish constant, asset, ID, and pointer categories during type checking; and repair stale or incomplete runtime declaration caches automatically.
 
 ## 0.2.0-beta.2 - 2026-08-30
 

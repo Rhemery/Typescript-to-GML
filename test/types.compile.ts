@@ -59,6 +59,9 @@ const timeSource = time_source_create(
   time_source_units_frames,
   () => undefined,
 );
+const expiryType: GM.Constant.TimeSourceExpiryType = time_source_expire_after;
+// @ts-expect-error An expiry mode is not a time-source ID or parent constant.
+time_source_create(expiryType, 1, time_source_units_frames, () => undefined);
 const macroValue: number = gm_macro<number>("4", { Debug: "8" });
 
 void instance;
@@ -66,5 +69,6 @@ void authoredAsset;
 void authoredInstance;
 void key;
 void timeSource;
+void expiryType;
 void macroValue;
 void RoomTypeSmoke;

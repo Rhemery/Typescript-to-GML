@@ -133,6 +133,10 @@ test("renders runtime functions, constants, structs, and instance variables", ()
     declarations,
     /declare function point_distance\(x1: number, target\?: GM\.Asset\.GMObject \| GM\.Id\.Instance\): number;/,
   );
+  assert.match(
+    declarations,
+    /type RuntimeReference<Kind extends string, Name extends string = string> = number & \{ readonly __gmRuntimeType\?: `\$\{Kind\}\.\$\{Name\}` \};/,
+  );
   assert.match(declarations, /\* Returns the distance between two points\./);
   assert.match(declarations, /\* @param x1 The first x coordinate\./);
   assert.match(declarations, /\* @param target The target object or instance\./);
