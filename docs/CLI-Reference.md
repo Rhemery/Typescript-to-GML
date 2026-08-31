@@ -6,7 +6,7 @@ The recommended Windows workflow is to open the GameMaker project folder in Visu
 
 When no project path is supplied, the CLI searches the current directory and then its parents for exactly one `.yyp`. Pass an explicit path when a directory contains more than one project.
 
-Every project command checks `datafiles/ts2gml/types/gamemaker.generated.d.ts` against the installed `GmlSpec.xml` selected for the project's GameMaker IDE family. A missing or changed declaration file is generated locally before TypeScript is checked; no runtime declaration snapshot is packaged. First use therefore requires a compatible installed runtime or `GAMEMAKER_GML_SPEC`. A previously generated local copy remains usable if GameMaker is temporarily unavailable. Equally compatible Beta, Stable, or LTS installations with different specifications produce an explicit selection error instead of silently choosing one.
+Every project command checks `datafiles/ts2gml/types/gamemaker.generated.d.ts` against the installed `GmlSpec.xml` selected for the project's GameMaker IDE family. A missing, changed, outdated, or incomplete declaration file is generated locally before TypeScript is checked; no runtime declaration snapshot is packaged. First use therefore requires a compatible installed runtime or `GAMEMAKER_GML_SPEC`. A previously generated local copy remains usable if GameMaker is temporarily unavailable. Equally compatible Beta, Stable, or LTS installations with different specifications produce an explicit selection error instead of silently choosing one.
 
 ## Project commands
 

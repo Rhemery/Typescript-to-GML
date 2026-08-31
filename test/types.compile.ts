@@ -53,11 +53,18 @@ const authoredAsset: GM.Asset.GMObject = obj_type_target;
 const authoredInstance = instance_create_layer(0, 0, "Instances", obj_type_target, { health: 20 });
 authoredInstance.health -= 1;
 const key: GM.Constant.VirtualKey = vk_space;
+const timeSource = time_source_create(
+  time_source_global,
+  1,
+  time_source_units_frames,
+  () => undefined,
+);
 const macroValue: number = gm_macro<number>("4", { Debug: "8" });
 
 void instance;
 void authoredAsset;
 void authoredInstance;
 void key;
+void timeSource;
 void macroValue;
 void RoomTypeSmoke;

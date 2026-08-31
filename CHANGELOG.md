@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Expose GameMaker constants as their GML-named global values, including time-source constants, and repair stale or incomplete runtime declaration caches automatically.
+
 ## 0.2.0-beta.2 - 2026-08-30
 
 - Generate each installed project's runtime declarations locally on first use from the active GameMaker runtime's `GmlSpec.xml`, refresh them when that specification changes, and provide a persistent interactive selector for ambiguous Beta, Stable, and LTS installations. Runtime-generated declarations are no longer committed or packaged.

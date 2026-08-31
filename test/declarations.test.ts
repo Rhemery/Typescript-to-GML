@@ -17,13 +17,18 @@ function renderRuntimeSpec(functionName: string): string {
   return `<?xml version="1.0" encoding="utf-8"?>
 <GameMakerLanguageSpec RuntimeVersion="test">
   <Functions>
-    <Function>
-      <Name>${functionName}</Name>
-      <ReturnType>Real</ReturnType>
+    <Function Name="${functionName}" ReturnType="Real" />
+    <Function Name="time_source_create" ReturnType="Id.TimeSource">
+      <Parameter Name="parent" Type="Id.TimeSource,Constant.TimeSource" Optional="false" />
+      <Parameter Name="period" Type="Real" Optional="false" />
+      <Parameter Name="units" Type="Constant.TimeSourceUnits" Optional="false" />
     </Function>
   </Functions>
   <Variables />
-  <Constants />
+  <Constants>
+    <Constant Name="time_source_global" Type="Real" Class="TimeSource">The global time source.</Constant>
+    <Constant Name="time_source_units_frames" Type="Real" Class="TimeSourceUnits">Use frames for the period.</Constant>
+  </Constants>
   <Structures />
   <Enumerations />
 </GameMakerLanguageSpec>
@@ -97,6 +102,8 @@ test("renders runtime functions, constants, structs, and instance variables", ()
         text: "The space key.",
       },
       { Name: "global", Type: "Real" },
+      { Name: "time_source_global", Type: "Real", Class: "TimeSource" },
+      { Name: "time_source_units_frames", Type: "Real", Class: "TimeSourceUnits" },
     ],
     variables: [
       {
@@ -137,6 +144,11 @@ test("renders runtime functions, constants, structs, and instance variables", ()
   assert.match(declarations, /\* The left direction\.[\s\S]*left = 0/);
   assert.equal(declarations.match(/\* The instance x position\./g)?.length, 2);
   assert.match(declarations, /declare const vk_space: GM\.Constant\.VirtualKey;/);
+  assert.match(declarations, /declare const time_source_global: GM\.Constant\.TimeSource;/);
+  assert.match(
+    declarations,
+    /declare const time_source_units_frames: GM\.Constant\.TimeSourceUnits;/,
+  );
   assert.match(declarations, /declare const gm_global: GMGlobal;/);
   assert.match(declarations, /interface Point extends GMStruct/);
   assert.match(declarations, /readonly id: GM\.Id\.Instance;/);
@@ -269,8 +281,24 @@ test("generates and refreshes project-local runtime declarations from GmlSpec", 
   assert.match(firstContents, /declare function runtime_first\(\): number;/);
   assert.match(
     firstContents,
+    /declare const time_source_global: GM\.Constant\.TimeSource;/,
+  );
+  assert.match(
+    firstContents,
+    /declare const time_source_units_frames: GM\.Constant\.TimeSourceUnits;/,
+  );
+  assert.match(
+    firstContents,
     new RegExp(createHash("sha256").update(firstSpec).digest("hex")),
   );
+
+  await fs.writeFile(
+    declarationPath,
+    firstContents.replace(/\/\/ Runtime declaration generation complete\.\s*$/, ""),
+  );
+  const repaired = await ensureProjectRuntimeDeclarations(projectPath, discovery);
+  assert.equal(repaired.written, true);
+  assert.equal(await fs.readFile(declarationPath, "utf8"), firstContents);
 
   const unchanged = await ensureProjectRuntimeDeclarations(projectPath, discovery);
   assert.equal(unchanged.written, false);
