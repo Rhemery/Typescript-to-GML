@@ -19,6 +19,7 @@ import {
   type InstalledGmlSpec,
 } from "./declarations/generate.js";
 import { generateProjectDeclarations } from "./declarations/project.js";
+import { checkForUpdate } from "./update-check.js";
 import { VERSION } from "./version.js";
 
 async function main(args: string[]): Promise<void> {
@@ -34,6 +35,13 @@ async function main(args: string[]): Promise<void> {
     printHelp();
     return;
   }
+
+  void checkForUpdate(VERSION).then((update) => {
+    if (!update) return;
+    console.error(
+      `New ts2gml update available: ${update.version} (currently ${VERSION}).\nDownload: ${update.url}`,
+    );
+  });
 
   if (command === "compile") {
     const input = args.shift();
