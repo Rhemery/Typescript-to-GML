@@ -6,6 +6,7 @@ import path from "node:path";
 import process from "node:process";
 import { test } from "node:test";
 import { checkForUpdate, findAvailableUpdate } from "../src/update-check.js";
+import { VERSION } from "../src/version.js";
 
 test("selects the newest release newer than the installed prerelease", () => {
   const update = findAvailableUpdate("0.2.0-beta.2", [
@@ -92,15 +93,16 @@ test("caches the release check and fails silently when it is unavailable", async
 test("the CLI prints an available update after a tool command", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-update-cli-test-"));
   const cacheDirectory = path.join(temporary, "typescript-to-gml");
+  const availableVersion = VERSION.replace(/(\d+)$/, (value) => `${Number(value) + 1}`);
   await fs.mkdir(cacheDirectory);
   await fs.writeFile(
     path.join(cacheDirectory, "update-check.json"),
     JSON.stringify({
       checkedAt: Date.now(),
       releases: [{
-        tag_name: "0.2.0-beta.3",
-        html_url: "https://github.com/Rhemery/Typescript-to-GML/releases/tag/0.2.0-beta.3",
-        prerelease: true,
+        tag_name: availableVersion,
+        html_url: `https://github.com/Rhemery/Typescript-to-GML/releases/tag/${availableVersion}`,
+        prerelease: VERSION.includes("-"),
       }],
     }),
   );
@@ -115,9 +117,11 @@ test("the CLI prints an available update after a tool command", async () => {
   );
 
   assert.equal(result.status, 1);
-  assert.match(
+  assert.ok(
+    result.stderr.includes(
+      `New ts2gml update available: ${availableVersion} (currently ${VERSION}).`,
+    ),
     result.stderr,
-    /New ts2gml update available: 0\.2\.0-beta\.3 \(currently 0\.2\.0-beta\.2\)\./,
   );
   assert.match(result.stderr, /https:\/\/github\.com\/Rhemery\/Typescript-to-GML\/releases\/tag/);
 });

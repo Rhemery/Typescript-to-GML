@@ -35,6 +35,6 @@
 
 ## Adoption recommendation
 
-For a serious project, use it first in a bounded feature or branch. Pin `0.2.0-beta.2`, keep the generated GML reviewable, run `check` in CI, build the game normally in GameMaker, and exercise every shipping target. Avoid converting irreplaceable or deadline-critical systems until the project has accumulated successful production use.
+For a serious project, use it first in a bounded feature or branch. Pin `0.2.0-beta.3`, keep the generated GML reviewable, run `check` in CI, build the game normally in GameMaker, and exercise every shipping target. Avoid converting irreplaceable or deadline-critical systems until the project has accumulated successful production use.
 
 Report a minimal source example whenever accepted TypeScript emits invalid GML, GameMaker compilation fails, runtime behavior differs, or the compiler crashes. Those are release-blocking classes of defect.

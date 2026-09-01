@@ -2,7 +2,7 @@
 
 TypeScript to GML is a project-local compiler and declaration library for authoring GameMaker code with TypeScript tooling. It does not embed JavaScript into a game. TypeScript first erases the types, then the compiler translates a supported JavaScript AST into native GML and GameMaker resources.
 
-The current release candidate is `0.2.0-beta.2`. It is best described as a production-capable beta: the tested lowering paths compile and execute in the GameMaker VM integration fixture, but target coverage and real-project mileage are still limited. Teams adopting it should pin the version, keep generated assets under source control, and retain ordinary GameMaker builds as a release gate.
+The current release candidate is `0.2.0-beta.3`. It is best described as a production-capable beta: the tested lowering paths compile and execute in the GameMaker VM integration fixture, but target coverage and real-project mileage are still limited. Teams adopting it should pin the version, keep generated assets under source control, and retain ordinary GameMaker builds as a release gate.
 
 ## What it provides
 
@@ -32,7 +32,7 @@ The current release candidate is `0.2.0-beta.2`. It is best described as a produ
 
 ## Project status
 
-- Package version: `0.2.0-beta.2`.
+- Package version: `0.2.0-beta.3`.
 - Node.js requirement: 20 or newer.
 - Primary user package: `.yymps` local asset package.
 - Fully exercised integration target: Windows VM, GameMaker runtime `2026.0.0.23`.

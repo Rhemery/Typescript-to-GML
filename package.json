@@ -1,6 +1,6 @@
 {
   "name": "typescript-to-gml",
-  "version": "0.2.0-beta.2",
+  "version": "0.2.0-beta.3",
   "description": "GameMaker declarations and a TypeScript-to-GML compiler.",
   "author": "Rhemery",
   "repository": {

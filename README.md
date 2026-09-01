@@ -3,7 +3,7 @@
 TypeScript to GML provides typed declarations for the GameMaker API and compiles a deliberately supported TypeScript/JavaScript subset into GML. Ordinary classes become GML constructors. Classes derived from `GMObject` become GameMaker object assets and event files. Classes derived from `GMRoom` provide creation code for existing rooms.
 
 > [!WARNING]
-> Version `0.2.0-beta.2` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
+> Version `0.2.0-beta.3` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
 
 The compiler is intentionally conservative: unsupported syntax produces a source-located `TS2GML` diagnostic instead of known-invalid GML. Generated assets are deterministic, and a manifest prevents external edits to compiler-owned files from being silently overwritten.
 

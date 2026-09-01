@@ -4,7 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+## 0.2.0-beta.3 - 2026-08-31
+
 - Expose GameMaker constants as their GML-named global values, including time-source constants; strongly distinguish constant, asset, ID, and pointer categories during type checking; and repair stale or incomplete runtime declaration caches automatically.
+- Check for newer compatible GitHub releases in the background, cache the result for 24 hours, and notify CLI users without interrupting compiler commands when the network is unavailable.
 
 ## 0.2.0-beta.2 - 2026-08-30
 
