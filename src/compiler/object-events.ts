@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { createNodeDiagnostic, emitGml, Ts2GmlError } from "./compile.js";
+import { createNodeDiagnostic, emitGml, runtimeObjectName, Ts2GmlError } from "./compile.js";
 import { isGmlIdentifier } from "./gml-identifiers.js";
 
 export interface CompiledObjectEvent {
@@ -175,6 +175,65 @@ const standardEvents = new Map<string, EventKind>([
   ["onCleanUp", { eventType: 12, eventNum: 0, filePrefix: "CleanUp" }],
 ]);
 
+export function validateObjectEvents(
+  sourceFile: ts.SourceFile,
+  checker: ts.TypeChecker,
+  objectNames: ReadonlySet<string>,
+): void {
+  const instanceTypes = new Set(["GMObject", ...objectNames]);
+  const visit = (node: ts.Node): void => {
+    if (ts.isTypeNode(node)) return;
+    if (
+      ts.isMethodDeclaration(node) &&
+      ts.isClassDeclaration(node.parent) &&
+      isObjectClass(node.parent, objectNames) &&
+      !hasStaticModifier(node) &&
+      ts.isIdentifier(node.name) &&
+      eventForMethod(node.name.text, sourceFile, node) &&
+      !node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ProtectedKeyword)
+    ) {
+      throw objectError(
+        node.name,
+        sourceFile,
+        `Object event '${node.name.text}' must be protected. Declare it as 'protected ${node.name.text}(...)' so TypeScript rejects external calls.`,
+      );
+    }
+
+    let receiver: ts.Node | undefined;
+    let memberNames: string[] = [];
+    if (ts.isPropertyAccessExpression(node)) {
+      receiver = node.expression;
+      memberNames = [node.name.text];
+    } else if (ts.isElementAccessExpression(node)) {
+      receiver = node.expression;
+      const keyType = checker.getTypeAtLocation(node.argumentExpression);
+      const keyTypes = keyType.isUnion() ? keyType.types : [keyType];
+      memberNames = keyTypes.flatMap((key) => key.isStringLiteral() ? [key.value] : []);
+    } else if (ts.isBindingElement(node) && ts.isObjectBindingPattern(node.parent)) {
+      receiver = node.parent;
+      const name = node.propertyName ?? node.name;
+      if (ts.isIdentifier(name) || ts.isStringLiteral(name)) memberNames = [name.text];
+    }
+    if (
+      receiver && memberNames.some((name) => name.startsWith("on")) &&
+      checker.getTypeAtLocation(receiver).getConstructSignatures().length === 0 &&
+      runtimeObjectName(checker.getTypeAtLocation(receiver), checker, instanceTypes)
+    ) {
+      for (const name of memberNames) {
+        if (eventForMethod(name, sourceFile, node, true)) {
+          throw objectError(
+            node,
+            sourceFile,
+            `Object event '${name}' is dispatched by GameMaker and cannot be called or referenced directly. Move shared logic into a regular method, or use event_perform, event_user, or event_inherited.`,
+          );
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+}
+
 export function compileObjectClass(
   classNode: ts.ClassDeclaration,
   sourceFile: ts.SourceFile,
@@ -201,9 +260,7 @@ export function compileObjectClass(
   const variables: CompiledObjectVariable[] = [];
 
   for (const member of classNode.members) {
-    if (hasStaticModifier(member)) {
-      throw objectError(member, sourceFile, "Static members are not supported on GMObject classes.");
-    }
+    if (hasStaticModifier(member)) continue;
     if (ts.isPropertyDeclaration(member)) {
       const fieldName = getMemberName(member.name, sourceFile);
       const value = member.initializer ? emitGml(member.initializer, sourceFile) : "undefined";
@@ -323,6 +380,7 @@ function eventForMethod(
   methodName: string,
   sourceFile: ts.SourceFile,
   node: ts.Node,
+  allowUnknown = false,
 ): CompiledObjectEvent | undefined {
   const standard = standardEvents.get(methodName);
   if (standard) return { ...eventFile(standard), code: "" };
@@ -385,7 +443,7 @@ function eventForMethod(
     };
   }
 
-  if (methodName.startsWith("on")) {
+  if (!allowUnknown && methodName.startsWith("on")) {
     throw objectError(node, sourceFile, `Unknown GameMaker event method '${methodName}'.`);
   }
   return undefined;

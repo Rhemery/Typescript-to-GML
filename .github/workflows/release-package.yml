@@ -1,4 +1,4 @@
-name: Build YYMPS package
+name: Build release packages
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run verify:release
@@ -33,9 +33,12 @@ jobs:
           IDE_VERSION: ${{ inputs.ide_version }}
           PACKAGE_PUBLISHER: ${{ inputs.publisher }}
         run: npm run build:yymps -- --ide-version "$env:IDE_VERSION" --publisher "$env:PACKAGE_PUBLISHER"
+      - run: npm run package:vscode
       - uses: actions/upload-artifact@v4
         with:
-          name: typescript-to-gml-yymps
-          path: release/*.yymps
+          name: typescript-to-gml-release-packages
+          path: |
+            release/*.yymps
+            release/*.vsix
           if-no-files-found: error
           retention-days: 7

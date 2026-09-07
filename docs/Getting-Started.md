@@ -3,9 +3,9 @@
 ## Requirements
 
 - GameMaker capable of importing a local asset package.
-- Node.js 20 or newer available as `node` on `PATH`.
+- Node.js 22 or newer available as `node` on `PATH`.
 - A source-controlled or backed-up GameMaker project.
-- An editor with TypeScript language support; Visual Studio Code works without an extension.
+- Visual Studio Code 1.134 or newer. The companion extension is optional but recommended for inline compiler diagnostics and manual links.
 
 The compiler runs beside the game rather than as a global install. This keeps each game pinned to its own compiler and declaration version.
 
@@ -18,6 +18,8 @@ The compiler runs beside the game rather than as a global install. This keeps ea
 5. Do not move individual files out of that directory; the batch launcher uses its location to find the project root.
 
 The package contains only the compiler, compiler authoring declarations, TypeScript standard-library declarations, documentation, licenses, and launcher. It does not contain a GameMaker runtime declaration snapshot or source assets that could overwrite a game's rooms, objects, or scripts. The first project command generates the GameMaker API declaration from the active compatible installed runtime; no repository checkout is needed.
+
+Install the `typescript-to-gml-vscode-<version>.vsix` attached to the same release through **Extensions: Install from VSIX...**. It is a separate artifact because the GameMaker local package and the VS Code extension have different installers. See [Visual Studio Code extension](VS-Code-Extension.md).
 
 GameMaker documents the IDE import/export flow in its [Local Asset Packages manual page](https://manual.gamemaker.io/monthly/en/IDE_Tools/Local_Asset_Packages.htm).
 
@@ -50,6 +52,10 @@ Initialization creates this layout:
 ```text
 MyGame/
 |-- MyGame.yyp
+|-- ts2gml.config.json
+|-- pre_run_step.bat
+|-- pre_build_step.bat
+|-- pre_project_step.bat
 |-- datafiles/
 |   `-- ts2gml/
 |       |-- cli.cjs
@@ -66,6 +72,8 @@ MyGame/
 ```
 
 Keep `typescript/` as the source of truth. The compiler owns only paths recorded in `.ts2gml/manifest.json`.
+
+`ts2gml.config.json` controls separate runtime guard levels for testing and package builds. Both default to `standard`; see [runtime type guards](Runtime-Guards.md). Generated GameMaker compiler hooks apply the matching profile before the project source is loaded for Run or Build.
 
 ## Write the first script
 
@@ -87,11 +95,11 @@ Create `typescript/objects/obj_player.ts`:
 class obj_player extends GMObject {
   health = 100;
 
-  onCreate() {
+  protected onCreate() {
     this.x = room_width * 0.5;
   }
 
-  onStep() {
+  protected onStep() {
     this.x += keyboard_check(vk_right) - keyboard_check(vk_left);
   }
 

@@ -2,13 +2,20 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { findInstalledGmlSpec } from "../dist/src/declarations/generate.js";
 
 if (process.platform !== "win32") {
   console.log("GameMaker Igor smoke test skipped: only the Windows worker is configured.");
   process.exit(0);
 }
 
-const runtimePath = process.env.GAMEMAKER_RUNTIME_PATH ?? await findInstalledRuntime();
+const projectPath = path.resolve(process.env.GAMEMAKER_PROJECT ?? "TestProject/TestProject.yyp");
+const target = process.env.GAMEMAKER_TARGET ?? "windows";
+const runtime = process.env.GAMEMAKER_COMPILER ?? "VM";
+if (target !== "windows" || runtime !== "VM") {
+  throw new Error(`The executable fixture currently supports windows/VM; ${target}/${runtime} needs a target-specific runner before it can be claimed as tested.`);
+}
+const runtimePath = process.env.GAMEMAKER_RUNTIME_PATH ?? path.dirname(await findInstalledGmlSpec({ projectFile: projectPath }));
 const igorPath = process.env.GAMEMAKER_IGOR ?? path.join(
   runtimePath,
   "bin",
@@ -28,7 +35,6 @@ const userDirectory = process.env.GAMEMAKER_USER_DIR ?? path.join(
   process.env.APPDATA ?? "",
   productName,
 );
-const projectPath = path.resolve("TestProject", "TestProject.yyp");
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-igor-"));
 
 try {
@@ -44,45 +50,21 @@ try {
     `--cache=${path.join(temporary, "cache")}`,
     `--temp=${path.join(temporary, "temp")}`,
     `--of=${outputPath}`,
-    "--runtime=VM",
+    `--runtime=${runtime}`,
     "--jsonErrors",
-    "windows",
+    target,
     "Compile",
   ]);
   await fs.access(outputPath);
   await run(runnerPath, ["-game", outputPath], 30_000, "TS2GML_SCOPE_CONTEXT_OK");
-  console.log(`GameMaker compile and scope-context runtime tests passed with ${path.basename(runtimePath)}.`);
+  const evidence = { compilerVersion: JSON.parse(await fs.readFile("package.json", "utf8")).version,
+    project: projectPath, runtime: path.basename(runtimePath), target, compiler: runtime,
+    nodeVersion: process.versions.node, platform: process.platform, passedAt: new Date().toISOString() };
+  await fs.mkdir("output", { recursive: true });
+  await fs.writeFile("output/gamemaker-verification.json", JSON.stringify(evidence, null, 2) + "\n");
+  console.log(`GameMaker compile and runtime tests passed: ${target}/${runtime}, ${path.basename(runtimePath)}.`);
 } finally {
   await fs.rm(temporary, { recursive: true, force: true });
-}
-
-async function findInstalledRuntime() {
-  const programData = process.env.ProgramData;
-  if (!programData) throw new Error("ProgramData is unavailable; set GAMEMAKER_RUNTIME_PATH.");
-  const products = (await fs.readdir(programData, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith("GameMakerStudio2"))
-    .map((entry) => path.join(programData, entry.name));
-  const runtimes = [];
-  for (const product of products) {
-    const runtimeDirectory = path.join(product, "Cache", "runtimes");
-    let entries;
-    try {
-      entries = await fs.readdir(runtimeDirectory, { withFileTypes: true });
-    } catch (error) {
-      if (error.code === "ENOENT") continue;
-      throw error;
-    }
-    for (const entry of entries) {
-      if (entry.isDirectory() && entry.name.startsWith("runtime-")) {
-        runtimes.push(path.join(runtimeDirectory, entry.name));
-      }
-    }
-  }
-  const runtime = runtimes.sort().at(-1);
-  if (!runtime) {
-    throw new Error("Could not locate an installed GameMaker runtime; set GAMEMAKER_RUNTIME_PATH.");
-  }
-  return runtime;
 }
 
 function run(executable, arguments_, timeoutMs, expectedOutput) {

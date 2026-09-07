@@ -30,7 +30,7 @@ class DamageRoll {
 }
 ```
 
-For ordinary class inheritance, a derived constructor must contain one explicit `super(...)` call as its first statement. Static members, accessors, private fields, and decorators are unsupported.
+For ordinary class inheritance, a derived constructor must contain one explicit `super(...)` call as its first statement. Static fields and methods are supported on ordinary and GMObject classes. Accessors, private fields, decorators, and static initialization blocks remain unsupported.
 
 ## GameMaker objects
 
@@ -40,15 +40,15 @@ A top-level class extending `GMObject` creates or updates an object asset. The c
 class obj_enemy extends GMObject {
   health = 20;
 
-  onCreate() {
+  protected onCreate() {
     this.image_speed = 0.2;
   }
 
-  onAlarm0() {
+  protected onAlarm0() {
     instance_destroy(this.id);
   }
 
-  onCollision_obj_bullet(other: GMInstance<obj_bullet>) {
+  protected onCollision_obj_bullet(other: GMInstance<obj_bullet>) {
     this.health -= other.damage;
   }
 }
@@ -56,7 +56,9 @@ class obj_enemy extends GMObject {
 
 Class fields become Object Variables initialized in PreCreate. Event methods generate their corresponding GameMaker event `.gml` files directly. Non-event methods and constructor statements are installed during Create. Collision event names are checked against project object assets, and their optional `other` parameter is compiler-only.
 
-The declarations include fixed Step, Draw, Mouse, Gesture, Other, and Async event names; alarms and user events; readable keyboard names such as `onKeyDown_A`; numeric keyboard forms; and project-aware collision methods.
+Declare every object event as `protected`, including numeric and collision events. TypeScript rejects calls through object instances, and project checks reject direct event calls or references inside object code as well. Use regular methods for shared logic, or GameMaker's `event_perform`, `event_user`, and `event_inherited` functions for explicit event dispatch. Protected visibility allows child objects to override events; TypeScript private methods would prevent those overrides.
+
+Supported events include fixed Step, Draw, Mouse, Gesture, Other, and Async event names; alarms and user events; readable keyboard names such as `onKeyDown_A`; numeric keyboard forms; and project-aware collision methods.
 
 An authored object may extend another authored object. The generated child points at its parent and begins Create with `event_inherited()`. If a class directly extends `GMObject`, a parent selected manually in the IDE is retained.
 
@@ -96,7 +98,7 @@ function addScore(amount: number) {
 
 Top-level bare variable references are rejected because their GML scope would be ambiguous. Top-level functions, constructors, and macros remain global symbols.
 
-Reserved GameMaker names that are TypeScript keywords use authoring aliases: `gm_typeof`, `gm_instanceof`, `gm_self`, and `gm_global` emit `typeof`, `instanceof`, `self`, and `global`.
+GameMaker keywords and context values use authoring aliases: `gm_typeof(...)`, `gm_instanceof(...)`, `gm_self<T>()`, and `gm_global` emit `typeof`, `instanceof`, `self`, and `global`.
 
 ## Macros
 
@@ -124,7 +126,7 @@ this.gm_with(obj_enemy, (enemy, caller) => {
 
 It emits a native GML `with` statement. In an object method, `this.gm_with` infers the caller type. In a script or room, use the global generic form when needed. Callback parameters map to GML `self` and `other`, may capture enclosing locals, and are not emitted as a runtime function.
 
-Use `gm_other<obj_enemy>()` when an `other` reference outside a typed collision parameter needs an authoring-time type. It emits bare `other` and performs no runtime check.
+Use `gm_self<obj_player>()` or `gm_other<obj_enemy>()` when a context reference needs an authoring-time type. They emit bare `self` or `other`, plus one runtime object check per distinct context/type pair at the start of the containing execution scope under the default `standard` guard level. See [runtime type guards](Runtime-Guards.md) for run/build profiles and maximum collection checks.
 
 ## Unmanaged GML interoperability
 

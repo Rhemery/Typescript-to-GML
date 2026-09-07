@@ -31,6 +31,7 @@ for (const documentationPath of [
   );
 }
 await fs.access(path.resolve(packageJson.types));
+await fs.access(path.resolve("vscode-extension", "dist", "extension.cjs"));
 await fs.access(path.resolve("dist", "ts2gml", "typescript", "lib", "lib.es2022.d.ts"));
 await assert.rejects(
   fs.access(path.resolve("dist", "ts2gml", "types", "gamemaker.generated.d.ts")),

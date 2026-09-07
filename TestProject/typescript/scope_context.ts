@@ -41,6 +41,9 @@ class ScopeContextStruct {
 }
 
 class obj_scope_target extends GMObject {
+  static total = 5;
+  static increment(): number { this.total += 1; return this.total; }
+  static identity(): typeof obj_scope_target { return this; }
   value = 20;
 
   invoke(callback: () => number): number {
@@ -57,6 +60,10 @@ class obj_scope_target extends GMObject {
   }
 
   callerValue(): number {
+    return gm_other<obj_scope_target>().value;
+  }
+
+  extractedCallerValue(): number {
     return gm_other<obj_scope_runner>().value;
   }
 }
@@ -70,10 +77,12 @@ class obj_scope_runner extends GMObject {
     this.value = 41;
   }
 
-  onCreate() {
+  protected onCreate() {
+    scopeContextExpect("object static before instance", obj_scope_target.increment(), 6);
+    scopeContextExpect("object static identity", obj_scope_target.identity(), obj_scope_target);
     const value = 2;
     scopeContextExpect("event field/local", this.value + value, 43);
-    scopeContextExpect("event self", this, gm_self);
+    scopeContextExpect("event self", this, gm_self<obj_scope_runner>());
 
     gm_global.scopeContextValue = 50;
     scopeContextExpect("global", gm_global.scopeContextValue, 50);
@@ -92,7 +101,7 @@ class obj_scope_runner extends GMObject {
     scopeContextExpect("object field/parameter", target.fromParameter(4), 24);
     scopeContextExpect("object field/local", target.fromLocal(), 23);
     scopeContextExpect("direct method other", target.callerValue(), target.value);
-    const targetCaller = target.callerValue;
+    const targetCaller = target.extractedCallerValue;
     scopeContextExpect("extracted method other", targetCaller(), this.value);
 
     const structReader = data.makeReader();
@@ -151,14 +160,14 @@ class obj_scope_runner extends GMObject {
     this.alarm[0] = 2;
   }
 
-  onCollision_obj_scope_target(other: GMInstance<obj_scope_target>) {
+  protected onCollision_obj_scope_target(other: GMInstance<obj_scope_target>) {
     const value = 2;
     scopeContextExpect("collision self/local", this.value + value, 56);
     scopeContextExpect("collision other", other.value, 26);
     this.collisionContextPassed = true;
   }
 
-  onAlarm0() {
+  protected onAlarm0() {
     scopeContextExpect("collision event ran", this.collisionContextPassed, true);
     console.log("TS2GML_SCOPE_CONTEXT_OK");
     game_end(0);
@@ -176,7 +185,7 @@ class TestRoom extends GMRoom {
       game_end(1);
     });
     loweringMatrixRun();
-    scopeContextExpect("room self", this, gm_self);
+    scopeContextExpect("room self", this, gm_self());
     instance_create_depth(0, 0, 0, obj_scope_runner);
   }
 }

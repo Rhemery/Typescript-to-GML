@@ -2,6 +2,81 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { compileTypeScript, Ts2GmlError } from "../src/compiler/compile.js";
 
+test("initializes class statics once before construction, with methods before fields", () => {
+  const result = compileTypeScript(`
+class Counter {
+  static readonly initial = this.read();
+  static count = 3;
+  static unset: number;
+  count = 100;
+  static read(offset: number = 0): number { return this.count + offset; }
+  static identity() { return this; }
+  static reader() { return () => this.count; }
+  static arrow = () => this.count;
+}
+function use() {
+  Counter.count += 1;
+  Counter.count++;
+  return [Counter.read(), new Counter().count];
+}
+`, "statics.ts");
+  assert.match(result.javascript, /static readonly|static initial/);
+  assert.match(result.gml, /function Counter\(\) constructor \{\s+self\.count = 100;\s+\}/);
+  assert.equal(result.gml.match(/__ts2gml_class_statics\(Counter, true\)/g)?.length, 1);
+  assert.ok(result.gml.indexOf("self.read = method") < result.gml.indexOf("self.initial = __ts2gml"));
+  assert.ok(result.gml.indexOf("self.initial = __ts2gml") < result.gml.indexOf("self.count = 3;"));
+  assert.match(result.gml, /self\.unset = undefined;/);
+  assert.match(result.gml, /return self\.__ts2gml_class;/);
+  assert.match(result.gml, /return method\(self, function/);
+  assert.match(result.gml, /self\.arrow = method\(self, function/);
+  assert.match(result.gml, /__ts2gml_class_statics\(Counter\)\.count \+= 1;/);
+  assert.match(result.gml, /__ts2gml_class_statics\(Counter\)\.count\+\+;/);
+  assert.doesNotMatch(result.gml, /static (?:initial|count|read)\b|\bthis\b/);
+});
+
+test("lowers inherited, aliased, bracketed, and destructured static members", () => {
+  const result = compileTypeScript(`
+class Parent {
+  static count = 1;
+  static read() { return this.count; }
+}
+class Child extends Parent { constructor() { super(); } }
+function use() {
+  const Alias = Child;
+  Alias["count"] = 7;
+  const { count } = Alias;
+  return [count, Alias.read(), Parent.count];
+}
+function shadow(Parent: {count: number}) { return Parent.count; }
+function generic<T extends typeof Parent>(value: T) { return value.count; }
+`, "./fixtures/inherited-statics.ts");
+  assert.match(result.gml, /__ts2gml_class_statics\(Child, true\)/);
+  assert.match(result.gml, /static_set\(self, __ts2gml_class_statics\(Parent\)\);/);
+  assert.match(result.gml, /__ts2gml_class_statics\(Alias\)\.count = 7;/);
+  assert.match(result.gml, /var __ts2gml_destructure_\w+ = __ts2gml_class_statics\(Alias\)/);
+  assert.match(result.gml, /return Parent\.count;/);
+  assert.match(result.gml, /return __ts2gml_class_statics\(value\)\.count;/);
+  assert.doesNotMatch(result.gml, /Alias\["count"\]/);
+});
+
+test("keeps unsupported static syntax source-located", () => {
+  for (const source of [
+    "class State { static get value() { return 1; } }",
+    "class State { static [name] = 1; }",
+    "class State { static value = 1; } function read(key: string) { return State[key]; }",
+    "class State { static { reset(); } }",
+    "class State { static __ts2gml_class = 1; }",
+    'class State { static "__ts2gml_class" = 1; }',
+    "class State { static value = 1; } function read(value: typeof State | {value: number}) { return value.value; }",
+  ]) {
+    assert.throws(() => compileTypeScript(source, "unsupported-statics.ts"), (error: unknown) =>
+      error instanceof Ts2GmlError && error.diagnostics.some((diagnostic) =>
+        diagnostic.fileName === "unsupported-statics.ts" && diagnostic.line > 0 && diagnostic.column > 0
+      )
+    );
+  }
+});
+
 test("lowers TypeScript classes and JavaScript expressions to GML", () => {
   const source = `
 class Vector3 extends Vector2 {
@@ -32,7 +107,7 @@ function announce(value: number): void {
   );
   assert.match(result.gml, /return sqrt\(squared\);/);
   assert.match(result.gml, /show_debug_message\(string_concat\("value=", value\)\);/);
-  assert.match(result.gml, /value == undefined/);
+  assert.match(result.gml, /__ts2gml_value_equal\(value, pointer_null\)/);
   assert.doesNotMatch(result.gml, /this\./);
   assert.doesNotMatch(result.gml, /\b(?:const|let)\b/);
 });
@@ -71,7 +146,6 @@ test("rejects JavaScript control flow and scope semantics that GML cannot preser
     ["super-method.ts", "class Child extends Base { run() { return super.run(); } }", "TS2GML1048"],
     ["shadow.ts", "function read(value: number) { if (value) { let value = 2; } return value; }", "TS2GML1049"],
     ["nested-class.ts", "function make() { class Local {} return new Local(); }", "TS2GML1050"],
-    ["array-member.ts", "function add(values: number[]) { values.push(1); return values.length; }", "TS2GML1051"],
     ["logical-assignment.ts", "function set(value: number) { value ||= 1; }", "TS2GML1052"],
     ["unsigned-shift.ts", "function shift(value: number) { return value >>> 1; }", "TS2GML1053"],
     ["comma.ts", "function both() { return (first(), second()); }", "TS2GML1054"],
@@ -85,6 +159,95 @@ test("rejects JavaScript control flow and scope semantics that GML cannot preser
         error instanceof Ts2GmlError && error.diagnostics.some((item) => item.code === code),
     );
   }
+});
+
+test("lowers JavaScript-style collections to native GameMaker data structures", () => {
+  const result = compileTypeScript(`
+function collections() {
+  const map = new Map<string, number>([["score", 1]]);
+  const set = new Set<string>(["ready"]);
+  const list = new List<number>([1, 2]);
+  const grid = new Grid<string>(2, 3);
+  const queue = new Queue<number>();
+  const stack = new Stack<number>();
+  const priority = new PriorityQueue<string>();
+  map.set("score", 2);
+  map.delete("missing");
+  set.add("running");
+  list.push(3);
+  grid.set(0, 0, "cell");
+  queue.enqueue(1);
+  stack.push(2);
+  priority.add("urgent", 10);
+  const values = [1, 2];
+  const record: { value?: number } = { value: 1 };
+  values.push(3);
+  values.reverse();
+  const count = values.length;
+  delete values[0];
+  delete map["score"];
+  delete record.value;
+  return count;
+}
+`, "collections.ts");
+
+  assert.match(result.gml, /function __ts2gml_Map\(_entries\) constructor/);
+  assert.match(result.gml, /__ds = ds_map_create\(\)/);
+  assert.match(result.gml, /new __ts2gml_Map\(\[\["score", 1\]\]\)/);
+  assert.match(result.gml, /new __ts2gml_Set\(\["ready"\]\)/);
+  assert.match(result.gml, /new __ts2gml_List\(\[1, 2\]\)/);
+  assert.match(result.gml, /new __ts2gml_Grid\(2, 3\)/);
+  assert.match(result.gml, /new __ts2gml_Queue\(\)/);
+  assert.match(result.gml, /new __ts2gml_Stack\(\)/);
+  assert.match(result.gml, /new __ts2gml_PriorityQueue\(\)/);
+  assert.match(result.gml, /__ts2gml_collection_push\(list, \[3\]\)/);
+  assert.match(result.gml, /__ts2gml_collection_push\(values, \[3\]\)/);
+  assert.match(result.gml, /__ts2gml_collection_reverse\(values, \[\]\)/);
+  assert.match(result.gml, /var count = __ts2gml_collection_length\(values\)/);
+  assert.match(result.gml, /__ts2gml_remove\(values, 0\)/);
+  assert.match(result.gml, /__ts2gml_remove\(map, "score"\)/);
+  assert.match(result.gml, /__ts2gml_remove\(map, "missing"\)/);
+  assert.match(result.gml, /__ts2gml_remove\(record, "value"\)/);
+  assert.doesNotMatch(result.gml, /static delete\b|\.delete\(/);
+});
+
+test("preserves authored members whose names overlap collection intrinsics", () => {
+  const result = compileTypeScript(`
+class Bag {
+  length = 7;
+  concat(left: number, right: number) { return left + right; }
+  includes(value: number, offset: number) { return value === offset; }
+  push(left: number, right: number) { return left * right; }
+}
+function inspectBag() {
+  const bag = new Bag();
+  return bag.length + bag.concat(1, 2) + bag.push(3, 4) + (bag.includes(5, 5) ? 1 : 0);
+}
+`, "authored-collection-members.ts");
+
+  assert.match(result.gml, /return _target\.length;/);
+  assert.match(result.gml, /method_call\(method\(_target, _function\), _arguments\)/);
+  assert.match(result.gml, /__ts2gml_call_member\(_target, _target\.concat, _arguments\)/);
+  assert.match(result.gml, /__ts2gml_call_member\(_target, _target\.includes, _arguments\)/);
+  assert.match(result.gml, /__ts2gml_call_member\(_target, _target\.push, _arguments\)/);
+  assert.match(result.gml, /__ts2gml_collection_concat\(bag, \[1, 2\]\)/);
+  assert.match(result.gml, /__ts2gml_collection_push\(bag, \[3, 4\]\)/);
+  assert.match(result.gml, /__ts2gml_collection_includes\(bag, \[5, 5\]\)/);
+});
+
+test("keeps unsupported JavaScript globals strict beside collection intrinsics", () => {
+  const result = compileTypeScript(
+    "function create() { return new Map<string, number>(); }",
+    "map.ts",
+  );
+  assert.match(result.gml, /new __ts2gml_Map\(\)/);
+
+  assert.throws(
+    () => compileTypeScript("const constructor = Map;", "bare-map.ts"),
+    (error: unknown) =>
+      error instanceof Ts2GmlError &&
+      error.diagnostics.some((diagnostic) => diagnostic.code === "TS2GML1033"),
+  );
 });
 
 test("allows erased type-only imports", () => {
@@ -261,7 +424,7 @@ const nothing = void reset();
 `, "operators.ts");
 
   assert.doesNotMatch(result.gml, /\?\./);
-  assert.match(result.gml, /\?\? undefined\) == undefined/);
+  assert.match(result.gml, /__ts2gml_value_nullish\(__ts2gml_optional/);
   assert.match(result.gml, /is_instanceof\(player, Player\)/);
   assert.match(result.gml, /variable_struct_exists\(player, "health"\)/);
   assert.match(result.gml, /is_callable\(__ts2gml_typeof_value\)/);
@@ -295,7 +458,7 @@ const { position: { x, y }, name: displayName, ...rest } = player;
 `, "destructuring.ts");
 
   assert.match(result.gml, /first = 0 < array_length/);
-  assert.match(result.gml, /second = \(1 < array_length[\s\S]+\?\? 2/);
+  assert.match(result.gml, /second = is_undefined\(__ts2gml_default_\w+\) \? 2/);
   assert.match(result.gml, /tail = 2 < array_length[\s\S]+array_copy_while/);
   assert.match(result.gml, /variable_struct_get\([^,]+, "position"\)/);
   assert.match(result.gml, /variable_struct_get\([^,]+, "name"\)/);
@@ -316,7 +479,7 @@ for (const key in record) console.log(key);
   assert.doesNotMatch(result.gml, /\bof\b|\bin\b/);
 });
 
-test("lowers typed gm_with blocks and gm_other assertions", () => {
+test("lowers typed gm_with blocks and context assertions", () => {
   const result = compileTypeScript(`
 class obj_enemy { health = 10; }
 class obj_player {
@@ -329,7 +492,9 @@ class obj_player {
     });
   }
   onCollision_obj_enemy() {
+    const player = gm_self<obj_player>();
     const enemy = gm_other<obj_enemy>();
+    player.score += 1;
     enemy.health -= 1;
   }
 }
@@ -338,11 +503,35 @@ class obj_player {
   assert.match(result.gml, /with \(obj_enemy\) \{/);
   assert.match(result.gml, /__ts2gml_with_self_\d+_\d+\.health -= _amount;/);
   assert.match(result.gml, /__ts2gml_with_other_\d+_\d+\.score \+= 1;/);
+  assert.match(result.gml, /var player = self;/);
   assert.match(result.gml, /var enemy = other;/);
   assert.doesNotMatch(
     result.gml,
     /gm_with|gm_other|function \(enemy, player\)|var enemy = self|var player = other/,
   );
+});
+
+test("hoists repeated typed context guards once per function", () => {
+  const result = compileTypeScript(`
+class obj_entity {}
+function inspect() {
+  const first = gm_self<obj_entity>();
+  if (first.health > 0) {
+    const second = gm_self<obj_entity>();
+    return second.health;
+  }
+  return 0;
+}
+`, "runtime-guards.ts");
+
+  assert.doesNotMatch(result.gml, /__TS2GML_RUNTIME_GUARD_LEVEL/);
+  assert.match(
+    result.gml,
+    /function inspect\(\) \{\s+__ts2gml_guard_object\(self, obj_entity, "self"\);/,
+  );
+  const inspect = result.gml.slice(result.gml.indexOf("function inspect"));
+  assert.equal(inspect.match(/__ts2gml_guard_object/g)?.length, 1);
+  assert.equal(inspect.match(/var (?:first|second) = self;/g)?.length, 2);
 });
 
 test("keeps explicit instance fields distinct from parameters and locals", () => {
@@ -444,11 +633,13 @@ test("rejects scopes that would change meaning after GML lowering", () => {
   }
 });
 
-test("rejects gm_with and gm_other forms that cannot be emitted inline", () => {
+test("rejects compiler context forms that cannot be emitted inline", () => {
   const invalidSources = [
     ["with-expression.ts", "const result = gm_with(target, () => {});", "TS2GML1044"],
     ["with-concise.ts", "gm_with(target, () => reset());", "TS2GML1044"],
     ["with-return.ts", "gm_with(target, () => { return; });", "TS2GML1044"],
+    ["self-argument.ts", "const value = gm_self(target);", "TS2GML1045"],
+    ["self-reference.ts", "const getSelf = gm_self;", "TS2GML1045"],
     ["other-argument.ts", "const value = gm_other(target);", "TS2GML1045"],
     ["other-reference.ts", "const getOther = gm_other;", "TS2GML1045"],
   ] as const;
@@ -567,7 +758,7 @@ function run(limit: number): number {
 `, "statement-lowering.ts");
 
   assert.match(result.gml, /for \(var __ts2gml_do_first_/);
-  assert.match(result.gml, /__ts2gml_do_first_\d+_\d+ \|\| count < limit/);
+  assert.match(result.gml, /__ts2gml_do_first_\d+_\d+ \|\| __ts2gml_value_truthy\(count < limit\)/);
   assert.match(result.gml, /catch \(__ts2gml_caught_/);
   assert.doesNotMatch(result.gml, /\bdo\s*\{|catch\s*\{/);
 });

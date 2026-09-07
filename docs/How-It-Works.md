@@ -28,11 +28,13 @@ Deterministic .gml, .yy, .yyp, folder, declaration, and manifest updates
 
 This ordering is important. Type annotations and type-only imports are gone before GML is emitted, but runtime JavaScript semantics are still validated. A construct is accepted only when the compiler has a defined GML representation with compatible behavior.
 
+Before erasure, the project type checker records the reifiable types needed by runtime guards. The JavaScript lowering reads the selected run/build level from `ts2gml.config.json` and inserts only those checks directly into the output. No generated GML asks which guard level is active at runtime. GameMaker configuration overrides are resolved before lowering.
+
 `check` performs the pipeline through conflict checking without writing generated project assets. `build` performs the same work and then applies the project update. No partially lowered source should be written after a diagnostic.
 
 ## Declaration layers
 
-`types/core.d.ts` defines compiler authoring concepts such as `GMObject`, `GMRoom`, `GMInstance`, `gm_macro`, `gm_with`, and `gm_other`.
+`types/core.d.ts` defines compiler authoring concepts such as `GMObject`, `GMRoom`, `GMInstance`, `gm_macro`, `gm_with`, `gm_self`, and `gm_other`.
 
 `types/gamemaker.generated.d.ts` is generated from an installed runtime's `GmlSpec.xml`. It contains runtime functions, GML-named constant values, global variables, structures, enums, asset types, and object instance variables. It is neither committed nor packaged. On first use, the standalone compiler finds the active runtime compatible with the `.yyp` IDE family and creates the project-local copy; later commands refresh it when the XML SHA-256 or declaration format changes, and repair incomplete output. Equally compatible installations require a machine-local choice through `ts2gml runtime`; the compiler never guesses between differing Beta, Stable, or LTS specifications. Never edit this generated file by hand.
 
@@ -56,7 +58,7 @@ Source subdirectories are mirrored as virtual Asset Browser folders. Moving a so
 
 Before writing, the project compiler checks for source-name collisions, invalid GML identifiers, collisions with GameMaker runtime symbols and project assets, and conflicts with unmanaged resources. It records generated paths and content fingerprints in `.ts2gml/manifest.json`.
 
-On the next build, a compiler-owned file whose fingerprint changed or which was deleted externally stops the build. This protects an IDE hotfix from being silently erased. Object `.yy` resources are merged differently: documented IDE-owned settings and manual Object Variables are preserved while compiler-owned identity, inheritance, fields, and events are refreshed.
+On the next build, compiler-owned output is refreshed from TypeScript even when it was edited or deleted externally. Hashes record the generated content but do not restrict updates. Object `.yy` resources are merged: documented IDE-owned settings and manual Object Variables are preserved while compiler-owned identity, inheritance, fields, and events are refreshed. Unchanged resource formatting and existing project entry order are preserved to avoid unnecessary IDE reloads.
 
 Watch mode adds another boundary: it may update existing generated `.gml` files, but it preflights every resource-structure change before writing. The user must save GameMaker and confirm the pending update because no external process can inspect unsaved IDE memory. The confirmed build recompiles against the newly saved resources and applies the structure as one update.
 

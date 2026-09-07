@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "objects/obj_scope_runner/Alarm_0.gml",
+  "mappings": [
+    {
+      "generatedLine": 1,
+      "source": "typescript/scope_context.ts",
+      "line": 171,
+      "column": 5
+    },
+    {
+      "generatedLine": 2,
+      "source": "typescript/scope_context.ts",
+      "line": 172,
+      "column": 5
+    },
+    {
+      "generatedLine": 3,
+      "source": "typescript/scope_context.ts",
+      "line": 173,
+      "column": 5
+    }
+  ]
+}

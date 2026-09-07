@@ -9,5 +9,10 @@ self.fromLocal = function() {
     return self.value + value;
 };
 self.callerValue = function() {
+    __ts2gml_guard_object(other, obj_scope_target, "other");
+    return other.value;
+};
+self.extractedCallerValue = function() {
+    __ts2gml_guard_object(other, obj_scope_runner, "other");
     return other.value;
 };

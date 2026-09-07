@@ -3,30 +3,42 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { createInterface } from "node:readline/promises";
-import { compileTypeScript, Ts2GmlError } from "./compiler/compile.js";
+import { compileTypeScript, Ts2GmlError, toJavaScript, validateTypeScriptSource } from "./compiler/compile.js";
+import type { DiagnosticResponse } from "./diagnostics.js";
+import { readManifest } from "./compiler/manifest.js";
+import { withProjectLock } from "./compiler/project-state.js";
 import {
+  applyRuntimeGuardProfile,
   buildGameMakerProject,
   checkGameMakerProject,
   prepareTypeScriptProject,
+  ResourceConflictError,
 } from "./compiler/project.js";
 import { watchGameMakerProject } from "./compiler/watch.js";
+import { detectRuntimeGuardProfile } from "./compiler/runtime-guards.js";
 import {
   clearProjectRuntimeSelection,
   discoverInstalledGmlSpecs,
   ensureProjectRuntimeDeclarations,
   generateDeclarations,
+  findInstalledGmlSpec,
   saveProjectRuntimeSelection,
   type InstalledGmlSpec,
 } from "./declarations/generate.js";
 import { generateProjectDeclarations } from "./declarations/project.js";
 import { checkForUpdate } from "./update-check.js";
 import { VERSION } from "./version.js";
+import { atomicWriteFile, sameFilePath } from "./files.js";
 
 async function main(args: string[]): Promise<void> {
-  if (Number.parseInt(process.versions.node, 10) < 20) {
-    throw new Error("Node.js 20 or newer is required to run ts2gml.");
+  if (Number.parseInt(process.versions.node, 10) < 22) {
+    throw new Error("Node.js 22 or newer is required to run ts2gml.");
   }
   const command = args.shift();
+  const json = takeFlag(args, "--json");
+  if (json && command !== "check" && command !== "diagnose" && command !== "doctor") {
+    throw new Error("--json is supported by check, diagnose, and doctor.");
+  }
   if (command === "--version" || command === "-v" || command === "version") {
     console.log(VERSION);
     return;
@@ -36,7 +48,37 @@ async function main(args: string[]): Promise<void> {
     return;
   }
 
-  void checkForUpdate(VERSION).then((update) => {
+  if (command === "guard-profile") {
+    const requestedProfile = args.shift();
+    if (requestedProfile !== "run" && requestedProfile !== "build" && requestedProfile !== "auto") {
+      throw new Error("guard-profile requires run, build, or auto.");
+    }
+    const automatic = requestedProfile === "auto";
+    const profile = automatic ? detectRuntimeGuardProfile(process.env) : requestedProfile;
+    const configuration = takeOption(args, "--configuration");
+    const project = await takeProject(args);
+    assertNoArguments(args);
+    const result = await applyRuntimeGuardProfile(
+      project,
+      profile,
+      {
+        ...(configuration ? { configuration } : {}),
+        preserveRunProfile: !automatic,
+      },
+    );
+    console.log(
+      result.skippedForRun
+        ? `Kept the ${result.level} runtime guard profile for this test run.`
+        : `Applied the ${result.level} ${result.profile} runtime guard profile${
+          result.configuration ? ` for ${result.configuration}` : ""
+        }${
+          result.written ? "." : " (no file change needed)."
+        }`,
+    );
+    return;
+  }
+
+  if (!json && command !== "diagnose") void checkForUpdate(VERSION).then((update) => {
     if (!update) return;
     console.error(
       `New ts2gml update available: ${update.version} (currently ${VERSION}).\nDownload: ${update.url}`,
@@ -46,12 +88,31 @@ async function main(args: string[]): Promise<void> {
   if (command === "compile") {
     const input = args.shift();
     if (!input) throw new Error("compile requires a TypeScript input file.");
-    const output = takeOption(args, "--out") ?? input.replace(/\.tsx?$/, ".gml");
+    if (!/\.[jt]sx?$/i.test(input)) {
+      throw new Error("compile requires a .ts, .tsx, .js, or .jsx input file.");
+    }
+    const output = takeOption(args, "--out") ?? input.replace(/\.[jt]sx?$/i, ".gml");
     assertNoArguments(args);
+    const inputPath = await fs.realpath(input);
+    const outputPath = await fs.realpath(output).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+      return path.resolve(output);
+    });
+    if (sameFilePath(inputPath, outputPath)) {
+      throw new Error("The GML output must be a different file from the source input.");
+    }
+    const inputStat = await fs.stat(inputPath);
+    const outputStat = await fs.stat(outputPath).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+      return undefined;
+    });
+    if (outputStat && inputStat.ino === outputStat.ino && inputStat.dev === outputStat.dev) {
+      throw new Error("The GML output must not be a link to the source input.");
+    }
     const source = await fs.readFile(input, "utf8");
     const result = compileTypeScript(source, path.resolve(input));
-    await fs.mkdir(path.dirname(path.resolve(output)), { recursive: true });
-    await fs.writeFile(output, result.gml, "utf8");
+    await atomicWriteFile(output, result.gml);
+    await atomicWriteFile(`${output}.map.json`, `${JSON.stringify({ ...result.sourceMap, generatedFile: path.resolve(output) }, null, 2)}\n`);
     console.log(`Compiled ${input} -> ${output}`);
     return;
   }
@@ -59,8 +120,10 @@ async function main(args: string[]): Promise<void> {
   if (command === "build") {
     const overwriteChangedGeneratedFiles = takeFlag(args, "--overwrite-generated");
     const ideProjectSaved = takeFlag(args, "--project-saved");
+    const guardConfiguration = takeOption(args, "--configuration");
     const project = await takeProject(args);
     const summary = await buildGameMakerProject(args, project, {
+      ...(guardConfiguration ? { guardConfiguration } : {}),
       ideProjectSaved,
       overwriteChangedGeneratedFiles,
     });
@@ -70,9 +133,43 @@ async function main(args: string[]): Promise<void> {
     return;
   }
 
+  if (command === "diagnose") {
+    const fileName = args.shift();
+    if (!fileName) throw new Error("diagnose requires a source filename and reads source text from standard input.");
+    assertNoArguments(args);
+    let source = "";
+    process.stdin.setEncoding("utf8");
+    for await (const chunk of process.stdin) source += chunk;
+    validateTypeScriptSource(source, path.resolve(fileName));
+    toJavaScript(source, path.resolve(fileName));
+    const response: DiagnosticResponse = { protocolVersion: 1, compilerVersion: VERSION, diagnostics: [] };
+    console.log(json ? JSON.stringify(response) : `Checked syntax in ${fileName}.`);
+    return;
+  }
+
+  if (command === "doctor") {
+    const project = path.resolve(await takeProject(args));
+    assertNoArguments(args);
+    const spec = await findInstalledGmlSpec({ projectFile: project });
+    const manifest = await readManifest(path.join(path.dirname(project), ".ts2gml", "manifest.json"));
+    const summary = await checkGameMakerProject([], project);
+    const report = { protocolVersion: 1, compilerVersion: VERSION, nodeVersion: process.versions.node,
+      project, runtimeSpec: spec, manifestVersion: manifest.formatVersion,
+      previousCompilerVersion: manifest.compilerVersion, ownedFiles: manifest.files.length,
+      sourceFiles: summary.sourceFiles, diagnostics: [] };
+    console.log(json ? JSON.stringify(report) : JSON.stringify(report, null, 2));
+    return;
+  }
+
   if (command === "check") {
     const project = await takeProject(args);
     const summary = await checkGameMakerProject(args, project);
+    if (json) {
+      const response: DiagnosticResponse = { protocolVersion: 1, compilerVersion: VERSION,
+        diagnostics: [], sourceFiles: summary.sourceFiles };
+      console.log(JSON.stringify(response));
+      return;
+    }
     console.log(
       `Checked ${summary.sourceFiles.length} source file(s): ${summary.scripts.length} script(s), ${summary.objects.length} object(s), and ${summary.rooms.length} room creation code file(s) are supported.`,
     );
@@ -82,8 +179,11 @@ async function main(args: string[]): Promise<void> {
   if (command === "init") {
     const project = await takeProject(args);
     assertNoArguments(args);
-    const summary = await prepareTypeScriptProject(project);
-    const declarations = await generateProjectDeclarations(project);
+    const { summary, declarations } = await withProjectLock(project, async () => {
+      const summary = await prepareTypeScriptProject(project);
+      const declarations = await generateProjectDeclarations(project);
+      return { summary, declarations };
+    });
     console.log(
       `${summary.createdConfig ? "Created" : "Updated"} TypeScript support in ${summary.sourceDirectory}; declared ${declarations.assets.length} GameMaker IDE asset(s).`,
     );
@@ -91,9 +191,12 @@ async function main(args: string[]): Promise<void> {
   }
 
   if (command === "watch") {
+    const guardConfiguration = takeOption(args, "--configuration");
     const project = await takeProject(args);
     assertNoArguments(args);
-    await watchGameMakerProject(project);
+    await watchGameMakerProject(project, {
+      ...(guardConfiguration ? { guardConfiguration } : {}),
+    });
     return;
   }
 
@@ -251,9 +354,11 @@ Usage:
   ts2gml compile source.ts [--out source.gml]
   ts2gml init [Game.yyp]
   ts2gml runtime [Game.yyp] [--installation PATH | --auto]
-  ts2gml check [Game.yyp]
-  ts2gml build [Game.yyp] [--overwrite-generated] [--project-saved]
-  ts2gml watch [Game.yyp]
+  ts2gml check [Game.yyp] [--json]
+  ts2gml doctor [Game.yyp] [--json]
+  ts2gml diagnose source.ts [--json] < source.ts
+  ts2gml build [Game.yyp] [--configuration NAME] [--overwrite-generated] [--project-saved]
+  ts2gml watch [Game.yyp] [--configuration NAME]
   ts2gml build <custom source paths...> --project Game.yyp`);
 }
 
@@ -268,7 +373,18 @@ function formatInstallation(candidate: InstalledGmlSpec): string {
 }
 
 main(process.argv.slice(2)).catch((error: unknown) => {
-  if (error instanceof Ts2GmlError) console.error(error.message);
+  if (process.argv.includes("--json")) {
+    const response: DiagnosticResponse = {
+      protocolVersion: 1, compilerVersion: VERSION,
+      diagnostics: error instanceof Ts2GmlError ? error.diagnostics : error instanceof ResourceConflictError
+        ? error.conflicts.map((conflict) => ({ code: "TS2GML_RESOURCE_CONFLICT", severity: "error",
+          fileName: conflict.typeScriptFile, line: 1, column: 1, endLine: 1, endColumn: 2,
+          message: `GameMaker (${conflict.gameMakerResourcePath}) and TypeScript both claim '${conflict.assetName}'.`,
+          suggestion: "Delete the conflicting asset in GameMaker and save the project, or rename the TypeScript asset." })) : [],
+      error: error instanceof Error ? error.message : String(error),
+    };
+    console.log(JSON.stringify(response));
+  } else if (error instanceof Ts2GmlError) console.error(error.message);
   else console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });

@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/math_helpers/math_helpers.gml",
+  "mappings": [
+    {
+      "generatedLine": 1,
+      "source": "typescript/math_helpers.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 2,
+      "source": "typescript/math_helpers.ts",
+      "line": 2,
+      "column": 3
+    }
+  ]
+}

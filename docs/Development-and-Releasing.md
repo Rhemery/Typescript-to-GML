@@ -6,9 +6,10 @@
 npm ci
 npm run check
 npm test
+npm run package:vscode
 ```
 
-Use Node.js 20 or newer. The repository commits `package-lock.json`, but intentionally ignores `types/gamemaker.generated.d.ts` because it depends on the locally installed GameMaker runtime.
+Use Node.js 24 for release builds; Node.js 22 is the supported minimum. CI tests Node 22 and 24 on Windows and Linux. The repository commits `package-lock.json`, but intentionally ignores `types/gamemaker.generated.d.ts` because it depends on the locally installed GameMaker runtime.
 
 Generate the local declaration used by the full verification suite from the installed runtime specification. Do not edit or commit it:
 
@@ -29,6 +30,8 @@ npm run verify
 
 `verify:release` is portable and runs strict tool type checking, compiler/project tests, distribution smoke checks, and YYMPS construction/validation. Its project tests create isolated local declaration fixtures; the release artifacts contain no runtime declaration snapshot.
 
+It also builds and validates the prerelease VSIX at `release/typescript-to-gml-vscode-<version>.vsix`. The extension has its own increasing numeric version: compiler `0.2.0-beta.4` used VSIX `0.2.0`; compiler `0.2.0-beta.5` uses VSIX `0.2.5`. Never reuse or decrease a published VSIX version. Its `ts2gmlCompilerVersion` records the matching compiler. Package, lockfile, CLI, changelog, minimum editor API, and archive metadata are checked during packaging. `package.json` is the authoritative compiler version.
+
 `verify` additionally regenerates and type-checks declarations from the installed GameMaker runtime, regenerates and checks `TestProject`, and uses that runtime to compile and run the game. On Windows, successful VM execution prints `TS2GML_SCOPE_CONTEXT_OK`. Runtime discovery can be overridden with `GAMEMAKER_GML_SPEC`, `GAMEMAKER_RUNTIME_PATH`, `GAMEMAKER_IGOR`, `GAMEMAKER_RUNNER`, and `GAMEMAKER_USER_DIR`.
 
 ## Versioning
@@ -47,6 +50,7 @@ The tested GameMaker 2026 LTS Igor CLI does not expose local asset package creat
 
 ```powershell
 npm run package:yymps
+npm run package:vscode
 ```
 
 It builds `dist/ts2gml`, creates `release/typescript-to-gml-<version>.yymps`, and verifies:
@@ -89,6 +93,6 @@ git diff --check
 
 Inspect `git status`, the changelog, generated TestProject changes, and the package inventory. The npm package is useful to library consumers, while the `.yymps` file should be the primary GameMaker user download.
 
-The manual GitHub Actions workflow builds a validated YYMPS artifact without publishing a release. Download it, perform the IDE import check, then attach the tested file to a prerelease with the matching version tag.
+The manual GitHub Actions workflow builds validated YYMPS and VSIX artifacts without publishing a release. Download them, perform the IDE/VS Code install checks, then attach the tested files to a prerelease with the matching version tag.
 
 The canonical source repository is [Rhemery/Typescript-to-GML](https://github.com/Rhemery/Typescript-to-GML). Keep the `repository`, `homepage`, and `bugs` fields in `package.json` pointed at that repository when publishing to npm.

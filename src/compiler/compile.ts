@@ -1,5 +1,14 @@
 import ts from "typescript";
+import { collectNativeAccessPlan, inspectRuntimeAccesses, type RuntimeAccessPlan } from "./access.js";
+import { usesValueRuntime, valueRuntimeGml } from "./values.js";
+import { collectionRuntimeGml } from "./collections.js";
+import { extractGmlSourceMap, originalSourceRange, parseMappedJavaScript, type GmlSourceMap } from "./source-maps.js";
+export { collectionRuntimeGml } from "./collections.js";
 import { isGmlIdentifier } from "./gml-identifiers.js";
+import {
+  createRuntimeGuardGml,
+  type RuntimeGuardLevel,
+} from "./runtime-guards.js";
 
 export interface CompilerDiagnostic {
   code: string;
@@ -18,6 +27,7 @@ export interface CompilerDiagnostic {
 export interface CompileResult {
   gml: string;
   javascript: string;
+  sourceMap: GmlSourceMap;
 }
 
 export class Ts2GmlError extends Error {
@@ -53,19 +63,60 @@ const mathFunctions = new Map([
 const gmlKeywordFunctions = new Map([
   ["gm_global", "global"],
   ["gm_instanceof", "instanceof"],
-  ["gm_self", "self"],
   ["gm_typeof", "typeof"],
+]);
+
+const gmlContextAssertions = new Map([
+  ["gm_self", "self"],
+  ["gm_other", "other"],
 ]);
 
 const compilerIntrinsicBindings = new Set([
   ...gmlKeywordFunctions.keys(),
+  ...gmlContextAssertions.keys(),
   "console",
   "gm_macro",
-  "gm_other",
   "gm_with",
   "Math",
+  "Grid",
+  "List",
+  "Map",
+  "PriorityQueue",
+  "Queue",
+  "Set",
+  "Stack",
   "method",
 ]);
+
+export const collectionRuntimeScriptName = "__ts2gml_collections";
+
+const collectionConstructors = new Map([
+  ["Grid", "__ts2gml_Grid"],
+  ["List", "__ts2gml_List"],
+  ["Map", "__ts2gml_Map"],
+  ["PriorityQueue", "__ts2gml_PriorityQueue"],
+  ["Queue", "__ts2gml_Queue"],
+  ["Set", "__ts2gml_Set"],
+  ["Stack", "__ts2gml_Stack"],
+]);
+
+const loweredJavaScriptInstanceMembers = new Map([
+  ["concat", "__ts2gml_collection_concat"],
+  ["delete", "__ts2gml_remove"],
+  ["entries", "__ts2gml_collection_entries"],
+  ["includes", "__ts2gml_collection_includes"],
+  ["indexOf", "__ts2gml_collection_index_of"],
+  ["join", "__ts2gml_collection_join"],
+  ["keys", "__ts2gml_collection_keys"],
+  ["pop", "__ts2gml_collection_pop"],
+  ["push", "__ts2gml_collection_push"],
+  ["reverse", "__ts2gml_collection_reverse"],
+  ["shift", "__ts2gml_collection_shift"],
+  ["sort", "__ts2gml_collection_sort"],
+  ["unshift", "__ts2gml_collection_unshift"],
+  ["values", "__ts2gml_collection_values"],
+]);
+
 
 const javaScriptRuntimeGlobals = new Set([
   "AggregateError",
@@ -213,27 +264,72 @@ const gmlReservedBindings = new Set([
 ]);
 const compilerInternalPrefix = "__ts2gml_";
 
+type RuntimeTypeDescriptor =
+  | { kind: "number" | "string" | "boolean" | "undefined" | "null" | "never"; label: string }
+  | { kind: "literal"; label: string; value: string | number | boolean }
+  | { kind: "array"; element: RuntimeTypeDescriptor; label: string }
+  | { kind: "union"; label: string; members: RuntimeTypeDescriptor[] }
+  | { kind: "object" | "constructor"; label: string; name: string };
+
+interface RuntimeArgumentGuard {
+  argumentIndex: number;
+  descriptor: RuntimeTypeDescriptor;
+  spread: boolean;
+}
+
+export interface RuntimeTypeGuardPlan {
+  level: RuntimeGuardLevel;
+  contextObjects: ReadonlyMap<number, string>;
+  guardedArguments: ReadonlyMap<number, readonly RuntimeArgumentGuard[]>;
+}
+
 export function compileTypeScript(source: string, fileName = "input.ts"): CompileResult {
   validateTypeScriptSource(source, fileName);
-  const javascript = toJavaScript(source, fileName);
+  const input = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
+  const staticClasses = collectStaticClassNames([input]);
+  const options: ts.CompilerOptions = { noResolve: true, types: [], target: ts.ScriptTarget.ESNext };
+  const host = ts.createCompilerHost(options);
+  const readSource = host.getSourceFile.bind(host);
+  host.getSourceFile = (name, languageVersion, onError, createNew) => ts.sys.resolvePath(name) === ts.sys.resolvePath(fileName)
+    ? input : readSource(name, languageVersion, onError, createNew);
+  const program = ts.createProgram([fileName], options, host);
+  const checker = program.getTypeChecker();
+  validateRuntimeAccesses(input, checker);
+  const staticReceivers = collectStaticReceivers(input, checker, staticClasses);
+  const javascript = toJavaScript(source, fileName, undefined, staticReceivers, collectNativeAccessPlan(input, checker));
   const sourceFile = parseJavaScript(javascript, fileName);
   validateJavaScript(sourceFile);
 
   const chunks = sourceFile.statements
     .filter((statement) => !ts.isExportDeclaration(statement))
-    .map((statement) => emitTopLevelGml(statement, sourceFile));
+    .map((statement) => emitTopLevelGml(statement, sourceFile, staticClasses));
+  if (staticClasses.size > 0) chunks.unshift(classStaticRuntimeGml);
+  if (usesCollectionRuntime(sourceFile)) chunks.unshift(collectionRuntimeGml);
+  if (usesRuntimeGuards(sourceFile)) {
+    chunks.unshift(createRuntimeGuardGml());
+  }
+  if (usesValueRuntime(chunks.join("\n"))) chunks.unshift(valueRuntimeGml);
 
+  const mapped = extractGmlSourceMap(`${chunks.filter(Boolean).join("\n\n").trim()}\n`,
+    fileName.replace(/\.[jt]sx?$/i, ".gml"), ts.sys.getCurrentDirectory());
   return {
     javascript,
-    gml: `${chunks.filter(Boolean).join("\n\n").trim()}\n`,
+    gml: mapped.code,
+    sourceMap: mapped.map,
   };
 }
 
 export function emitTopLevelGml(
   statement: ts.Statement,
   sourceFile: ts.SourceFile,
+  staticClasses: ReadonlySet<string> = new Set(),
 ): string {
-  if (ts.isClassDeclaration(statement)) return emitConstructorClass(statement, sourceFile);
+  if (ts.isClassDeclaration(statement)) {
+    return [
+      emitConstructorClass(statement, sourceFile),
+      emitClassStatics(statement, sourceFile, staticClasses),
+    ].filter(Boolean).join("\n\n");
+  }
 
   if (ts.isVariableStatement(statement)) {
     const macroDeclarations: Array<{
@@ -300,7 +396,13 @@ export function emitTopLevelGml(
   return stripExport(emitGml(statement, sourceFile));
 }
 
-export function toJavaScript(source: string, fileName: string): string {
+export function toJavaScript(
+  source: string,
+  fileName: string,
+  runtimeTypeGuards?: RuntimeTypeGuardPlan,
+  staticReceivers?: ReadonlySet<string>,
+  nativeAccess?: RuntimeAccessPlan,
+): string {
   const result = ts.transpileModule(source, {
     fileName,
     reportDiagnostics: true,
@@ -309,7 +411,27 @@ export function toJavaScript(source: string, fileName: string): string {
       module: ts.ModuleKind.ESNext,
       useDefineForClassFields: true,
       removeComments: false,
-      sourceMap: false,
+      inlineSourceMap: true,
+      inlineSources: true,
+    },
+    transformers: {
+      before: [runtimeTypeGuardTransformer(runtimeTypeGuards)],
+      after: [(context) => (sourceFile) => {
+        const visit: ts.Visitor = (node) => {
+          const original = ts.getOriginalNode(node);
+          const result = ts.visitEachChild(node, visit, context);
+          if (nativeAccess?.nativeArrays.has(`${original.pos}:${original.end}:${original.kind}`)) {
+            return runtimeCall("__ts2gml_native_array", [result as ts.Expression]);
+          }
+          if (nativeAccess?.nativeBooleans.has(`${original.pos}:${original.end}:${original.kind}`)) {
+            return runtimeCall("__ts2gml_value_truthy", [result as ts.Expression]);
+          }
+          return staticReceivers?.has(`${original.pos}:${original.end}:${original.kind}`)
+            ? runtimeCall("__ts2gml_class_statics", [result as ts.Expression])
+            : result;
+        };
+        return ts.visitNode(sourceFile, visit) as ts.SourceFile;
+      }],
     },
   });
 
@@ -322,8 +444,612 @@ export function toJavaScript(source: string, fileName: string): string {
   return result.outputText;
 }
 
+export const classStaticRuntimeScriptName = "__ts2gml_class_statics";
+
+export const classStaticRuntimeGml = `function __ts2gml_class_statics(_class, _create = false) {
+    static _classes = [];
+    static _values = [];
+    if (is_undefined(_class)) return undefined;
+    for (var _index = 0; _index < array_length(_classes); _index += 1) {
+        if (_classes[_index] == _class) return _values[_index];
+    }
+    if (!_create) throw "Class statics accessed before class initialization.";
+    var _value = { __ts2gml_class: _class };
+    array_push(_classes, _class);
+    array_push(_values, _value);
+    return _value;
+}`;
+
+export function collectStaticClassNames(sourceFiles: readonly ts.SourceFile[]): Set<string> {
+  const classes = sourceFiles.flatMap((sourceFile) =>
+    sourceFile.statements.filter((node): node is ts.ClassDeclaration =>
+      ts.isClassDeclaration(node) && !hasModifier(node, ts.SyntaxKind.DeclareKeyword)
+    )
+  );
+  const names = new Set(classes.flatMap((node) =>
+    node.name && node.members.some((member) => hasModifier(member, ts.SyntaxKind.StaticKeyword))
+      ? [node.name.text] : []
+  ));
+  let previousSize = -1;
+  while (names.size !== previousSize) {
+    previousSize = names.size;
+    for (const node of classes) {
+      const base = node.heritageClauses?.find((clause) =>
+        clause.token === ts.SyntaxKind.ExtendsKeyword
+      )?.types[0]?.expression;
+      if (node.name && base && ts.isIdentifier(base) && names.has(base.text)) {
+        names.add(node.name.text);
+      }
+    }
+  }
+  return names;
+}
+
+export function collectStaticReceivers(
+  sourceFile: ts.SourceFile,
+  checker: ts.TypeChecker,
+  staticClasses: ReadonlySet<string>,
+): Set<string> {
+  const receivers = new Set<string>();
+  const visit = (node: ts.Node): void => {
+    if (ts.isTypeNode(node)) return;
+    const receiver = ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)
+      ? node.expression
+      : ts.isVariableDeclaration(node) && ts.isObjectBindingPattern(node.name)
+        ? node.initializer
+        : undefined;
+    if (receiver) {
+      const type = checker.getNonNullableType(checker.getTypeAtLocation(receiver));
+      const types = type.isUnion() ? type.types : [type];
+      const staticTypes = types.filter((item) => item.getConstructSignatures().length > 0 &&
+        runtimeObjectName(item, checker, staticClasses));
+      if (staticTypes.length > 0) {
+        if (staticTypes.length !== types.length) {
+          throw nodeError(node, sourceFile, "TS2GML2002",
+            "A static member receiver cannot mix class and instance types.",
+            "Narrow the receiver to a class before accessing its static members.");
+        }
+        if (ts.isElementAccessExpression(node) &&
+          (!ts.isStringLiteralLike(node.argumentExpression) ||
+            !isGmlIdentifier(node.argumentExpression.text))) {
+          throw nodeError(node, sourceFile, "TS2GML2002",
+            "Static member element access requires a literal GML member name.",
+            "Use Class.member or Class[\"member\"].");
+        }
+        receivers.add(`${receiver.pos}:${receiver.end}:${receiver.kind}`);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return receivers;
+}
+
+export function emitClassStatics(
+  classNode: ts.ClassDeclaration,
+  sourceFile: ts.SourceFile,
+  staticClasses: ReadonlySet<string>,
+): string {
+  const name = classNode.name?.text;
+  const members = classNode.members.filter((member) => hasModifier(member, ts.SyntaxKind.StaticKeyword));
+  if (!name || (members.length === 0 && !staticClasses.has(name))) return "";
+  const lines: string[] = [];
+  const base = classNode.heritageClauses?.find((clause) =>
+    clause.token === ts.SyntaxKind.ExtendsKeyword
+  )?.types[0]?.expression;
+  if (base && ts.isIdentifier(base) && staticClasses.has(base.text)) {
+    lines.push(`static_set(self, __ts2gml_class_statics(${base.text}));`);
+  }
+  // Methods exist before field initializers run; fields then execute in source order.
+  for (const member of members) {
+    if (ts.isGetAccessorDeclaration(member) || ts.isSetAccessorDeclaration(member)) {
+      throw nodeError(member, sourceFile, "TS2GML2003", "Class accessors are not supported yet.");
+    }
+    if (!ts.isMethodDeclaration(member) || !member.body) continue;
+    const renames = parameterRenames(member.parameters);
+    const parameters = member.parameters.map((parameter) =>
+      emitGml(parameter, sourceFile, renames, true)
+    ).join(", ");
+    lines.push(`self.${memberName(member.name, sourceFile)} = method(undefined, function(${parameters}) ${emitGml(member.body, sourceFile, renames, true)});`);
+  }
+  for (const member of members) {
+    if (!ts.isPropertyDeclaration(member)) continue;
+    lines.push(`self.${memberName(member.name, sourceFile)} = undefined;`);
+  }
+  for (const member of members) {
+    if (!ts.isPropertyDeclaration(member) || !member.initializer) continue;
+    lines.push(`self.${memberName(member.name, sourceFile)} = ${emitGml(member.initializer, sourceFile, new Map(), true)};`);
+  }
+  return `method(__ts2gml_class_statics(${name}, true), function() {\n${indent(lines.join("\n"))}\n})();`;
+}
+
+export function createRuntimeTypeGuardPlan(
+  sourceFile: ts.SourceFile,
+  checker: ts.TypeChecker,
+  objectNames: ReadonlySet<string>,
+  level: RuntimeGuardLevel,
+): RuntimeTypeGuardPlan {
+  const contextObjects = new Map<number, string>();
+  const guardedArguments = new Map<number, RuntimeArgumentGuard[]>();
+  const diagnostics: CompilerDiagnostic[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node)) {
+      const contextKeyword = getGmlContextAssertion(node);
+      const contextType = node.typeArguments?.[0];
+      if (contextKeyword && contextType) {
+        const type = checker.getTypeFromTypeNode(contextType);
+        const objectName = type.isUnion()
+          ? undefined
+          : runtimeObjectName(
+            type,
+            checker,
+            objectNames,
+          );
+        if (objectName) {
+          contextObjects.set(node.getStart(sourceFile), objectName);
+        } else if (checker.typeToString(type) !== "GMObject") {
+          diagnostics.push(createNodeDiagnostic(
+            contextType,
+            sourceFile,
+            "TS2GML1064",
+            `The ${contextKeyword} runtime guard needs one concrete GameMaker object type.`,
+            `Use ${
+              (node.expression as ts.Identifier).text
+            }<AuthoredObject>() or omit the type argument for an unchecked context value.`,
+          ));
+        }
+      }
+
+      const guardedIndexes = guardedMutationArgumentIndexes(node, checker);
+      const signature = guardedIndexes.length > 0 ? checker.getResolvedSignature(node) : undefined;
+      const guards = guardedIndexes.flatMap((argumentIndex): RuntimeArgumentGuard[] => {
+        const argument = node.arguments[argumentIndex];
+        if (!argument || !signature) return [];
+        let expected = expectedArgumentType(signature, argumentIndex, node, checker);
+        if (!expected) return [];
+        const spread = ts.isSpreadElement(argument);
+        let descriptor = runtimeTypeDescriptor(expected, checker, objectNames);
+        if (!descriptor) return [];
+        if (spread) {
+          descriptor = {
+            kind: "array",
+            element: descriptor,
+            label: `${descriptor.label}[]`,
+          };
+        }
+        return [{ argumentIndex, descriptor, spread }];
+      });
+      if (guards.length > 0) guardedArguments.set(node.getStart(sourceFile), guards);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  if (diagnostics.length > 0) throw new Ts2GmlError(diagnostics);
+  return { level, contextObjects, guardedArguments };
+}
+
+function usesRuntimeGuards(sourceFile: ts.SourceFile): boolean {
+  let used = false;
+  const visit = (node: ts.Node): void => {
+    if (used) return;
+    if (
+      ts.isIdentifier(node) &&
+      (node.text === "__ts2gml_guard_object" || node.text === "__ts2gml_guard_value")
+    ) {
+      used = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return used;
+}
+
+function runtimeTypeGuardTransformer(
+  plan?: RuntimeTypeGuardPlan,
+): ts.TransformerFactory<ts.SourceFile> {
+  return (context) => {
+    return (sourceFile) => {
+      const level = plan?.level ?? "standard";
+      const hoistedContextCalls = new Set<number>();
+
+      const visit: ts.Visitor = (node) => {
+        if (
+          ts.isBlock(node) &&
+          node.parent &&
+          isFunctionWithBody(node.parent) &&
+          node.parent.body === node
+        ) {
+          const contexts = level === "off"
+            ? { guards: [], positions: [] }
+            : collectDirectContextGuards(node, sourceFile, plan);
+          for (const position of contexts.positions) hoistedContextCalls.add(position);
+          const visited = ts.visitEachChild(node, visit, context) as ts.Block;
+          if (contexts.guards.length === 0) return visited;
+          return ts.factory.updateBlock(visited, [
+            ...contexts.guards.map(createContextGuardStatement),
+            ...visited.statements,
+          ]);
+        }
+
+        if (ts.isCallExpression(node)) {
+          const position = node.getStart(sourceFile);
+          const contextKeyword = getGmlContextAssertion(node);
+          const expectedObject = contextKeyword
+            ? contextObjectForCall(node, sourceFile, plan)
+            : undefined;
+          if (
+            level !== "off" &&
+            contextKeyword &&
+            expectedObject &&
+            !hoistedContextCalls.has(position)
+          ) {
+            const contextValue = ts.factory.createCallExpression(
+              ts.factory.createIdentifier((node.expression as ts.Identifier).text),
+              undefined,
+              [],
+            );
+            return ts.factory.createCallExpression(
+              ts.factory.createIdentifier("__ts2gml_guard_object"),
+              undefined,
+              [
+                contextValue,
+                ts.factory.createIdentifier(expectedObject),
+                ts.factory.createStringLiteral(contextKeyword),
+              ],
+            );
+          }
+
+          const visited = ts.visitEachChild(node, visit, context) as ts.CallExpression;
+          const argumentGuards = plan?.guardedArguments.get(position);
+          if (level !== "maximum" || !argumentGuards || argumentGuards.length === 0) {
+            return visited;
+          }
+          const byIndex = new Map(argumentGuards.map((guard) => [guard.argumentIndex, guard]));
+          const member = ts.isPropertyAccessExpression(node.expression)
+            ? node.expression.name.text
+            : "call";
+          return ts.factory.updateCallExpression(
+            visited,
+            visited.expression,
+            visited.typeArguments,
+            visited.arguments.map((argument, index) => {
+              const guard = byIndex.get(index);
+              if (!guard) return argument;
+              const value = guard.spread && ts.isSpreadElement(argument)
+                ? argument.expression
+                : argument;
+              const checked = ts.factory.createCallExpression(
+                ts.factory.createIdentifier("__ts2gml_guard_value"),
+                undefined,
+                [
+                  value,
+                  runtimeTypeDescriptorExpression(guard.descriptor),
+                  ts.factory.createStringLiteral(guard.descriptor.label),
+                  ts.factory.createStringLiteral(`${member}() argument ${index + 1}`),
+                ],
+              );
+              return guard.spread && ts.isSpreadElement(argument)
+                ? ts.factory.updateSpreadElement(argument, checked)
+                : checked;
+            }),
+          );
+        }
+        return ts.visitEachChild(node, visit, context);
+      };
+
+      return ts.visitNode(sourceFile, visit) as ts.SourceFile;
+    };
+  };
+}
+
+function collectDirectContextGuards(
+  root: ts.Node,
+  sourceFile: ts.SourceFile,
+  plan: RuntimeTypeGuardPlan | undefined,
+): {
+  guards: Array<{ keyword: string; objectName: string }>;
+  positions: number[];
+} {
+  const guards: Array<{ keyword: string; objectName: string }> = [];
+  const positions: number[] = [];
+  const seen = new Set<string>();
+  const visit = (node: ts.Node): void => {
+    if (node !== root && isFunctionWithBody(node)) return;
+    if (ts.isCallExpression(node)) {
+      const keyword = getGmlContextAssertion(node);
+      const objectName = keyword ? contextObjectForCall(node, sourceFile, plan) : undefined;
+      if (keyword && objectName) {
+        positions.push(node.getStart(sourceFile));
+        const key = `${keyword}:${objectName}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          guards.push({ keyword, objectName });
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(root);
+  return { guards, positions };
+}
+
+function contextObjectForCall(
+  call: ts.CallExpression,
+  sourceFile: ts.SourceFile,
+  plan: RuntimeTypeGuardPlan | undefined,
+): string | undefined {
+  const planned = plan?.contextObjects.get(call.getStart(sourceFile));
+  if (planned) return planned;
+  const type = call.typeArguments?.[0];
+  if (
+    type &&
+    ts.isTypeReferenceNode(type) &&
+    ts.isIdentifier(type.typeName) &&
+    type.typeName.text !== "GMObject"
+  ) {
+    return type.typeName.text;
+  }
+  return undefined;
+}
+
+function createContextGuardStatement(
+  guard: { keyword: string; objectName: string },
+): ts.ExpressionStatement {
+  return ts.factory.createExpressionStatement(
+    ts.factory.createCallExpression(
+      ts.factory.createIdentifier("__ts2gml_guard_object"),
+      undefined,
+      [
+        ts.factory.createCallExpression(
+          ts.factory.createIdentifier(guard.keyword === "self" ? "gm_self" : "gm_other"),
+          undefined,
+          [],
+        ),
+        ts.factory.createIdentifier(guard.objectName),
+        ts.factory.createStringLiteral(guard.keyword),
+      ],
+    ),
+  );
+}
+
+function runtimeTypeDescriptorExpression(descriptor: RuntimeTypeDescriptor): ts.Expression {
+  const values: ts.Expression[] = [ts.factory.createStringLiteral(descriptor.kind)];
+  if (descriptor.kind === "literal") {
+    values.push(
+      typeof descriptor.value === "string"
+        ? ts.factory.createStringLiteral(descriptor.value)
+        : typeof descriptor.value === "number"
+          ? ts.factory.createNumericLiteral(descriptor.value)
+          : descriptor.value
+            ? ts.factory.createTrue()
+            : ts.factory.createFalse(),
+    );
+  } else if (descriptor.kind === "array") {
+    values.push(runtimeTypeDescriptorExpression(descriptor.element));
+  } else if (descriptor.kind === "union") {
+    values.push(
+      ts.factory.createArrayLiteralExpression(
+        descriptor.members.map(runtimeTypeDescriptorExpression),
+      ),
+    );
+  } else if (descriptor.kind === "object" || descriptor.kind === "constructor") {
+    values.push(ts.factory.createIdentifier(descriptor.name));
+  }
+  return ts.factory.createArrayLiteralExpression(values);
+}
+
+function guardedMutationArgumentIndexes(
+  call: ts.CallExpression,
+  checker: ts.TypeChecker,
+): number[] {
+  if (!ts.isPropertyAccessExpression(call.expression)) return [];
+  const member = call.expression.name.text;
+  const receiverType = checker.getTypeAtLocation(call.expression.expression);
+  if ((checker.isArrayType(receiverType) || checker.isTupleType(receiverType)) &&
+    (member === "push" || member === "unshift")) {
+    return call.arguments.map((_, index) => index);
+  }
+
+  const signature = checker.getResolvedSignature(call);
+  const owner = signature?.declaration && declarationOwnerName(signature.declaration);
+  const indexes = owner ? guardedCollectionMethods.get(`${owner}.${member}`) : undefined;
+  if (indexes === "all") return call.arguments.map((_, index) => index);
+  return indexes ? [...indexes] : [];
+}
+
+const guardedCollectionMethods = new Map<string, readonly number[] | "all">([
+  ["Array.push", "all"],
+  ["Array.unshift", "all"],
+  ["List.add", [0]],
+  ["List.insert", [1]],
+  ["List.push", [0]],
+  ["List.set", [1]],
+  ["Set.add", [0]],
+  ["Map.set", [0, 1]],
+  ["Grid.add", [2]],
+  ["Grid.clear", [0]],
+  ["Grid.multiply", [2]],
+  ["Grid.set", [2]],
+  ["Queue.enqueue", [0]],
+  ["Stack.push", [0]],
+  ["PriorityQueue.add", [0]],
+  ["PriorityQueue.changePriority", [0]],
+]);
+
+function declarationOwnerName(node: ts.Node): string | undefined {
+  let current: ts.Node | undefined = node.parent;
+  while (current) {
+    if (
+      (ts.isInterfaceDeclaration(current) || ts.isClassDeclaration(current)) &&
+      current.name
+    ) {
+      return current.name.text;
+    }
+    current = current.parent;
+  }
+  return undefined;
+}
+
+function expectedArgumentType(
+  signature: ts.Signature,
+  argumentIndex: number,
+  call: ts.CallExpression,
+  checker: ts.TypeChecker,
+): ts.Type | undefined {
+  if (
+    ts.isPropertyAccessExpression(call.expression) &&
+    checker.isArrayType(checker.getTypeAtLocation(call.expression.expression))
+  ) {
+    const receiver = checker.getTypeAtLocation(call.expression.expression);
+    const element = arrayElementTypes(receiver, checker)[0];
+    if (element) return element;
+  }
+
+  const parameter = signature.parameters[Math.min(argumentIndex, signature.parameters.length - 1)];
+  if (!parameter) return undefined;
+  let type = checker.getTypeOfSymbolAtLocation(parameter, call);
+  const declaration = parameter.valueDeclaration;
+  if (declaration && ts.isParameter(declaration) && declaration.dotDotDotToken) {
+    type = arrayElementTypes(type, checker)[0] ?? type;
+  }
+  return type;
+}
+
+function arrayElementTypes(type: ts.Type, checker: ts.TypeChecker): readonly ts.Type[] {
+  if (!checker.isArrayType(type) && !checker.isTupleType(type)) return [];
+  return checker.getTypeArguments(type as ts.TypeReference);
+}
+
+function runtimeTypeDescriptor(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+  objectNames: ReadonlySet<string>,
+  seen = new Set<ts.Type>(),
+): RuntimeTypeDescriptor | undefined {
+  if (seen.has(type)) return undefined;
+  seen.add(type);
+  const label = checker.typeToString(type, undefined, ts.TypeFormatFlags.NoTruncation);
+  if (type.flags & ts.TypeFlags.Any || type.flags & ts.TypeFlags.Unknown) return undefined;
+  if (type.flags & ts.TypeFlags.StringLiteral) {
+    return { kind: "literal", label, value: (type as ts.StringLiteralType).value };
+  }
+  if (type.flags & ts.TypeFlags.NumberLiteral) {
+    return { kind: "literal", label, value: (type as ts.NumberLiteralType).value };
+  }
+  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+    return { kind: "literal", label, value: label === "true" };
+  }
+  if (type.flags & ts.TypeFlags.StringLike) return { kind: "string", label };
+  if (type.flags & (ts.TypeFlags.NumberLike | ts.TypeFlags.EnumLike)) {
+    return { kind: "number", label };
+  }
+  if (type.flags & ts.TypeFlags.BooleanLike) return { kind: "boolean", label };
+  if (type.flags & ts.TypeFlags.Null) return { kind: "null", label };
+  if (type.flags & (ts.TypeFlags.Undefined | ts.TypeFlags.Void)) {
+    return { kind: "undefined", label };
+  }
+  if (type.flags & ts.TypeFlags.Never) return { kind: "never", label };
+  if (type.isUnion()) {
+    const members = type.types.map((member) =>
+      runtimeTypeDescriptor(member, checker, objectNames, new Set(seen))
+    );
+    if (members.some((member) => !member)) return undefined;
+    return { kind: "union", label, members: members as RuntimeTypeDescriptor[] };
+  }
+  if (checker.isArrayType(type) || checker.isTupleType(type)) {
+    const elements = arrayElementTypes(type, checker);
+    const descriptors = elements.map((element) =>
+      runtimeTypeDescriptor(element, checker, objectNames, new Set(seen))
+    );
+    if (descriptors.length === 0 || descriptors.some((descriptor) => !descriptor)) {
+      return undefined;
+    }
+    const element = descriptors.length === 1
+      ? descriptors[0]!
+      : { kind: "union", members: descriptors, label: "tuple element" } as RuntimeTypeDescriptor;
+    return { kind: "array", element, label };
+  }
+
+  const objectName = runtimeObjectName(type, checker, objectNames);
+  if (objectName) return { kind: "object", label, name: objectName };
+  if (type.isIntersection()) {
+    for (const member of type.types) {
+      const descriptor = runtimeTypeDescriptor(member, checker, objectNames, new Set(seen));
+      if (descriptor && descriptor.kind !== "constructor") return { ...descriptor, label };
+    }
+  }
+  const symbol = type.aliasSymbol ?? type.getSymbol();
+  if (
+    symbol &&
+    isGmlIdentifier(symbol.name) &&
+    symbol.declarations?.some(ts.isClassDeclaration)
+  ) {
+    return { kind: "constructor", label, name: symbol.name };
+  }
+  const constraint = checker.getBaseConstraintOfType(type);
+  return constraint && constraint !== type
+    ? runtimeTypeDescriptor(constraint, checker, objectNames, seen)
+    : undefined;
+}
+
+export function runtimeObjectName(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+  objectNames: ReadonlySet<string>,
+  seen = new Set<ts.Type>(),
+): string | undefined {
+  if (seen.has(type)) return undefined;
+  seen.add(type);
+  for (const symbol of [type.aliasSymbol, type.getSymbol()]) {
+    if (symbol && objectNames.has(symbol.name)) return symbol.name;
+  }
+  if (type.isUnionOrIntersection()) {
+    for (const member of type.types) {
+      const name = runtimeObjectName(member, checker, objectNames, seen);
+      if (name) return name;
+    }
+  }
+  const constraint = checker.getBaseConstraintOfType(type);
+  return constraint && constraint !== type
+    ? runtimeObjectName(constraint, checker, objectNames, seen)
+    : undefined;
+}
+
 export function parseJavaScript(source: string, fileName: string): ts.SourceFile {
-  return ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  return parseMappedJavaScript(source, fileName);
+}
+
+export function usesCollectionRuntime(sourceFile: ts.SourceFile): boolean {
+  let used = false;
+  const visit = (node: ts.Node): void => {
+    if (used) return;
+    if (ts.isDeleteExpression(node)) {
+      used = true;
+      return;
+    }
+    if (
+      ts.isNewExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      (
+        collectionConstructors.has(node.expression.text) ||
+        [...collectionConstructors.values()].includes(node.expression.text)
+      )
+    ) {
+      used = true;
+      return;
+    }
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      (node.name.text === "length" || loweredJavaScriptInstanceMembers.has(node.name.text))
+    ) {
+      used = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return used;
 }
 
 export function validateTypeScriptSource(source: string, fileName: string): void {
@@ -350,6 +1076,14 @@ export function validateTypeScriptSource(source: string, fileName: string): void
     }
   }
   if (diagnostics.length > 0) throw new Ts2GmlError(diagnostics);
+}
+
+export function validateRuntimeAccesses(sourceFile: ts.SourceFile, checker: ts.TypeChecker): void {
+  const issues = inspectRuntimeAccesses(sourceFile, checker,
+    loweredJavaScriptInstanceMembers, unsupportedJavaScriptInstanceMembers);
+  if (issues.length > 0) throw new Ts2GmlError(issues.map((issue) =>
+    createNodeDiagnostic(issue.node, sourceFile, "TS2GML1051", issue.message, issue.suggestion)
+  ));
 }
 
 export function validateJavaScript(sourceFile: ts.SourceFile): void {
@@ -412,6 +1146,9 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
 
   const visit = (node: ts.Node): void => {
     if (ts.isTypeNode(node)) return;
+    if (ts.isNumericLiteral(node) && !Number.isFinite(Number(node.text))) {
+      report(node, "TS2GML1070", "A numeric literal must be finite.", "Use GameMaker's explicit infinity constant when that target value is intended.");
+    }
     if (ts.isVariableDeclaration(node) || ts.isParameter(node)) {
       validateBinding(node.name);
     } else if (
@@ -424,14 +1161,15 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
       validateBinding(node.name);
     } else if (
       (ts.isPropertyDeclaration(node) || ts.isMethodDeclaration(node)) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === "gm_with"
+      (ts.isIdentifier(node.name) || ts.isStringLiteralLike(node.name)) &&
+      (node.name.text === "gm_with" ||
+        (node.name.text === "__ts2gml_class" && hasModifier(node, ts.SyntaxKind.StaticKeyword)))
     ) {
       report(
         node.name,
         "TS2GML1056",
-        "Class member 'gm_with' conflicts with the compiler intrinsic.",
-        "Rename the member so calls to gm_with keep their defined meaning.",
+        `Class member '${node.name.text}' conflicts with a compiler intrinsic.`,
+        "Rename the member so the compiler intrinsic keeps its defined meaning.",
       );
     }
     if (
@@ -459,7 +1197,10 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
       return;
     }
     if (isGmWithCall(node)) validateGmWithCall(node, report);
-    if (isGmOtherCall(node)) validateGmOtherCall(node, report);
+    const contextKeyword = getGmlContextAssertion(node);
+    if (contextKeyword && ts.isCallExpression(node)) {
+      validateGmlContextAssertion(node, report);
+    }
     if (
       ts.isIdentifier(node) &&
       node.text === "gm_macro" &&
@@ -475,7 +1216,7 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
     }
     if (
       ts.isIdentifier(node) &&
-      ["gm_with", "gm_other"].includes(node.text) &&
+      (node.text === "gm_with" || gmlContextAssertions.has(node.text)) &&
       isIdentifierReference(node) &&
       !isDirectCallTarget(node)
     ) {
@@ -485,7 +1226,7 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
         `${node.text} is a compiler intrinsic and cannot be used as a runtime value.`,
         node.text === "gm_with"
           ? "Call gm_with(target, (self, other) => { ... }) as a statement."
-          : "Call gm_other<ObjectType>() directly where the other instance is needed.",
+          : `Call ${node.text}<ObjectType>() directly where the context value is needed.`,
       );
       return;
     }
@@ -569,11 +1310,15 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
     if (ts.isForOfStatement(node) && node.awaitModifier) {
       report(node, "TS2GML1009", "Async iteration has no direct GML equivalent.");
     }
-    if (ts.isDeleteExpression(node)) {
+    if (
+      ts.isDeleteExpression(node) &&
+      !ts.isPropertyAccessExpression(node.expression) &&
+      !ts.isElementAccessExpression(node.expression)
+    ) {
       report(
         node,
         "TS2GML1010",
-        "JavaScript delete semantics cannot be represented safely in GML.",
+        "delete requires a property, collection key, or collection index.",
       );
     }
     if (hasModifier(node, ts.SyntaxKind.AsyncKeyword)) {
@@ -679,6 +1424,11 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
         "Put each expression in its own statement.",
       );
     }
+    if (ts.isBinaryExpression(node) &&
+      [ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(node.operatorToken.kind)) {
+      report(node.operatorToken, "TS2GML1069", "Coercive equality has no supported JavaScript-compatible GML lowering.",
+        "Use === or !== and convert operands explicitly when their types differ.");
+    }
     if (
       (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
       [ts.SyntaxKind.PlusPlusToken, ts.SyntaxKind.MinusMinusToken].includes(node.operator) &&
@@ -708,18 +1458,6 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
         "TS2GML1050",
         "Nested class declarations cannot be lowered to GML constructors.",
         "Move the class to the top level.",
-      );
-    }
-    if (
-      ts.isPropertyAccessExpression(node) &&
-      node.expression.kind !== ts.SyntaxKind.ThisKeyword &&
-      unsupportedJavaScriptInstanceMembers.has(node.name.text)
-    ) {
-      report(
-        node.name,
-        "TS2GML1051",
-        `JavaScript instance member '.${node.name.text}' has no type-safe GML lowering.`,
-        "Use the corresponding GameMaker array_* or string_* function explicitly.",
       );
     }
     if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
@@ -1032,8 +1770,10 @@ function isGmWithCall(node: ts.Node): node is ts.CallExpression {
       node.expression.name.text === "gm_with");
 }
 
-function isGmOtherCall(node: ts.Node): node is ts.CallExpression {
-  return isCallTo(node, "gm_other");
+function getGmlContextAssertion(node: ts.Node): string | undefined {
+  return ts.isCallExpression(node) && ts.isIdentifier(node.expression)
+    ? gmlContextAssertions.get(node.expression.text)
+    : undefined;
 }
 
 function isCallTo(node: ts.Node, name: string): node is ts.CallExpression {
@@ -1138,16 +1878,17 @@ function validateGmWithCall(
   }
 }
 
-function validateGmOtherCall(
+function validateGmlContextAssertion(
   call: ts.CallExpression,
   report: DiagnosticReporter,
 ): void {
   if (call.arguments.length > 0) {
+    const name = (call.expression as ts.Identifier).text;
     report(
       call,
       "TS2GML1045",
-      "gm_other is a type-only assertion and does not accept runtime arguments.",
-      "Select the expected type with gm_other<ObjectType>().",
+      `${name} is a type-only assertion and does not accept runtime arguments.`,
+      `Select the expected type with ${name}<ObjectType>().`,
     );
   }
 }
@@ -1514,8 +2255,7 @@ function validateFunctionCaptures(sourceFile: ts.SourceFile): void {
       return;
     }
     const childHasLexicalThis = ts.isPropertyDeclaration(node) &&
-      ts.isClassLike(node.parent) &&
-      !hasModifier(node, ts.SyntaxKind.StaticKeyword)
+      ts.isClassLike(node.parent)
       ? true
       : lexicalThisAvailable;
     ts.forEachChild(node, (child) => visitRoot(child, childHasLexicalThis));
@@ -1639,6 +2379,11 @@ function validateJavaScriptRuntime(sourceFile: ts.SourceFile): void {
       isIdentifierReference(node) &&
       javaScriptRuntimeGlobals.has(node.text) &&
       !isVisible(node.text) &&
+      !(
+        collectionConstructors.has(node.text) &&
+        ts.isNewExpression(node.parent) &&
+        node.parent.expression === node
+      ) &&
       !(
         (ts.isPropertyAccessExpression(node.parent) ||
           ts.isElementAccessExpression(node.parent)) &&
@@ -1895,9 +2640,24 @@ export function emitGml(
   node: ts.Node,
   sourceFile: ts.SourceFile,
   identifierRenames: ReadonlyMap<string, string> = new Map(),
+  staticThis = false,
 ): string {
-  const result = ts.transform(node, [gmlTransformer(identifierRenames, sourceFile)]);
+  const result = ts.transform(node, [gmlTransformer(identifierRenames, sourceFile, staticThis)]);
   try {
+    const preserveUnicode = (child: ts.Node): void => {
+      if (ts.isStringLiteral(child)) ts.setEmitFlags(child, ts.EmitFlags.NoAsciiEscaping);
+      const original = ts.getOriginalNode(child);
+      if (ts.isStatement(child) && !ts.isBlock(child) && original.pos >= 0 && original.end <= sourceFile.text.length) {
+        const range = originalSourceRange(sourceFile, original.getStart(sourceFile), original.end);
+        if (range.source !== sourceFile) {
+          const position = range.source.getLineAndCharacterOfPosition(range.start);
+          ts.addSyntheticLeadingComment(child, ts.SyntaxKind.SingleLineCommentTrivia,
+            ` @ts2gml-source ${JSON.stringify({ source: sourceFile.fileName, line: position.line + 1, column: position.character + 1 })}`, true);
+        }
+      }
+      ts.forEachChild(child, preserveUnicode);
+    };
+    preserveUnicode(result.transformed[0]!);
     return printer.printNode(ts.EmitHint.Unspecified, result.transformed[0]!, sourceFile);
   } finally {
     result.dispose();
@@ -1987,15 +2747,7 @@ function emitConstructorClass(
 
   const lines: string[] = [];
   for (const member of classNode.members) {
-    const isStatic = hasModifier(member, ts.SyntaxKind.StaticKeyword);
-    if (isStatic) {
-      throw nodeError(
-        member,
-        sourceFile,
-        "TS2GML2002",
-        "JavaScript static class members have no safe GML equivalent.",
-      );
-    }
+    if (hasModifier(member, ts.SyntaxKind.StaticKeyword)) continue;
     if (ts.isPropertyDeclaration(member)) {
       const name = memberName(member.name, sourceFile);
       const value = member.initializer ? emitGml(member.initializer, sourceFile) : "undefined";
@@ -2040,6 +2792,7 @@ function emitConstructorClass(
 function gmlTransformer(
   identifierRenames: ReadonlyMap<string, string>,
   sourceFile: ts.SourceFile,
+  staticThis: boolean,
 ): ts.TransformerFactory<ts.Node> {
   return (context: ts.TransformationContext): ts.Transformer<ts.Node> => {
   const usedIdentifiers = collectIdentifierTexts(sourceFile);
@@ -2060,12 +2813,220 @@ function gmlTransformer(
     return ts.factory.createIdentifier(text);
   };
 
+  const inlineResult = (origin: ts.Node, parameter: ts.Identifier, result: ts.Expression,
+    argument: ts.Expression): ts.CallExpression => {
+    const visible = new Set<string>();
+    let owner: ts.Node | undefined = origin;
+    while (owner && !isFunctionWithBody(owner)) owner = owner.parent;
+    if (owner && isFunctionWithBody(owner)) {
+      for (const name of collectFunctionBindings(owner)) visible.add(identifierRenames.get(name) ?? name);
+    }
+    for (const bindings of transformState.withActionBindings) {
+      for (const binding of bindings) visible.add(binding.alias.text);
+    }
+    if (transformState.withLexicalThis) visible.add(transformState.withLexicalThis.text);
+    const captured = new Set<string>();
+    const collect = (node: ts.Node): void => {
+      if (ts.isIdentifier(node) && visible.has(node.text) && isIdentifierReference(node)) captured.add(node.text);
+      ts.forEachChild(node, collect);
+    };
+    collect(result);
+    return callInlineFunction(parameter, result, argument,
+      [...captured].map((name) => ts.factory.createIdentifier(name)));
+  };
+
   const visit: ts.Visitor = (node) => {
+    if (ts.isCallExpression(node) && ts.isParenthesizedExpression(node.expression)) {
+      let expression = node.expression.expression;
+      while (ts.isParenthesizedExpression(expression)) expression = expression.expression;
+      if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+        return visit(ts.factory.updateCallExpression(node, expression, node.typeArguments, node.arguments));
+      }
+    }
+    if (ts.isFunctionDeclaration(node) && node.modifiers) {
+      node = ts.factory.updateFunctionDeclaration(node,
+        node.modifiers.filter((modifier) => modifier.kind !== ts.SyntaxKind.ExportKeyword && modifier.kind !== ts.SyntaxKind.DefaultKeyword),
+        node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body);
+    }
+    if (ts.isCallExpression(node) && ts.isElementAccessExpression(node.expression) &&
+      ts.isStringLiteralLike(node.expression.argumentExpression) && isGmlIdentifier(node.expression.argumentExpression.text)) {
+      return visit(ts.factory.updateCallExpression(node,
+        ts.factory.createPropertyAccessExpression(node.expression.expression, node.expression.argumentExpression.text),
+        node.typeArguments, node.arguments));
+    }
+    if (ts.isBinaryExpression(node) &&
+      node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+      node.operatorToken.kind <= ts.SyntaxKind.LastAssignment) {
+      const target = node.left;
+      if (ts.isElementAccessExpression(target) && isCallTo(target.expression, "__ts2gml_native_array")) {
+        return ts.factory.updateBinaryExpression(node,
+          ts.factory.createElementAccessExpression(ts.visitNode(target.expression.arguments[0]!, visit) as ts.Expression,
+            ts.visitNode(target.argumentExpression, visit) as ts.Expression), node.operatorToken,
+          ts.visitNode(node.right, visit) as ts.Expression);
+      }
+      if (ts.isElementAccessExpression(target) && ts.isStringLiteralLike(target.argumentExpression) && target.argumentExpression.text === "length") {
+        return visit(ts.factory.updateBinaryExpression(node,
+          ts.factory.createPropertyAccessExpression(target.expression, "length"), node.operatorToken, node.right));
+      }
+      if (ts.isElementAccessExpression(target) ||
+        (ts.isPropertyAccessExpression(target) && target.name.text === "length" &&
+          target.expression.kind !== ts.SyntaxKind.ThisKeyword)) {
+        // Literal class static access is normalized to a field below.
+        if (ts.isElementAccessExpression(target) && isCallTo(target.expression, "__ts2gml_class_statics") &&
+          ts.isStringLiteralLike(target.argumentExpression)) {
+          return ts.factory.createBinaryExpression(
+            ts.factory.createPropertyAccessExpression(ts.visitNode(target.expression, visit) as ts.Expression,
+              target.argumentExpression.text), node.operatorToken, ts.visitNode(node.right, visit) as ts.Expression);
+        }
+        const receiver = ts.visitNode(target.expression, visit) as ts.Expression;
+        const key = ts.isElementAccessExpression(target)
+          ? ts.visitNode(target.argumentExpression, visit) as ts.Expression
+          : ts.factory.createStringLiteral("length");
+        const right = ts.visitNode(node.right, visit) as ts.Expression;
+        const length = ts.isPropertyAccessExpression(target);
+        const setter = length ? "__ts2gml_value_set_length" : "__ts2gml_value_set";
+        if (node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+          return runtimeCall(setter, length ? [receiver, right] : [receiver, key, right]);
+        }
+        const operator = ts.tokenToString(node.operatorToken.kind)!.slice(0, -1);
+        const binary = new Map<string, ts.BinaryOperator>([
+          ["+", ts.SyntaxKind.PlusToken], ["-", ts.SyntaxKind.MinusToken],
+          ["*", ts.SyntaxKind.AsteriskToken], ["/", ts.SyntaxKind.SlashToken],
+          ["%", ts.SyntaxKind.PercentToken], ["&", ts.SyntaxKind.AmpersandToken],
+          ["|", ts.SyntaxKind.BarToken], ["^", ts.SyntaxKind.CaretToken],
+          ["<<", ts.SyntaxKind.LessThanLessThanToken], [">>", ts.SyntaxKind.GreaterThanGreaterThanToken],
+        ]).get(operator)!;
+        const pair = freshIdentifier("assignment");
+        const object = ts.factory.createElementAccessExpression(pair, 0);
+        const property = ts.factory.createElementAccessExpression(pair, 1);
+        const previous = length ? runtimeCall("__ts2gml_collection_length", [object])
+          : runtimeCall("__ts2gml_value_get", [object, property]);
+        const value = ts.factory.createBinaryExpression(previous, binary, right);
+        return inlineResult(node, pair, runtimeCall(setter, length ? [object, value] : [object, property, value]),
+          ts.factory.createArrayLiteralExpression([receiver, key]));
+      }
+    }
+    if ((ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+      [ts.SyntaxKind.PlusPlusToken, ts.SyntaxKind.MinusMinusToken].includes(node.operator) &&
+      (ts.isElementAccessExpression(node.operand) ||
+        (ts.isPropertyAccessExpression(node.operand) && node.operand.name.text === "length"))) {
+      if (ts.isElementAccessExpression(node.operand) && isCallTo(node.operand.expression, "__ts2gml_native_array")) {
+        return ts.visitEachChild(node, visit, context);
+      }
+      const updated = visit(ts.factory.createBinaryExpression(node.operand,
+        node.operator === ts.SyntaxKind.PlusPlusToken ? ts.SyntaxKind.PlusEqualsToken : ts.SyntaxKind.MinusEqualsToken,
+        ts.factory.createNumericLiteral(1))) as ts.Expression;
+      return updated;
+    }
+    if (ts.isElementAccessExpression(node) &&
+      isCallTo(node.expression, "__ts2gml_class_statics") &&
+      ts.isStringLiteralLike(node.argumentExpression)) {
+      return ts.factory.createPropertyAccessExpression(
+        ts.visitNode(node.expression, visit) as ts.Expression,
+        node.argumentExpression.text,
+      );
+    }
     if (
       ts.isOptionalChain(node) &&
       !(node.parent && ts.isOptionalChain(node.parent))
     ) {
       return lowerOptionalChain(node, visit, freshIdentifier);
+    }
+    if (ts.isElementAccessExpression(node)) {
+      if (isCallTo(node.expression, "__ts2gml_native_array")) {
+        return ts.factory.createElementAccessExpression(ts.visitNode(node.expression.arguments[0]!, visit) as ts.Expression,
+          ts.visitNode(node.argumentExpression, visit) as ts.Expression);
+      }
+      if (ts.isStringLiteralLike(node.argumentExpression) && node.argumentExpression.text === "length") {
+        return visit(ts.factory.createPropertyAccessExpression(node.expression, "length"));
+      }
+      return runtimeCall("__ts2gml_value_get", [
+        ts.visitNode(node.expression, visit) as ts.Expression,
+        ts.visitNode(node.argumentExpression, visit) as ts.Expression,
+      ]);
+    }
+    if (ts.isIfStatement(node)) return ts.factory.updateIfStatement(node,
+      runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.expression, visit) as ts.Expression]),
+      ts.visitNode(node.thenStatement, visit) as ts.Statement,
+      ts.visitNode(node.elseStatement, visit) as ts.Statement | undefined);
+    if (ts.isWhileStatement(node)) return ts.factory.updateWhileStatement(node,
+      runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.expression, visit) as ts.Expression]),
+      ts.visitNode(node.statement, visit) as ts.Statement);
+    if (ts.isForStatement(node)) return ts.factory.updateForStatement(node,
+      ts.visitNode(node.initializer, visit) as ts.ForInitializer | undefined,
+      node.condition ? runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.condition, visit) as ts.Expression]) : undefined,
+      ts.visitNode(node.incrementor, visit) as ts.Expression | undefined,
+      ts.visitNode(node.statement, visit) as ts.Statement);
+    if (ts.isConditionalExpression(node)) return ts.factory.updateConditionalExpression(node,
+      runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.condition, visit) as ts.Expression]),
+      node.questionToken, ts.visitNode(node.whenTrue, visit) as ts.Expression,
+      node.colonToken, ts.visitNode(node.whenFalse, visit) as ts.Expression);
+    if (ts.isPrefixUnaryExpression(node) && node.operator === ts.SyntaxKind.ExclamationToken) {
+      return ts.factory.createLogicalNot(runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.operand, visit) as ts.Expression]));
+    }
+    if (ts.isDeleteExpression(node)) {
+      const target = node.expression;
+      if (ts.isPropertyAccessExpression(target)) {
+        return runtimeCall("__ts2gml_remove", [
+          ts.visitNode(target.expression, visit) as ts.Expression,
+          ts.factory.createStringLiteral(target.name.text),
+        ]);
+      }
+      if (ts.isElementAccessExpression(target)) {
+        return runtimeCall("__ts2gml_remove", [
+          ts.visitNode(target.expression, visit) as ts.Expression,
+          ts.visitNode(target.argumentExpression, visit) as ts.Expression,
+        ]);
+      }
+    }
+    if (
+      ts.isNewExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      collectionConstructors.has(node.expression.text)
+    ) {
+      return ts.factory.updateNewExpression(
+        node,
+        ts.factory.createIdentifier(collectionConstructors.get(node.expression.text)!),
+        undefined,
+        node.arguments?.map((argument) => ts.visitNode(argument, visit) as ts.Expression),
+      );
+    }
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.expression.kind !== ts.SyntaxKind.ThisKeyword &&
+      loweredJavaScriptInstanceMembers.has(node.expression.name.text)
+    ) {
+      const member = node.expression.name.text;
+      const helper = ts.factory.createIdentifier(loweredJavaScriptInstanceMembers.get(member)!);
+      const receiver = ts.visitNode(node.expression.expression, visit) as ts.Expression;
+      if (member === "delete" && node.arguments.some(ts.isSpreadElement)) {
+        return createSpreadCall(helper, [receiver, ...node.arguments], visit);
+      }
+      if (member === "delete") {
+        return ts.factory.createCallExpression(helper, undefined, [
+          receiver,
+          ...node.arguments.map((argument) => ts.visitNode(argument, visit) as ts.Expression),
+        ]);
+      }
+      const argumentsArray = node.arguments.some(ts.isSpreadElement)
+        ? runtimeCall("array_concat", [
+            ts.factory.createArrayLiteralExpression(),
+            ...spreadParts(node.arguments, visit),
+          ])
+        : ts.factory.createArrayLiteralExpression(
+            node.arguments.map((argument) => ts.visitNode(argument, visit) as ts.Expression),
+          );
+      return ts.factory.createCallExpression(helper, undefined, [receiver, argumentsArray]);
+    }
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      node.expression.kind !== ts.SyntaxKind.ThisKeyword &&
+      node.name.text === "length"
+    ) {
+      return runtimeCall("__ts2gml_collection_length", [
+        ts.visitNode(node.expression, visit) as ts.Expression,
+      ]);
     }
     if (ts.isForOfStatement(node)) {
       return lowerForOfStatement(node, visit, freshIdentifier);
@@ -2083,7 +3044,7 @@ function gmlTransformer(
         ]),
         ts.factory.createLogicalOr(
           firstIteration,
-          ts.visitNode(node.expression, visit) as ts.Expression,
+          runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.expression, visit) as ts.Expression]),
         ),
         ts.factory.createAssignment(firstIteration, ts.factory.createFalse()),
         ts.visitNode(node.statement, visit) as ts.Statement,
@@ -2107,8 +3068,9 @@ function gmlTransformer(
         ts.visitNode(node.block, visit) as ts.Block,
       );
     }
-    if (isGmOtherCall(node)) {
-      return ts.factory.createIdentifier("other");
+    const contextKeyword = getGmlContextAssertion(node);
+    if (contextKeyword) {
+      return ts.factory.createIdentifier(contextKeyword);
     }
     if (ts.isTypeOfExpression(node)) {
       return lowerTypeOfExpression(node.expression, visit);
@@ -2153,10 +3115,14 @@ function gmlTransformer(
       return ts.factory.createIdentifier("undefined");
     }
     if (node.kind === ts.SyntaxKind.ThisKeyword && transformState.withActionDepth > 0) {
-      return transformState.withLexicalThis!;
+      return staticThis
+        ? ts.factory.createPropertyAccessExpression(transformState.withLexicalThis!, "__ts2gml_class")
+        : transformState.withLexicalThis!;
     }
     if (node.kind === ts.SyntaxKind.ThisKeyword) {
-      return ts.factory.createIdentifier("self");
+      return staticThis
+        ? ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier("self"), "__ts2gml_class")
+        : ts.factory.createIdentifier("self");
     }
     if (
       ts.isPropertyAccessExpression(node) &&
@@ -2202,6 +3168,9 @@ function gmlTransformer(
       node.expression.text === "Math"
     ) {
       if (node.name.text === "PI") return ts.factory.createIdentifier("pi");
+      if (["round", "random", "min", "max"].includes(node.name.text)) {
+        return ts.factory.createIdentifier(`__ts2gml_value_${node.name.text}`);
+      }
       const replacement = mathFunctions.get(node.name.text);
       if (replacement) return ts.factory.createIdentifier(replacement);
     }
@@ -2213,9 +3182,28 @@ function gmlTransformer(
       );
     }
     if (node.kind === ts.SyntaxKind.NullKeyword) {
-      return ts.factory.createIdentifier("undefined");
+      return ts.factory.createIdentifier("pointer_null");
     }
     if (ts.isBinaryExpression(node)) {
+      if ([ts.SyntaxKind.BarBarToken, ts.SyntaxKind.AmpersandAmpersandToken,
+        ts.SyntaxKind.QuestionQuestionToken].includes(node.operatorToken.kind)) {
+        const parameter = freshIdentifier("logical");
+        const left = ts.visitNode(node.left, visit) as ts.Expression;
+        const right = ts.visitNode(node.right, visit) as ts.Expression;
+        const condition = runtimeCall(node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken
+          ? "__ts2gml_value_nullish" : "__ts2gml_value_truthy", [parameter]);
+        const useRight = node.operatorToken.kind !== ts.SyntaxKind.BarBarToken;
+        return inlineResult(node, parameter, ts.factory.createConditionalExpression(condition,
+          undefined, useRight ? right : parameter, undefined, useRight ? parameter : right), left);
+      }
+      if (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+        node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) {
+        const equal = runtimeCall("__ts2gml_value_equal", [
+          ts.visitNode(node.left, visit) as ts.Expression,
+          ts.visitNode(node.right, visit) as ts.Expression,
+        ]);
+        return node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ? equal : ts.factory.createLogicalNot(equal);
+      }
       if (node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword) {
         return ts.factory.createCallExpression(
           ts.factory.createIdentifier("is_instanceof"),
@@ -2271,11 +3259,22 @@ function gmlTransformer(
         parts,
       );
     }
+    if (ts.isNumericLiteral(node)) {
+      const numeric = Number(node.text).toString();
+      if (!numeric.includes("e")) return ts.factory.createNumericLiteral(numeric);
+      const [coefficient, exponent] = numeric.split("e");
+      const digits = coefficient!.replace(".", "");
+      const point = (coefficient!.includes(".") ? coefficient!.indexOf(".") : coefficient!.length) + Number(exponent);
+      const decimal = point <= 0 ? `0.${"0".repeat(-point)}${digits}`
+        : point >= digits.length ? `${digits}${"0".repeat(point - digits.length)}.0`
+        : `${digits.slice(0, point)}.${digits.slice(point)}`;
+      return ts.factory.createNumericLiteral(decimal);
+    }
     if (ts.isNoSubstitutionTemplateLiteral(node)) {
-      return ts.factory.createStringLiteral(node.text);
+      return ts.setEmitFlags(ts.factory.createStringLiteral(node.text), ts.EmitFlags.NoAsciiEscaping);
     }
     if (ts.isStringLiteral(node)) {
-      return ts.factory.createStringLiteral(node.text);
+      return ts.setEmitFlags(ts.factory.createStringLiteral(node.text), ts.EmitFlags.NoAsciiEscaping);
     }
     if (ts.isArrowFunction(node)) {
       let usesLexicalThis = false;
@@ -2491,20 +3490,21 @@ function callInlineFunction(
   parameter: ts.Identifier,
   result: ts.Expression,
   argument: ts.Expression,
+  captures: readonly ts.Identifier[] = [],
 ): ts.CallExpression {
   const functionExpression = ts.factory.createFunctionExpression(
     undefined,
     undefined,
     undefined,
     undefined,
-    [ts.factory.createParameterDeclaration(undefined, undefined, parameter)],
+    [parameter, ...captures].map((name) => ts.factory.createParameterDeclaration(undefined, undefined, name)),
     undefined,
     ts.factory.createBlock([ts.factory.createReturnStatement(result)], true),
   );
   return ts.factory.createCallExpression(
     ts.factory.createParenthesizedExpression(functionExpression),
     undefined,
-    [argument],
+    [argument, ...captures],
   );
 }
 
@@ -2788,13 +3788,13 @@ function appendBindingElement(
   visit: ts.Visitor,
   freshIdentifier: FreshIdentifier,
 ): void {
-  const initializer = element.initializer
-    ? ts.factory.createBinaryExpression(
-        value,
-        ts.SyntaxKind.QuestionQuestionToken,
-        ts.visitNode(element.initializer, visit) as ts.Expression,
-      )
-    : value;
+  let initializer = value;
+  if (element.initializer) {
+    const temporary = freshIdentifier("default");
+    declarations.push(ts.factory.createVariableDeclaration(temporary, undefined, undefined, value));
+    initializer = ts.factory.createConditionalExpression(runtimeCall("is_undefined", [temporary]),
+      undefined, ts.visitNode(element.initializer, visit) as ts.Expression, undefined, temporary);
+  }
   if (ts.isIdentifier(element.name)) {
     declarations.push(
       ts.factory.createVariableDeclaration(
@@ -3034,17 +4034,7 @@ function runtimeCall(name: string, argumentsList: readonly ts.Expression[]): ts.
 }
 
 function isNullish(expression: ts.Expression): ts.Expression {
-  return ts.factory.createBinaryExpression(
-    ts.factory.createParenthesizedExpression(
-      ts.factory.createBinaryExpression(
-        expression,
-        ts.SyntaxKind.QuestionQuestionToken,
-        ts.factory.createIdentifier("undefined"),
-      ),
-    ),
-    ts.SyntaxKind.EqualsEqualsToken,
-    ts.factory.createIdentifier("undefined"),
-  );
+  return runtimeCall("__ts2gml_value_nullish", [expression]);
 }
 
 function variableList(
@@ -3102,8 +4092,10 @@ export function createNodeDiagnostic(
   message: string,
   suggestion?: string,
 ): CompilerDiagnostic {
-  const start = node.getStart(sourceFile);
-  const end = node.getEnd();
+  const range = originalSourceRange(sourceFile, node.getStart(sourceFile), node.getEnd());
+  sourceFile = range.source;
+  const start = range.start;
+  const end = Math.min(range.end, sourceFile.text.length);
   const position = sourceFile.getLineAndCharacterOfPosition(start);
   const endPosition = sourceFile.getLineAndCharacterOfPosition(end);
   const lineStart = sourceFile.getPositionOfLineAndCharacter(position.line, 0);

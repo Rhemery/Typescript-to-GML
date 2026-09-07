@@ -1,0 +1,7 @@
+{
+  "runtimeGuards": {
+    "run": "maximum",
+    "build": "maximum",
+    "configurations": {}
+  }
+}

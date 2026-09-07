@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+## 0.2.0-beta.5 - Unreleased
+
+- Protect standalone source files from output collisions, including links and Windows path casing.
+- Correct logical values and truthiness, strict equality, null/default handling, Unicode literals, indexed access and writes, omitted collection arguments, and Math rounding/random aliases. Require explicit array sort comparators with stable ordering.
+- Validate instance methods by their receiver type and retain direct access to native GameMaker arrays such as `alarm`.
+- Serialize project writers, atomically replace files, recover interrupted writes, and validate versioned manifests.
+- Use each game's local compiler for asynchronous editor checks. Add JSON diagnostics, `doctor`, and source maps for generated GML.
+- Require Node 22 or newer; use Node 24 for release tooling and check Node 22/24 in CI. Version the companion extension as `0.2.5`, with explicit compiler metadata and a matching minimum VS Code API.
+- Recheck declaration/configuration changes in watch mode and strengthen common native array type signatures.
+- Normalize native predicate booleans, emit finite scientific and other numeric literal formats as valid decimal GML, and reject coercive equality with a source-located diagnostic.
+- Make wrapper destruction idempotent and reject operations on destroyed native storage. Retry temporary Windows sharing locks during atomic replacement.
+- Add generated GML navigation, a reproducible benchmark command, and a compiler-derived diagnostic catalog.
+
+- Support static fields and methods on ordinary and `GMObject` classes, with initialization before construction, inherited class state, class aliases, and lexical `this` in static arrows.
+- Require protected object events so TypeScript rejects external calls while preserving child overrides; reject direct event calls and references inside object code during project checks.
+
+## 0.2.0-beta.4 - 2026-09-04
+
+- Preserve the native `self` and `other` runtime declarations without aliasing either to the compiler-owned `gm_self<T>()` and `gm_other<T>()` context assertions.
+- Add project-configured `off`, `standard`, and `maximum` runtime type guards with separate Run and Build profiles, GameMaker configuration overrides, deduplicated `gm_self<T>()`/`gm_other<T>()` checks, strict typed collection mutations, and generated compiler hooks that regenerate guards directly in place.
+- Make `gm_self<T>()` and `gm_other<T>()` symmetrical typed context assertions that emit bare GML `self` and `other`.
+- Make all GameMaker DS handles strict generic types defaulting to `unknown`; add native-backed `List`, `Map`, `Set`, `Grid`, `Queue`, `Stack`, and `PriorityQueue` authoring APIs; lower common array collection methods without hijacking same-named authored members; and support `delete` for arrays, structs, maps, sets, and native removable DS values.
+- Add a companion Visual Studio Code extension that displays `TS2GML` diagnostics while editing, runs project checks on save, and opens the exact official GameMaker manual topic when a runtime built-in is middle-clicked without permanently underlining built-ins.
+- Keep manifest-owned generated content authoritative: automatically refresh externally edited or deleted output without requiring `--overwrite-generated`, while preserving IDE-owned Object settings. Reject unmanaged asset collisions with both paths and instructions to delete the GameMaker asset and save before allowing ts2gml to manage it.
+- Preserve GameMaker's existing resource/folder order and equivalent resource formatting across repeated saves to avoid unnecessary project rewrites.
+
 ## 0.2.0-beta.3 - 2026-08-31
 
 - Expose GameMaker constants as their GML-named global values, including time-source constants; strongly distinguish constant, asset, ID, and pointer categories during type checking; and repair stale or incomplete runtime declaration caches automatically.

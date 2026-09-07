@@ -1,6 +1,6 @@
 {
   "name": "typescript-to-gml",
-  "version": "0.2.0-beta.3",
+  "version": "0.2.0-beta.5",
   "description": "GameMaker declarations and a TypeScript-to-GML compiler.",
   "author": "Rhemery",
   "repository": {
@@ -30,22 +30,28 @@
     "SECURITY.md"
   ],
   "scripts": {
-    "build": "npm run build:code --silent && npm run bundle --silent",
+    "build": "npm run build:code --silent && npm run bundle --silent && npm run build:vscode --silent",
     "build:code": "tsc -p tsconfig.build.json",
+    "build:vscode": "node scripts/build-vscode-extension.mjs",
     "bundle": "node scripts/build-distribution.mjs",
     "build:yymps": "node scripts/build-yymps.mjs",
     "package:yymps": "npm run build --silent && npm run build:yymps --silent",
-    "check": "tsc -p tsconfig.json --noEmit",
+    "package:vscode": "node scripts/package-vscode-extension.mjs",
+    "check": "npm run check:code --silent && npm run check:vscode --silent",
+    "check:code": "tsc -p tsconfig.json --noEmit",
+    "check:vscode": "tsc -p vscode-extension/tsconfig.json --noEmit",
     "check:runtime-types": "tsc -p tsconfig.runtime-types.json --noEmit",
     "declarations": "npm run build:code --silent && node dist/src/cli.js declarations && npm run bundle --silent",
     "test": "npm run build --silent && node scripts/run-tests.mjs",
     "check:game": "tsc -p TestProject/typescript/tsconfig.json",
     "smoke:distribution": "node scripts/smoke-distribution.mjs",
     "smoke:gamemaker": "node scripts/smoke-gamemaker.mjs",
-    "verify:release": "npm run check --silent && npm test --silent && npm run build:yymps --silent && npm run smoke:distribution --silent",
+    "verify:release": "npm run check --silent && npm test --silent && npm run build:yymps --silent && npm run package:vscode --silent && npm run smoke:distribution --silent",
     "verify": "npm run declarations --silent && npm run check:runtime-types --silent && npm run verify:release --silent && npm run example --silent && npm run check:game --silent && npm run smoke:gamemaker --silent",
     "prepack": "npm run verify:release --silent",
-    "example": "npm run build --silent && node scripts/install-example.mjs && node TestProject/datafiles/ts2gml/cli.cjs build TestProject/TestProject.yyp"
+    "example": "npm run build --silent && node scripts/install-example.mjs && node TestProject/datafiles/ts2gml/cli.cjs build TestProject/TestProject.yyp",
+    "benchmark": "npm run build:code --silent && node scripts/benchmark.mjs",
+    "docs:diagnostics": "node scripts/diagnostic-catalog.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.2.5",
@@ -54,11 +60,13 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "@types/vscode": "^1.134.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "keywords": [
     "gamemaker",

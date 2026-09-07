@@ -1,12 +1,12 @@
 class obj_test_player extends GMObject {
   health = 100;
 
-  onCreate() {
+  protected onCreate() {
     this.x = 64;
     this.y = 64;
   }
 
-  onStep() {
+  protected onStep() {
     this.x += 1;
   }
 

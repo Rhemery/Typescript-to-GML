@@ -1,7 +1,11 @@
 self.callerValue = function() {
+    __ts2gml_guard_object(other, obj_scope_target, "other");
     return other.value;
 };
 self.value = 41;
+__ts2gml_guard_object(self, obj_scope_runner, "self");
+scopeContextExpect("object static before instance", __ts2gml_class_statics(obj_scope_target).increment(), 6);
+scopeContextExpect("object static identity", __ts2gml_class_statics(obj_scope_target).identity(), obj_scope_target);
 var value = 2;
 scopeContextExpect("event field/local", self.value + value, 43);
 scopeContextExpect("event self", self, self);
@@ -20,7 +24,7 @@ scopeContextExpect("object variable", target.value, 20);
 scopeContextExpect("object field/parameter", target.fromParameter(4), 24);
 scopeContextExpect("object field/local", target.fromLocal(), 23);
 scopeContextExpect("direct method other", target.callerValue(), target.value);
-var targetCaller = target.callerValue;
+var targetCaller = target.extractedCallerValue;
 scopeContextExpect("extracted method other", targetCaller(), self.value);
 var structReader = data.makeReader();
 scopeContextExpect("struct arrow direct", structReader(), 12);
@@ -31,36 +35,36 @@ scopeContextExpect("object arrow callback", target.invoke(objectReader), 41);
 var literal = { value: 99, read: method(self, function () { return self.value; }) };
 var callbackArray = [method(self, function () { return self.value; })];
 scopeContextExpect("struct literal arrow", literal.read(), 41);
-scopeContextExpect("array literal arrow", callbackArray[0](), 41);
+scopeContextExpect("array literal arrow", __ts2gml_value_get(callbackArray, 0)(), 41);
 scopeContextExpect("method binding", method_get_self(self.callerValue), self.id);
 scopeContextExpect("callback other", target.invoke(self.callerValue), target.value);
 var amount = 3;
 with (obj_scope_target) {
-    var __ts2gml_with_self_3436_1 = self;
-    var __ts2gml_with_other_3436_2 = other;
-    scopeContextExpect("with self", __ts2gml_with_self_3436_1.value, 20);
-    scopeContextExpect("with other", __ts2gml_with_other_3436_2.value, 41);
-    __ts2gml_with_self_3436_1.value += amount;
-    __ts2gml_with_other_3436_2.value += 1;
+    var __ts2gml_with_self_4188_1 = self;
+    var __ts2gml_with_other_4188_2 = other;
+    scopeContextExpect("with self", __ts2gml_with_self_4188_1.value, 20);
+    scopeContextExpect("with other", __ts2gml_with_other_4188_2.value, 41);
+    __ts2gml_with_self_4188_1.value += amount;
+    __ts2gml_with_other_4188_2.value += 1;
 }
 scopeContextExpect("with local capture", target.value, 23);
 scopeContextExpect("with lexical this", self.value, 42);
 with (obj_scope_target) {
-    var __ts2gml_with_self_3840_1 = self;
-    var __ts2gml_with_other_3840_2 = other;
+    var __ts2gml_with_self_4592_1 = self;
+    var __ts2gml_with_other_4592_2 = other;
     with (obj_scope_target) {
-        var __ts2gml_with_self_3840_3 = self;
-        var __ts2gml_with_other_3840_4 = other;
-        __ts2gml_with_self_3840_3.value += 1;
-        __ts2gml_with_other_3840_4.value += 2;
-        __ts2gml_with_other_3840_2.value += 4;
-        __ts2gml_with_other_3840_2.value += 8;
+        var __ts2gml_with_self_4592_3 = self;
+        var __ts2gml_with_other_4592_4 = other;
+        __ts2gml_with_self_4592_3.value += 1;
+        __ts2gml_with_other_4592_4.value += 2;
+        __ts2gml_with_other_4592_2.value += 4;
+        __ts2gml_with_other_4592_2.value += 8;
     }
 }
 scopeContextExpect("nested with self/other", target.value, 26);
 scopeContextExpect("nested with lexical this", self.value, 54);
 var collisionSurface = surface_create(1, 1);
-surface_set_target(collisionSurface);
+__ts2gml_value_truthy(surface_set_target(collisionSurface));
 draw_clear(c_white);
 surface_reset_target();
 var collisionSprite = sprite_create_from_surface(collisionSurface, 0, 0, 1, 1, false, false, 0, 0);

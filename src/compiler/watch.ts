@@ -1,6 +1,7 @@
 import { watch, type FSWatcher } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { withProjectLock } from "./project-state.js";
 import { createInterface } from "node:readline/promises";
 import {
   generateProjectDeclarations,
@@ -14,6 +15,7 @@ import {
 } from "./project.js";
 
 export interface WatchOptions {
+  guardConfiguration?: string;
   confirmStructuralChanges?: (changes: readonly string[]) => boolean | Promise<boolean>;
   debounceMs?: number;
   saveSettleMs?: number;
@@ -35,6 +37,7 @@ export async function watchGameMakerProject(
   let sourceTimer: NodeJS.Timeout | undefined;
   let projectTimer: NodeJS.Timeout | undefined;
   let running = false;
+  let activeWork: Promise<void> = Promise.resolve();
   let buildQueued = false;
   let declarationsQueued = false;
   let generatedObjectNames = new Set<string>();
@@ -60,14 +63,20 @@ export async function watchGameMakerProject(
   };
 
   const runQueuedWork = async (): Promise<void> => {
-    if (running) return;
+    if (running || options.signal?.aborted) return;
     running = true;
     try {
-      while (buildQueued || declarationsQueued) {
+      while (!options.signal?.aborted && (buildQueued || declarationsQueued)) {
         if (buildQueued) {
           buildQueued = false;
           try {
-            const result = await buildGameMakerProject([], projectPath, { hotReloadOnly: true });
+            const result = await buildGameMakerProject([], projectPath, {
+              ...(options.guardConfiguration
+                ? { guardConfiguration: options.guardConfiguration }
+                : {}),
+              guardProfile: "run",
+              hotReloadOnly: true,
+            });
             reportBuild(result);
           } catch (error) {
             const failure = reportFailure(error);
@@ -83,6 +92,10 @@ export async function watchGameMakerProject(
                   }
                   if (!options.signal?.aborted) {
                     reportBuild(await buildGameMakerProject([], projectPath, {
+                      ...(options.guardConfiguration
+                        ? { guardConfiguration: options.guardConfiguration }
+                        : {}),
+                      guardProfile: "run",
                       ideProjectSaved: true,
                     }));
                   }
@@ -97,12 +110,15 @@ export async function watchGameMakerProject(
 
         declarationsQueued = false;
         try {
-          const result = await generateProjectDeclarations(projectPath, {
+          const result = await withProjectLock(projectPath, () => generateProjectDeclarations(projectPath, {
             excludedAssetNames: roomClassNames,
             additionalObjectNames: generatedObjectNames,
-          });
+          }));
           options.onDeclarations?.(result);
-          if (result.written) console.log(`Declared ${result.assets.length} GameMaker IDE asset(s).`);
+          if (result.written) {
+            console.log(`Declared ${result.assets.length} GameMaker IDE asset(s).`);
+            buildQueued = true;
+          }
         } catch (error) {
           const failure = error instanceof Error ? error : new Error(String(error));
           options.onDeclarations?.(failure);
@@ -117,13 +133,12 @@ export async function watchGameMakerProject(
   const scheduleBuild = (event: string, fileName: string | Buffer | null): void => {
     if (fileName) {
       const changedPath = fileName.toString();
-      if (/\.d\.ts$/i.test(changedPath)) return;
-      if (!/\.tsx?$/i.test(changedPath) && event !== "rename") return;
+      if (!/\.tsx?$/i.test(changedPath) && !/(^|[\\/])tsconfig(?:\.[^\\/]+)?\.json$/i.test(changedPath) && event !== "rename") return;
     }
     if (sourceTimer) clearTimeout(sourceTimer);
     sourceTimer = setTimeout(() => {
       buildQueued = true;
-      void runQueuedWork();
+      if (!running) activeWork = runQueuedWork();
     }, debounceMs);
   };
 
@@ -135,7 +150,7 @@ export async function watchGameMakerProject(
     if (projectTimer) clearTimeout(projectTimer);
     projectTimer = setTimeout(() => {
       declarationsQueued = true;
-      void runQueuedWork();
+      if (!running) activeWork = runQueuedWork();
     }, debounceMs);
   };
 
@@ -143,11 +158,18 @@ export async function watchGameMakerProject(
     scheduleBuild(event, fileName);
   });
   projectWatcher = watch(projectDirectory, { recursive: true }, (_event, fileName) => {
+    const changed = fileName?.toString().replaceAll("\\", "/");
+    if (changed && (changed === "ts2gml.config.json" || changed === ".ts2gml/runtime-selection.json" ||
+      /^datafiles\/ts2gml\/types\/.*\.d\.ts$/i.test(changed))) {
+      scheduleBuild("rename", null);
+      return;
+    }
     scheduleDeclarations(fileName);
   });
   console.log(`Watching ${project.sourceDirectory} and ${projectPath}`);
   buildQueued = true;
-  await runQueuedWork();
+  activeWork = runQueuedWork();
+  await activeWork;
 
   await new Promise<void>((resolve, reject) => {
     const close = (): void => {
@@ -162,6 +184,7 @@ export async function watchGameMakerProject(
     if (options.signal?.aborted) close();
     else options.signal?.addEventListener("abort", close, { once: true });
   });
+  await activeWork;
 }
 
 async function confirmSavedGameMakerProject(signal?: AbortSignal): Promise<boolean> {

@@ -1,3 +1,4 @@
+import { atomicWriteFile } from "../files.js";
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -129,17 +130,22 @@ export class GmlSpecSelectionError extends Error {
 }
 
 const runtimeSelectionFileName = "runtime-selection.json";
-const runtimeDeclarationFormatVersion = 2;
+const runtimeDeclarationFormatVersion = 4;
 const runtimeDeclarationCompletionMarker = "// Runtime declaration generation complete.";
 
-const invalidGlobalNames = new Set(["NaN", "Infinity", "undefined", "true", "false"]);
+const invalidGlobalNames = new Set([
+  "NaN",
+  "Infinity",
+  "undefined",
+  "true",
+  "false",
+]);
 const functionAliases = new Map([
   ["instanceof", "gm_instanceof"],
   ["typeof", "gm_typeof"],
 ]);
 const globalAliases = new Map([
   ["global", "gm_global"],
-  ["self", "gm_self"],
 ]);
 const authoredObjectOverloads = new Map<string, string>([
   [
@@ -162,6 +168,21 @@ const authoredObjectOverloads = new Map<string, string>([
     "instance_nearest",
     "declare function instance_nearest<T extends GMObject>(x: number, y: number, obj: GMObjectClass<T>): GMInstance<T>;",
   ],
+]);
+
+interface FunctionTypeSpecialization {
+  typeParameters: string;
+  parameterTypes: ReadonlyMap<number, string>;
+  returnType: string | undefined;
+}
+
+const dataStructureAliases: ReadonlyMap<string, readonly [string, string]> = new Map([
+  ["DsGrid", ["<T = unknown>", "readonly __gmDsGridType?: T"]],
+  ["DsList", ["<T = unknown>", "readonly __gmDsListType?: T"]],
+  ["DsMap", ["<K = unknown, V = unknown>", "readonly __gmDsMapTypes?: readonly [K, V]"]],
+  ["DsPriority", ["<T = unknown>", "readonly __gmDsPriorityType?: T"]],
+  ["DsQueue", ["<T = unknown>", "readonly __gmDsQueueType?: T"]],
+  ["DsStack", ["<T = unknown>", "readonly __gmDsStackType?: T"]],
 ]);
 const reservedParameterNames = new Set([
   "break",
@@ -241,7 +262,7 @@ export async function generateDeclarations(
 
   const outputPath = path.resolve(outputFile);
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, output, "utf8");
+  await atomicWriteFile(outputPath, output);
   return {
     specPath,
     outputPath,
@@ -336,6 +357,7 @@ export function renderDeclarations(input: {
     if (authoredObjectOverload) lines.push(authoredObjectOverload);
     for (const fn of overloads) {
       const usedParameterNames = new Map<string, number>();
+      const specialization = specializeDataStructureFunction(fn);
       const parameters = (fn.Parameter ?? []).map((parameter, index) => {
         const baseName = isIdentifier(parameter.Name) ? parameter.Name : `argument${index}`;
         const safeName = reservedParameterNames.has(baseName) ? `_${baseName}` : baseName;
@@ -344,7 +366,9 @@ export function renderDeclarations(input: {
         const parameterName = occurrence === 1 ? safeName : `${safeName}${occurrence}`;
         const optional = parameter.Optional === "true" ? "?" : "";
         return {
-          declaration: `${parameterName}${optional}: ${mapType(parameter.Type)}`,
+          declaration: `${parameterName}${optional}: ${
+            specialization?.parameterTypes.get(index) ?? mapType(parameter.Type)
+          }`,
           name: parameterName,
           description: parameter.text,
         };
@@ -354,7 +378,7 @@ export function renderDeclarations(input: {
         parameters,
         deprecated: fn.Deprecated === "true",
       });
-      lines.push(`declare function ${name}(${parameters.map((parameter) => parameter.declaration).join(", ")}): ${mapType(fn.ReturnType)};`);
+      lines.push(`declare function ${name}${specialization?.typeParameters ?? ""}(${parameters.map((parameter) => parameter.declaration).join(", ")}): ${specialization?.returnType ?? mapType(fn.ReturnType)};`);
     }
   }
   lines.push("");
@@ -693,11 +717,9 @@ export async function saveProjectRuntimeSelection(
 ): Promise<string> {
   const selectionPath = getRuntimeSelectionPath(projectFile);
   await fs.mkdir(path.dirname(selectionPath), { recursive: true });
-  await fs.writeFile(
+  await atomicWriteFile(
     selectionPath,
-    `${JSON.stringify({ installationDirectory: path.resolve(installationDirectory) }, null, 2)}\n`,
-    "utf8",
-  );
+    `${JSON.stringify({ installationDirectory: path.resolve(installationDirectory) }, null, 2)}\n`);
   return selectionPath;
 }
 
@@ -745,6 +767,13 @@ function appendAliasNamespace(
 ): void {
   lines.push(`  namespace ${namespace} {`);
   for (const name of names.filter(isIdentifier)) {
+    const dataStructure = namespace === "Id" ? dataStructureAliases.get(name) : undefined;
+    if (dataStructure) {
+      lines.push(
+        `    type ${name}${dataStructure[0]} = ${reference}<"${name}"> & { ${dataStructure[1]} };`,
+      );
+      continue;
+    }
     const authoredClass = namespace === "Asset" && name === "GMRoom"
       ? " | GMRoomClass"
       : namespace === "Asset" && name === "GMObject"
@@ -753,6 +782,148 @@ function appendAliasNamespace(
     lines.push(`    type ${name} = ${reference}<"${name}">${authoredClass};`);
   }
   lines.push("  }");
+}
+
+function specializeDataStructureFunction(fn: FunctionSpec): FunctionTypeSpecialization | undefined {
+  const name = fn.Name;
+  const parameters = fn.Parameter ?? [];
+  const parameterTypes = new Map<number, string>();
+  const typedArrayFunctions = new Set([
+    "array_create", "array_create_ext", "array_get", "array_set", "array_first", "array_last",
+    "array_push", "array_pop", "array_shift", "array_insert", "array_copy", "array_concat",
+    "array_filter", "array_filter_ext", "array_map", "array_map_ext", "array_sort",
+    "array_reverse", "array_shuffle", "array_unique", "array_get_index", "array_contains",
+  ]);
+  if (typedArrayFunctions.has(name)) {
+    parameters.forEach((parameter, index) => {
+      if (mapType(parameter.Type) === "GMValue[]") parameterTypes.set(index, index === 0 ? "T[]" : "NoInfer<T>[]");
+      if (["value", "argument1"].includes(parameter.Name) && mapType(parameter.Type) === "any") {
+        parameterTypes.set(index, name === "array_create" ? "T" : "NoInfer<T>");
+      }
+      if ((name === "array_push" && index > 0) || (name === "array_insert" && index > 1)) {
+        parameterTypes.set(index, "NoInfer<T>");
+      }
+      if (["function", "sorttype_or_function"].includes(parameter.Name)) {
+        const callback = name === "array_sort" ? "boolean | ((left: T, right: T) => number)"
+          : name === "array_create_ext" ? "(index: number) => T"
+          : name === "array_map" ? "(value: T, index: number) => U"
+          : name === "array_map_ext" ? "(value: T, index: number) => NoInfer<T>"
+          : "(value: T, index: number) => boolean";
+        parameterTypes.set(index, callback);
+      }
+    });
+    const elementReturns = ["array_get", "array_first", "array_last", "array_pop", "array_shift"];
+    const arrayReturn = mapType(fn.ReturnType) === "GMValue[]" || name === "array_create";
+    return { typeParameters: name === "array_map" ? "<T, U>" : name === "array_create" ? "<T = number>" : "<T>",
+      parameterTypes, returnType: elementReturns.includes(name) ? "T | undefined"
+        : arrayReturn ? name === "array_map" ? "U[]" : "T[]" : undefined };
+  }
+  const setHandles = (type: string, names: readonly string[]) => {
+    parameters.forEach((parameter, index) => {
+      if (names.includes(parameter.Name)) parameterTypes.set(index, type);
+    });
+  };
+  const setValues = (type: string, names: readonly string[]) => {
+    parameters.forEach((parameter, index) => {
+      if (names.includes(parameter.Name)) parameterTypes.set(index, type);
+    });
+  };
+
+  if (name.startsWith("ds_list_")) {
+    if (name === "ds_list_create") {
+      return { typeParameters: "<T = unknown>", parameterTypes, returnType: "GM.Id.DsList<T>" };
+    }
+    setHandles("GM.Id.DsList<T>", ["id", "destination", "source"]);
+    setValues("NoInfer<T>", ["val", "value", "argument1", "argument2"]);
+    parameters.forEach((parameter, index) => {
+      if (mapType(parameter.Type) === "any") parameterTypes.set(index, "NoInfer<T>");
+    });
+    const returnType = name === "ds_list_find_value" ? "T | undefined" : undefined;
+    return { typeParameters: "<T>", parameterTypes, returnType };
+  }
+
+  if (name.startsWith("ds_map_")) {
+    if (["ds_map_create", "ds_map_secure_load", "ds_map_secure_load_buffer"].includes(name)) {
+      return {
+        typeParameters: "<K = unknown, V = unknown>",
+        parameterTypes,
+        returnType: "GM.Id.DsMap<K, V>",
+      };
+    }
+    setHandles("GM.Id.DsMap<K, V>", ["id", "map", "destination", "source"]);
+    setValues("NoInfer<K>", ["key"]);
+    setValues("NoInfer<V>", ["val", "value"]);
+    parameters.forEach((parameter, index) => {
+      if (mapType(parameter.Type) !== "any" || parameterTypes.has(index)) return;
+      parameterTypes.set(index, index === 1 ? "NoInfer<K>" : "NoInfer<V>");
+    });
+    const keyReturns = new Set([
+      "ds_map_find_first",
+      "ds_map_find_last",
+      "ds_map_find_next",
+      "ds_map_find_previous",
+    ]);
+    let returnType: string | undefined;
+    if (keyReturns.has(name)) returnType = "K | undefined";
+    else if (name === "ds_map_find_value") returnType = "V | undefined";
+    else if (name === "ds_map_keys_to_array") returnType = "K[]";
+    else if (name === "ds_map_values_to_array") returnType = "V[]";
+    parameters.forEach((parameter, index) => {
+      if (name === "ds_map_keys_to_array" && parameter.Name === "array") {
+        parameterTypes.set(index, "K[]");
+      } else if (name === "ds_map_values_to_array" && parameter.Name === "array") {
+        parameterTypes.set(index, "V[]");
+      }
+    });
+    return { typeParameters: "<K, V>", parameterTypes, returnType };
+  }
+
+  const valueStructures = [
+    ["ds_grid_", "DsGrid", "index", ["val", "value"]],
+    ["ds_priority_", "DsPriority", "id", ["val", "value"]],
+    ["ds_queue_", "DsQueue", "id", ["val", "value", "argument1"]],
+    ["ds_stack_", "DsStack", "id", ["val", "value", "argument1"]],
+  ] as const;
+  for (const [prefix, typeName, primaryHandle, valueNames] of valueStructures) {
+    if (!name.startsWith(prefix)) continue;
+    if (name === `${prefix}create`) {
+      return {
+        typeParameters: "<T = unknown>",
+        parameterTypes,
+        returnType: `GM.Id.${typeName}<T>`,
+      };
+    }
+    setHandles(`GM.Id.${typeName}<T>`, [primaryHandle, "destination", "source", "src"]);
+    setValues("NoInfer<T>", valueNames);
+    parameters.forEach((parameter, index) => {
+      if (mapType(parameter.Type) === "any") parameterTypes.set(index, "NoInfer<T>");
+    });
+    const valueReturns = new Set([
+      "ds_grid_get",
+      "ds_grid_get_disk_max",
+      "ds_grid_get_disk_mean",
+      "ds_grid_get_disk_min",
+      "ds_grid_get_disk_sum",
+      "ds_grid_get_max",
+      "ds_grid_get_mean",
+      "ds_grid_get_min",
+      "ds_priority_delete_max",
+      "ds_priority_delete_min",
+      "ds_priority_find_max",
+      "ds_priority_find_min",
+      "ds_queue_dequeue",
+      "ds_queue_head",
+      "ds_queue_tail",
+      "ds_stack_pop",
+      "ds_stack_top",
+    ]);
+    return {
+      typeParameters: "<T>",
+      parameterTypes,
+      returnType: valueReturns.has(name) ? "T | undefined" : undefined,
+    };
+  }
+  return undefined;
 }
 
 function appendDocumentation(

@@ -102,6 +102,8 @@ test("renders runtime functions, constants, structs, and instance variables", ()
         text: "The space key.",
       },
       { Name: "global", Type: "Real" },
+      { Name: "other", Type: "Id.Instance" },
+      { Name: "self", Type: "Id.Instance" },
       { Name: "time_source_global", Type: "Real", Class: "TimeSource" },
       { Name: "time_source_units_frames", Type: "Real", Class: "TimeSourceUnits" },
     ],
@@ -154,6 +156,9 @@ test("renders runtime functions, constants, structs, and instance variables", ()
     /declare const time_source_units_frames: GM\.Constant\.TimeSourceUnits;/,
   );
   assert.match(declarations, /declare const gm_global: GMGlobal;/);
+  assert.match(declarations, /declare const other: GM\.Id\.Instance;/);
+  assert.match(declarations, /declare const self: GM\.Id\.Instance;/);
+  assert.doesNotMatch(declarations, /declare const gm_(?:self|other):/);
   assert.match(declarations, /interface Point extends GMStruct/);
   assert.match(declarations, /readonly id: GM\.Id\.Instance;/);
   assert.match(declarations, /declare enum Direction/);
@@ -168,6 +173,86 @@ test("renders runtime functions, constants, structs, and instance variables", ()
   assert.match(
     declarations,
     /instance_create_layer<T extends GMObject>\([^)]+obj: GMObjectClass<T>[^)]*\): GMInstance<T>;/,
+  );
+});
+
+test("renders strict generic types for every GameMaker data structure", () => {
+  const dataStructureFunctions = [
+    { Name: "ds_list_create", ReturnType: "Id.DsList" },
+    {
+      Name: "ds_list_add",
+      ReturnType: "Undefined",
+      Parameter: [
+        { Name: "id", Type: "Id.DsList", Optional: "false" },
+        { Name: "argument1", Type: "Any", Optional: "false" },
+      ],
+    },
+    {
+      Name: "ds_list_find_value",
+      ReturnType: "Any",
+      Parameter: [
+        { Name: "id", Type: "Id.DsList", Optional: "false" },
+        { Name: "pos", Type: "Real", Optional: "false" },
+      ],
+    },
+    { Name: "ds_map_create", ReturnType: "Id.DsMap" },
+    {
+      Name: "ds_map_set",
+      ReturnType: "Undefined",
+      Parameter: [
+        { Name: "id", Type: "Id.DsMap", Optional: "false" },
+        { Name: "key", Type: "Any", Optional: "false" },
+        { Name: "value", Type: "Any", Optional: "false" },
+      ],
+    },
+    {
+      Name: "ds_map_find_value",
+      ReturnType: "Any",
+      Parameter: [
+        { Name: "id", Type: "Id.DsMap", Optional: "false" },
+        { Name: "key", Type: "Any", Optional: "false" },
+      ],
+    },
+    { Name: "ds_grid_create", ReturnType: "Id.DsGrid" },
+    { Name: "ds_priority_create", ReturnType: "Id.DsPriority" },
+    { Name: "ds_queue_create", ReturnType: "Id.DsQueue" },
+    { Name: "ds_stack_create", ReturnType: "Id.DsStack" },
+  ];
+  const declarations = renderDeclarations({
+    runtimeVersion: "test",
+    functions: dataStructureFunctions,
+    variables: [],
+    constants: [],
+    structures: [],
+    enumerations: [],
+  });
+
+  assert.match(declarations, /type DsList<T = unknown> = IdReference<"DsList">/);
+  assert.match(
+    declarations,
+    /type DsMap<K = unknown, V = unknown> = IdReference<"DsMap">/,
+  );
+  assert.match(declarations, /type DsGrid<T = unknown> = IdReference<"DsGrid">/);
+  assert.match(declarations, /type DsPriority<T = unknown> = IdReference<"DsPriority">/);
+  assert.match(declarations, /type DsQueue<T = unknown> = IdReference<"DsQueue">/);
+  assert.match(declarations, /type DsStack<T = unknown> = IdReference<"DsStack">/);
+  assert.match(declarations, /ds_list_create<T = unknown>\(\): GM\.Id\.DsList<T>/);
+  assert.match(
+    declarations,
+    /ds_list_add<T>\(id: GM\.Id\.DsList<T>, argument1: NoInfer<T>\)/,
+  );
+  assert.match(
+    declarations,
+    /ds_list_find_value<T>\(id: GM\.Id\.DsList<T>, pos: number\): T \| undefined/,
+  );
+  assert.match(declarations, /ds_map_create<K = unknown, V = unknown>\(\)/);
+  assert.match(
+    declarations,
+    /ds_map_set<K, V>\(id: GM\.Id\.DsMap<K, V>, key: NoInfer<K>, value: NoInfer<V>\)/,
+  );
+  assert.match(
+    declarations,
+    /ds_map_find_value<K, V>\(id: GM\.Id\.DsMap<K, V>, key: NoInfer<K>\): V \| undefined/,
   );
 });
 

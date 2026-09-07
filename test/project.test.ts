@@ -9,10 +9,17 @@ import { promisify } from "node:util";
 import { Ts2GmlError } from "../src/compiler/compile.js";
 import {
   buildGameMakerProject,
+  applyRuntimeGuardProfile,
   checkGameMakerProject,
   prepareTypeScriptProject,
+  ResourceConflictError,
 } from "../src/compiler/project.js";
 import { watchGameMakerProject } from "../src/compiler/watch.js";
+import {
+  defaultRuntimeGuardConfiguration,
+  detectRuntimeGuardConfiguration,
+  detectRuntimeGuardProfile,
+} from "../src/compiler/runtime-guards.js";
 
 const execFileAsync = promisify(execFile);
 const emptyProgramData = path.join(os.tmpdir(), `ts2gml-no-runtime-${process.pid}`);
@@ -26,6 +33,7 @@ declare namespace GM {
   namespace Asset {
     type GMObject = number | GMObjectClass;
     type GMRoom = number;
+    type GMScript = number;
     type GMSprite = number;
   }
   namespace Id { type Instance = number; }
@@ -100,7 +108,7 @@ async function addRoom(
   );
 }
 
-async function waitFor(check: () => Promise<boolean>, timeoutMs = 5_000): Promise<void> {
+async function waitFor(check: () => Promise<boolean>, timeoutMs = 15_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await check()) return;
@@ -108,6 +116,62 @@ async function waitFor(check: () => Promise<boolean>, timeoutMs = 5_000): Promis
   }
   throw new Error("Timed out waiting for the watched project to rebuild.");
 }
+
+test("generates shared object statics across files and removes stale static scripts", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-statics-"));
+  try {
+    const projectPath = await createEmptyProject(temporary, "Statics");
+    await installTool(temporary);
+    const sourceDirectory = path.join(temporary, "typescript");
+    await fs.mkdir(sourceDirectory);
+    const objectPath = path.join(sourceDirectory, "obj_counter.ts");
+    await fs.writeFile(objectPath, `
+class obj_counter extends GMObject {
+  static count = 1;
+  static increment(): number { this.count += 1; return this.count; }
+  static onStep(value: number): number { return value; }
+  count = 10;
+  protected onCreate() { obj_counter.increment(); }
+}
+class obj_child_counter extends obj_counter {}
+`);
+    const utilityPath = path.join(sourceDirectory, "static_use.ts");
+    await fs.writeFile(utilityPath, `
+function readStatic(): number {
+  const Alias = obj_child_counter;
+  Alias.count += 1;
+  return Alias.increment() + obj_counter.onStep(2);
+}
+`);
+    const first = await buildGameMakerProject([], projectPath);
+    assert.deepEqual(first.scripts, ["__ts2gml_class_statics", "obj_counter_statics", "static_use"]);
+    const statics = await fs.readFile(path.join(temporary, "scripts/obj_counter_statics/obj_counter_statics.gml"), "utf8");
+    assert.match(statics, /__ts2gml_class_statics\(obj_counter, true\)/);
+    assert.match(statics, /static_set\(self, __ts2gml_class_statics\(obj_counter\)\)/);
+    assert.match(statics, /self\.onStep = method/);
+    const create = await fs.readFile(path.join(temporary, "objects/obj_counter/Create_0.gml"), "utf8");
+    assert.match(create, /__ts2gml_class_statics\(obj_counter\)\.increment\(\)/);
+    assert.doesNotMatch(create, /self\.(?:increment|onStep) =/);
+    const resource = JSON.parse(await fs.readFile(path.join(temporary, "objects/obj_counter/obj_counter.yy"), "utf8")) as {
+      properties: Array<{ name: string; value: string }>;
+    };
+    assert.deepEqual(resource.properties.map((property) => [property.name, property.value]), [["count", "10"]]);
+    const utility = await fs.readFile(path.join(temporary, "scripts/static_use/static_use.gml"), "utf8");
+    assert.match(utility, /__ts2gml_class_statics\(Alias\)\.count \+= 1/);
+    assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
+
+    await fs.writeFile(objectPath, "class obj_counter extends GMObject { count = 10; }");
+    await fs.writeFile(utilityPath, "function readStatic(): number { return 0; }");
+    const cleaned = await buildGameMakerProject([], projectPath);
+    assert.deepEqual(cleaned.scripts, ["static_use"]);
+    for (const script of ["__ts2gml_class_statics", "obj_counter_statics"]) {
+      await assert.rejects(fs.access(path.join(temporary, "scripts", script, `${script}.gml`)),
+        (error: unknown) => (error as NodeJS.ErrnoException).code === "ENOENT");
+    }
+  } finally {
+    await fs.rm(temporary, { recursive: true, force: true });
+  }
+});
 
 test("writes scripts and event-driven objects into a GameMaker project idempotently", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-project-"));
@@ -131,15 +195,15 @@ test("writes scripts and event-driven objects into a GameMaker project idempoten
 class obj_enemy extends GMObject {
   health = 10;
   constructor() { super(); this.takeDamage(1); }
-  onCreate() { this.takeDamage(1); }
-  onStep() { this.x += 1; }
-  onDraw() { draw_self(); }
+  protected onCreate() { this.takeDamage(1); }
+  protected onStep() { this.x += 1; }
+  protected onDraw() { draw_self(); }
   takeDamage(value: number) { this.health -= value; }
 }
 class obj_fast_enemy extends obj_enemy {
   speed = 2;
-  onAlarm0() { this.health = 10; }
-  onCollision_obj_enemy(other: GMInstance<obj_enemy>) {
+  protected onAlarm0() { this.health = 10; }
+  protected onCollision_obj_enemy(other: GMInstance<obj_enemy>) {
     this.health -= 1;
     other.health -= 1;
   }
@@ -161,6 +225,19 @@ class obj_fast_enemy extends obj_enemy {
     "**/*.ts",
     "../datafiles/ts2gml/types/**/*.d.ts",
   ]);
+  assert.deepEqual(
+    JSON.parse(await fs.readFile(path.join(temporary, "ts2gml.config.json"), "utf8")),
+    {
+      runtimeGuards: {
+        run: "standard",
+        build: "standard",
+        configurations: {},
+      },
+    },
+  );
+  await fs.access(path.join(temporary, "pre_run_step.bat"));
+  await fs.access(path.join(temporary, "pre_build_step.sh"));
+  await fs.access(path.join(temporary, "pre_project_step.bat"));
   const enemyCreate = await fs.readFile(
     path.join(temporary, "objects", "obj_enemy", "Create_0.gml"),
     "utf8",
@@ -265,7 +342,7 @@ class obj_fast_enemy extends obj_enemy {
 
   await fs.writeFile(
     objectSource,
-    "class obj_enemy extends GMObject { onCollision_obj_fast_enemy() { this.x += 1; } }",
+    "class obj_enemy extends GMObject { protected onCollision_obj_fast_enemy() { this.x += 1; } }",
   );
   await assert.rejects(
     buildGameMakerProject([], projectPath),
@@ -274,7 +351,7 @@ class obj_fast_enemy extends obj_enemy {
 
   await fs.writeFile(
     objectSource,
-    "class obj_enemy extends GMObject { onStep() { this.x += 1; } }",
+    "class obj_enemy extends GMObject { protected onStep() { this.x += 1; } }",
   );
   const second = await buildGameMakerProject([], projectPath);
   assert.deepEqual(second.objects, ["obj_enemy"]);
@@ -317,7 +394,7 @@ test("removes the former compiler-owned event dispatcher during migration", asyn
   await fs.mkdir(sourceDirectory);
   await fs.writeFile(
     path.join(sourceDirectory, "player.ts"),
-    "class obj_player extends GMObject { onCreate() { this.x = 1; } }",
+    "class obj_player extends GMObject { protected onCreate() { this.x = 1; } }",
   );
   await buildGameMakerProject([], projectPath);
 
@@ -430,7 +507,7 @@ function collide() {
   );
 });
 
-test("protects externally changed generated files until explicitly overwritten", async () => {
+test("refreshes and removes managed files even after external edits or deletion", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-generated-edits-"));
   const projectPath = await createEmptyProject(temporary, "GeneratedEdits");
   await installTool(temporary);
@@ -447,55 +524,44 @@ test("protects externally changed generated files until explicitly overwritten",
     generatedFileHashes: Record<string, string>;
   };
   assert.deepEqual(Object.keys(manifest.generatedFileHashes), [
+    "pre_build_step.bat",
+    "pre_build_step.sh",
+    "pre_project_step.bat",
+    "pre_project_step.sh",
+    "pre_run_step.bat",
+    "pre_run_step.sh",
     "scripts/first/first.gml",
+    "scripts/first/first.gml.map.json",
     "scripts/first/first.yy",
     "scripts/second/second.gml",
+    "scripts/second/second.gml.map.json",
     "scripts/second/second.yy",
   ]);
 
   const firstOutput = path.join(temporary, "scripts", "first", "first.gml");
   const secondOutput = path.join(temporary, "scripts", "second", "second.gml");
   const manualFix = "function first_value() { return 99; } // Manual hotfix.\n";
-  const previousSecondOutput = await fs.readFile(secondOutput, "utf8");
-  const previousProject = await fs.readFile(projectPath, "utf8");
-  const previousManifest = await fs.readFile(manifestPath, "utf8");
   await fs.writeFile(firstOutput, manualFix);
   await fs.writeFile(secondSource, "function second_value() { return 2; }");
 
-  await assert.rejects(
-    buildGameMakerProject([], projectPath),
-    /changed outside ts2gml:[\s\S]*modified: scripts\/first\/first\.gml[\s\S]*--overwrite-generated/,
-  );
-  assert.equal(await fs.readFile(firstOutput, "utf8"), manualFix);
-  assert.equal(await fs.readFile(secondOutput, "utf8"), previousSecondOutput);
-  assert.equal(await fs.readFile(projectPath, "utf8"), previousProject);
-  assert.equal(await fs.readFile(manifestPath, "utf8"), previousManifest);
-
-  await buildGameMakerProject([], projectPath, { overwriteChangedGeneratedFiles: true });
+  await buildGameMakerProject([], projectPath, { hotReloadOnly: true });
   assert.doesNotMatch(await fs.readFile(firstOutput, "utf8"), /Manual hotfix/);
   assert.match(await fs.readFile(secondOutput, "utf8"), /return 2;/);
 
   await fs.rm(secondOutput);
-  await assert.rejects(
-    buildGameMakerProject([], projectPath),
-    /deleted: scripts\/second\/second\.gml/,
-  );
-  await buildGameMakerProject([], projectPath, { overwriteChangedGeneratedFiles: true });
+  await buildGameMakerProject([], projectPath);
   assert.match(await fs.readFile(secondOutput, "utf8"), /return 2;/);
 
   await fs.writeFile(firstOutput, manualFix);
+  const unmanagedNote = path.join(path.dirname(firstOutput), "manual-notes.txt");
+  await fs.writeFile(unmanagedNote, "Keep this untracked file.");
   await fs.rm(firstSource);
-  await assert.rejects(
-    buildGameMakerProject([], projectPath),
-    /modified: scripts\/first\/first\.gml/,
-  );
-  assert.equal(await fs.readFile(firstOutput, "utf8"), manualFix);
-
-  await buildGameMakerProject([], projectPath, { overwriteChangedGeneratedFiles: true });
+  await buildGameMakerProject([], projectPath);
   await assert.rejects(
     fs.access(firstOutput),
     (error: unknown) => (error as NodeJS.ErrnoException).code === "ENOENT",
   );
+  assert.equal(await fs.readFile(unmanagedNote, "utf8"), "Keep this untracked file.");
 });
 
 test("does not touch unchanged GameMaker files during an incremental build", async () => {
@@ -541,6 +607,47 @@ test("does not touch unchanged GameMaker files during an incremental build", asy
   }
 });
 
+test("preserves IDE resource formatting and project order across repeated saves", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-ide-save-"));
+  const projectPath = await createEmptyProject(temporary, "IdeSave");
+  await installTool(temporary);
+  for (const name of ["first", "second"]) {
+    const directory = path.join(temporary, "typescript", name);
+    await fs.mkdir(directory, { recursive: true });
+    await fs.writeFile(path.join(directory, `${name}.ts`), `function ${name}_value() { return 1; }`);
+  }
+  await buildGameMakerProject([], projectPath);
+  const project = JSON.parse(await fs.readFile(projectPath, "utf8")) as {
+    resources: unknown[];
+    Folders: unknown[];
+  };
+  project.resources.reverse();
+  project.Folders.reverse();
+  const savedProject = JSON.stringify(project);
+  await fs.writeFile(projectPath, savedProject);
+  const resourcePath = path.join(temporary, "scripts", "first", "first.yy");
+  const savedResource = JSON.stringify(JSON.parse(await fs.readFile(resourcePath, "utf8")));
+  await fs.writeFile(resourcePath, savedResource);
+  const fixedTime = new Date("2001-02-03T04:05:06.000Z");
+  await fs.utimes(projectPath, fixedTime, fixedTime);
+  await fs.utimes(resourcePath, fixedTime, fixedTime);
+
+  for (const hotReloadOnly of [false, true, false]) {
+    assert.deepEqual((await buildGameMakerProject([], projectPath, { hotReloadOnly })).writtenFiles, []);
+    assert.equal(await fs.readFile(projectPath, "utf8"), savedProject);
+    assert.equal(await fs.readFile(resourcePath, "utf8"), savedResource);
+    assert.equal((await fs.stat(projectPath)).mtimeMs, fixedTime.getTime());
+    assert.equal((await fs.stat(resourcePath)).mtimeMs, fixedTime.getTime());
+  }
+
+  const script = JSON.parse(savedResource) as { isDnD: boolean };
+  script.isDnD = true;
+  await fs.writeFile(resourcePath, JSON.stringify(script));
+  await buildGameMakerProject([], projectPath);
+  assert.equal(JSON.parse(await fs.readFile(resourcePath, "utf8")).isDnD, false);
+  assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
+});
+
 test("writes creation code for existing rooms and restores the room when source is removed", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-room-code-"));
   const projectPath = await createEmptyProject(temporary, "RoomFixture");
@@ -573,6 +680,9 @@ test("writes creation code for existing rooms and restores the room when source 
   const roomCreationCode = await fs.readFile(creationCodePath, "utf8");
   assert.match(roomCreationCode, /function room_test\(\)/);
   assert.match(roomCreationCode, /room_goto\(Room1\);/);
+  await fs.writeFile(creationCodePath, "// Edited in GameMaker.\n");
+  await buildGameMakerProject([], projectPath, { hotReloadOnly: true });
+  assert.equal(await fs.readFile(creationCodePath, "utf8"), roomCreationCode);
   const declarations = await fs.readFile(first.declarations.outputPath, "utf8");
   assert.doesNotMatch(declarations, /declare const Room1/);
   await execFileAsync(
@@ -622,6 +732,94 @@ test("rejects room classes that would overwrite missing or unmanaged room creati
     buildGameMakerProject([], projectPath),
     /does not match an existing GameMaker room asset/,
   );
+});
+
+test("protects object events while preserving overrides and ordinary methods", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-event-access-"));
+  const projectPath = await createEmptyProject(temporary, "Fixture");
+  await installTool(temporary);
+  const sourceDirectory = path.join(temporary, "typescript");
+  await fs.mkdir(sourceDirectory);
+  const sourcePath = path.join(sourceDirectory, "events.ts");
+  const source = `
+class obj_target extends GMObject {}
+class obj_parent extends GMObject {
+  onGround = true;
+  protected onStep() {}
+  protected onKeyDown_32() {}
+  protected onCollision_obj_target(other: GMInstance<obj_target>) {}
+  run() {}
+}
+
+class obj_child extends obj_parent {
+  protected override onStep() { this.run(); }
+  protected override onCollision_obj_target(other: GMInstance<obj_target>) {}
+}
+class EventReceiver {
+  onStep() {}
+  run() { this.onStep(); }
+}
+function useInstance(target: GMInstance<obj_child>) { target.run(); return target.onGround; }
+`;
+  await fs.writeFile(sourcePath, source);
+  const built = await buildGameMakerProject([], projectPath);
+  assert.match(
+    await fs.readFile(path.join(temporary, "objects", "obj_child", "Step_0.gml"), "utf8"),
+    /self\.run\(\);/,
+  );
+  const declarations = await fs.readFile(built.declarations.outputPath, "utf8");
+  assert.match(declarations, /declare abstract class GMObjectCollisionEvents/);
+  assert.match(declarations, /protected onCollision_obj_target\?\(other: GMInstance<obj_target>\): void;/);
+  assert.match(declarations, /interface GMObject extends GMObjectCollisionEvents/);
+
+  for (const access of [
+    "target.onStep();",
+    "target.onKeyDown_32();",
+    "target.onCollision_obj_target(gm_self<obj_target>());",
+    "target.onCollision_obj_parent!(target);",
+    "gm_self().onDraw!();",
+  ]) {
+    await fs.writeFile(sourcePath, `${source}\nfunction invalid(target: GMInstance<obj_child>) { ${access} }`);
+    await assert.rejects(checkGameMakerProject([], projectPath), (error: unknown) => {
+      assert.ok(error instanceof Ts2GmlError);
+      assert.ok(error.diagnostics.some((diagnostic) => diagnostic.code === "TS2445"), `${access}\n${error.message}`);
+      return true;
+    });
+  }
+
+  for (const access of [
+    "this.onStep();",
+    "this.onKeyDown_32();",
+    "this.onCollision_obj_target(gm_self<obj_target>());",
+    "this.onDraw!();",
+    "this.onStep.call(this);",
+    "const callback = this.onStep;",
+    'this["onStep"]();',
+    'const key = "onStep"; this[key]();',
+    'const key = this.onGround ? "onStep" : "onKeyDown_32"; this[key]();',
+    "const { onStep: callback } = this;",
+    "gm_self<obj_parent>().onStep();",
+  ]) {
+    await fs.writeFile(sourcePath, source.replace("run() {}", `run() { ${access} }`));
+    await assert.rejects(checkGameMakerProject([], projectPath), (error: unknown) => {
+      assert.ok(error instanceof Ts2GmlError);
+      assert.ok(error.diagnostics.some((diagnostic) =>
+        diagnostic.code === "TS2GML3001" &&
+        diagnostic.message.includes("cannot be called or referenced directly") &&
+        path.resolve(diagnostic.fileName) === sourcePath && diagnostic.line > 0 && diagnostic.column > 0
+      ), `${access}\n${error.message}`);
+      return true;
+    });
+  }
+  await fs.writeFile(sourcePath, source.replace("this.run();", "super.onStep();"));
+  await assert.rejects(checkGameMakerProject([], projectPath), /Use event_inherited\(\) in GameMaker object events/);
+
+  for (const event of ["onStep", "onKeyDown_32", "onCollision_obj_target"]) {
+    await fs.writeFile(sourcePath, source
+      .replace(`protected ${event}`, event)
+      .replace(`protected override ${event}`, `override ${event}`));
+    await assert.rejects(checkGameMakerProject([], projectPath), /must be protected/);
+  }
 });
 
 test("maps every named object event family to its GameMaker event subtype", async () => {
@@ -725,7 +923,7 @@ test("maps every named object event family to its GameMaker event subtype", asyn
     path.join(sourceDirectory, "events.ts"),
     `class obj_target extends GMObject {}
 class obj_events extends GMObject {
-${expected.map(([name]) => `  ${name}() { show_debug_message("${name}"); }`).join("\n")}
+${expected.map(([name]) => `  protected ${name}() { show_debug_message("${name}"); }`).join("\n")}
 }`,
   );
 
@@ -773,7 +971,7 @@ const AD_ID = gm_macro<string>('""', {
     path.join(sourceDirectory, "objects", "obj_player.ts"),
     `class obj_player extends GMObject {
       speed = PLAYER_SPEED;
-      onStep() { this.x += PLAYER_SPEED; }
+      protected onStep() { this.x += PLAYER_SPEED; }
     }`,
   );
 
@@ -805,6 +1003,166 @@ const AD_ID = gm_macro<string>('""', {
   await execFileAsync(
     process.execPath,
     [path.resolve("node_modules", "typescript", "bin", "tsc"), "-p", sourceDirectory],
+  );
+});
+
+test("generates configurable run and build runtime guard profiles", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-runtime-guards-"));
+  const projectPath = await createEmptyProject(temporary, "GuardFixture");
+  await installTool(temporary);
+  await fs.writeFile(
+    path.join(temporary, "ts2gml.config.json"),
+    JSON.stringify({
+      runtimeGuards: {
+        run: "maximum",
+        build: "off",
+        configurations: {
+          Debug: { run: "standard", build: "maximum" },
+        },
+      },
+    }, null, 2),
+  );
+  const sourceDirectory = path.join(temporary, "typescript");
+  await fs.mkdir(sourceDirectory);
+  await fs.writeFile(
+    path.join(sourceDirectory, "guards.ts"),
+    `class obj_guard_entity extends GMObject {}
+function append_guarded(values: number[], value: number) {
+  values.push(value);
+  const list = new List<number>();
+  list.add(value);
+  const scores = new Map<string, number>();
+  scores.set("current", value);
+  const first = gm_self<obj_guard_entity>();
+  const second = gm_self<obj_guard_entity>();
+  return first === second;
+}
+`,
+  );
+
+  const summary = await buildGameMakerProject([], projectPath);
+  assert.deepEqual(summary.scripts, [
+    "__ts2gml_collections",
+    "__ts2gml_runtime_guards",
+    "__ts2gml_values",
+    "guards",
+  ]);
+  const sourceGml = await fs.readFile(
+    path.join(temporary, "scripts", "guards", "guards.gml"),
+    "utf8",
+  );
+  assert.doesNotMatch(sourceGml, /__ts2gml_guard_/);
+  assert.match(sourceGml, /__ts2gml_collection_push\(values, \[value\]\);/);
+  assert.equal(sourceGml.match(/var (?:first|second) = self;/g)?.length, 2);
+
+  const guardPath = path.join(
+    temporary,
+    "scripts",
+    "__ts2gml_runtime_guards",
+    "__ts2gml_runtime_guards.gml",
+  );
+  const buildGuards = await fs.readFile(guardPath, "utf8");
+  assert.doesNotMatch(buildGuards, /__TS2GML_RUNTIME_GUARD_LEVEL/);
+
+  await buildGameMakerProject([], projectPath, {
+    guardConfiguration: "Debug",
+    guardProfile: "run",
+  });
+  const debugRunGml = await fs.readFile(
+    path.join(temporary, "scripts", "guards", "guards.gml"),
+    "utf8",
+  );
+  assert.equal(debugRunGml.match(/__ts2gml_guard_object\(self, obj_guard_entity/g)?.length, 1);
+  assert.doesNotMatch(debugRunGml, /__ts2gml_guard_value/);
+
+  await applyRuntimeGuardProfile(projectPath, "run");
+  const runGml = await fs.readFile(
+    path.join(temporary, "scripts", "guards", "guards.gml"),
+    "utf8",
+  );
+  assert.equal(runGml.match(/__ts2gml_guard_object\(self, obj_guard_entity/g)?.length, 1);
+  assert.match(
+    runGml,
+    /__ts2gml_guard_value\(value, \["number"\], "number", "push\(\) argument 1"\)/,
+  );
+  assert.match(
+    runGml,
+    /__ts2gml_guard_value\(value, \["number"\], "number", "add\(\) argument 1"\)/,
+  );
+  assert.match(
+    runGml,
+    /__ts2gml_guard_value\(value, \["number"\], "number", "set\(\) argument 2"\)/,
+  );
+  assert.doesNotMatch(runGml, /__TS2GML_RUNTIME_GUARD_LEVEL|\? __ts2gml_guard_/);
+  const preservedRun = await applyRuntimeGuardProfile(projectPath, "build");
+  assert.equal(preservedRun.skippedForRun, true);
+  assert.equal(
+    await fs.readFile(path.join(temporary, "scripts", "guards", "guards.gml"), "utf8"),
+    runGml,
+  );
+  await applyRuntimeGuardProfile(projectPath, "build");
+  assert.equal(
+    await fs.readFile(path.join(temporary, "scripts", "guards", "guards.gml"), "utf8"),
+    sourceGml,
+  );
+  assert.equal(await fs.readFile(guardPath, "utf8"), buildGuards);
+
+  await buildGameMakerProject([], projectPath, {
+    guardConfiguration: "Debug",
+    guardProfile: "build",
+  });
+  const debugBuildGml = await fs.readFile(
+    path.join(temporary, "scripts", "guards", "guards.gml"),
+    "utf8",
+  );
+  assert.match(debugBuildGml, /__ts2gml_guard_object\(self, obj_guard_entity/);
+  assert.match(debugBuildGml, /__ts2gml_guard_value\(value, \["number"\]/);
+
+  assert.match(
+    await fs.readFile(path.join(temporary, "pre_project_step.bat"), "utf8"),
+    /guard-profile auto/,
+  );
+  assert.match(
+    await fs.readFile(path.join(temporary, "pre_run_step.bat"), "utf8"),
+    /guard-profile run/,
+  );
+  assert.match(
+    await fs.readFile(path.join(temporary, "pre_build_step.sh"), "utf8"),
+    /guard-profile build/,
+  );
+});
+
+test("selects runtime guard profiles and GameMaker configurations from hook variables", () => {
+  const config = structuredClone(defaultRuntimeGuardConfiguration);
+  config.runtimeGuards.configurations.Debug = { run: "maximum" };
+  assert.equal(
+    detectRuntimeGuardConfiguration(config, { YYconfig: "Debug" }),
+    "Debug",
+  );
+  assert.equal(detectRuntimeGuardProfile({ YYtargetFile: "" }), "run");
+  assert.equal(detectRuntimeGuardProfile({ YYtargetFile: "Game.zip" }), "build");
+  assert.equal(
+    detectRuntimeGuardProfile({ TS2GML_PROFILE: "build", YYtargetFile: "" }),
+    "build",
+  );
+});
+
+test("rejects context guard types that cannot become one GameMaker object check", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-runtime-guard-type-"));
+  const projectPath = await createEmptyProject(temporary, "GuardTypeFixture");
+  await installTool(temporary);
+  const sourceDirectory = path.join(temporary, "typescript");
+  await fs.mkdir(sourceDirectory);
+  await fs.writeFile(
+    path.join(sourceDirectory, "guard_type.ts"),
+    "function current<T extends GMObject>() { return gm_self<T>(); }",
+  );
+
+  await assert.rejects(
+    checkGameMakerProject([], projectPath),
+    (error: unknown) =>
+      error instanceof Ts2GmlError &&
+      error.diagnostics.some((diagnostic) => diagnostic.code === "TS2GML1064"),
   );
 });
 
@@ -894,7 +1252,7 @@ test("mirrors TypeScript source folders into GameMaker and preserves folders use
   await fs.mkdir(path.dirname(scriptSource), { recursive: true });
   await fs.writeFile(
     objectSource,
-    "class obj_enemy extends GMObject { onCreate() { this.x = 1; } }",
+    "class obj_enemy extends GMObject { protected onCreate() { this.x = 1; } }",
   );
   await fs.writeFile(scriptSource, "function helper_value() { return 1; }");
 
@@ -944,7 +1302,7 @@ test("mirrors TypeScript source folders into GameMaker and preserves folders use
   };
   assert.deepEqual(
     movedProject.Folders.map((folder) => folder.folderPath),
-    ["folders/actors.yy", "folders/gameplay.yy", "folders/objects.yy"],
+    ["folders/gameplay.yy", "folders/objects.yy", "folders/actors.yy"],
   );
   const movedObject = JSON.parse(
     await fs.readFile(path.join(temporary, "objects", "obj_enemy", "obj_enemy.yy"), "utf8"),
@@ -1010,7 +1368,7 @@ enum ImportedState { Idle, Active = 4, Done }`;
     path.join(sourceDirectory, "obj_player.ts"),
     `
 class obj_player extends GMObject {
-  onCreate() {
+  protected onCreate() {
     this.sprite_index = Sprite1;
     instance_create_layer(0, 0, "Instances", obj_manual);
     const data = new ManualData(9);
@@ -1100,17 +1458,73 @@ class obj_player extends GMObject {
 
   await fs.writeFile(
     path.join(sourceDirectory, "obj_manual.ts"),
-    "class obj_manual extends GMObject { onCreate() { this.x = 1; } }",
+    "class obj_manual extends GMObject { protected onCreate() { this.x = 1; } }",
   );
   await assert.rejects(
     checkGameMakerProject([], projectPath),
-    /already has an unmanaged asset with that name or path/,
+    /both GameMaker and TypeScript claim the same asset/,
   );
   await assert.rejects(
     buildGameMakerProject([], projectPath),
-    /already has an unmanaged asset with that name or path/,
+    /both GameMaker and TypeScript claim the same asset/,
   );
   assert.equal(await fs.readFile(manualObjectPath, "utf8"), "user object");
+});
+
+test("rejects unmanaged resources until the GameMaker asset is deleted", async () => {
+  for (const registered of [true, false]) {
+    const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-conflict-"));
+    const projectPath = await createEmptyProject(temporary, "Conflict");
+    await installTool(temporary);
+    const resourcePath = "scripts/shared/shared.yy";
+    const resourceDirectory = path.join(temporary, "scripts", "shared");
+    const sourcePath = path.join(temporary, "typescript", "shared.ts");
+    await fs.mkdir(resourceDirectory, { recursive: true });
+    await fs.mkdir(path.dirname(sourcePath));
+    const resourceFile = path.join(resourceDirectory, "shared.yy");
+    const gmlFile = path.join(resourceDirectory, "shared.gml");
+    const resource = JSON.stringify({ name: "shared", resourceType: "GMScript", resourceVersion: "2.0" });
+    const manualCode = "function manual_shared() {}\n";
+    const source = "function generated_shared() { return 7; }\n";
+    await fs.writeFile(resourceFile, resource);
+    await fs.writeFile(gmlFile, manualCode);
+    await fs.writeFile(sourcePath, source);
+    const project = JSON.parse(await fs.readFile(projectPath, "utf8")) as {
+      resources: Array<{ id: { name: string; path: string } }>;
+    };
+    if (registered) project.resources.push({ id: { name: "shared", path: resourcePath } });
+    await fs.writeFile(projectPath, JSON.stringify(project));
+    const savedProject = await fs.readFile(projectPath, "utf8");
+
+    for (const operation of [
+      () => checkGameMakerProject([], projectPath),
+      () => buildGameMakerProject([], projectPath),
+      () => buildGameMakerProject([], projectPath, { overwriteChangedGeneratedFiles: true }),
+    ]) {
+      await assert.rejects(operation, (error: unknown) => {
+        assert.ok(error instanceof ResourceConflictError);
+        assert.match(error.message, /Delete the conflicting asset in GameMaker and save/);
+        assert.equal(error.conflicts[0]?.typeScriptFile, sourcePath);
+        assert.equal(error.conflicts[0]?.gameMakerResourcePath, resourcePath);
+        return true;
+      });
+      assert.equal(await fs.readFile(projectPath, "utf8"), savedProject);
+      assert.equal(await fs.readFile(resourceFile, "utf8"), resource);
+      assert.equal(await fs.readFile(gmlFile, "utf8"), manualCode);
+      assert.equal(await fs.readFile(sourcePath, "utf8"), source);
+    }
+
+    // Removing just the project reference or metadata cannot authorize overwriting manual code.
+    project.resources = [];
+    await fs.writeFile(projectPath, JSON.stringify(project));
+    await fs.rm(resourceFile);
+    await assert.rejects(buildGameMakerProject([], projectPath), /file already exists and is unmanaged/);
+    assert.equal(await fs.readFile(gmlFile, "utf8"), manualCode);
+    await fs.rm(gmlFile);
+    await buildGameMakerProject([], projectPath);
+    assert.match(await fs.readFile(gmlFile, "utf8"), /generated_shared/);
+    assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
+  }
 });
 
 test("project-local distribution discovers and builds its GameMaker project", async () => {
@@ -1276,7 +1690,7 @@ test("watch hot-reloads code and confirms saved IDE state before structural chan
   await fs.writeFile(
     sourcePath,
     `function watched_value(): number { return 1; }
-class obj_player extends GMObject { onCreate() { this.x = 1; } }`,
+class obj_player extends GMObject { protected onCreate() { this.x = 1; } }`,
   );
   await buildGameMakerProject([], projectPath);
   const gameMakerObject = JSON.parse(await fs.readFile(objectPath, "utf8")) as {
@@ -1299,10 +1713,14 @@ class obj_player extends GMObject { onCreate() { this.x = 1; } }`,
   });
   try {
     await waitFor(async () => results.some((result) => !(result instanceof Error)));
+    await fs.writeFile(outputPath, "function watched_value() { return 99; }");
+    await fs.writeFile(createEventPath, "self.x = 99;");
+    const scriptPath = path.join(temporary, "scripts", "watched", "watched.yy");
+    await fs.writeFile(scriptPath, JSON.stringify(JSON.parse(await fs.readFile(scriptPath, "utf8"))));
     await fs.writeFile(
       sourcePath,
       `function watched_value(): number { return 7; }
-class obj_player extends GMObject { onCreate() { this.x = 2; } }`,
+class obj_player extends GMObject { protected onCreate() { this.x = 2; } }`,
     );
     await waitFor(async () =>
       (await fs.readFile(outputPath, "utf8")).includes("return 7") &&
@@ -1337,8 +1755,8 @@ class obj_player extends GMObject { onCreate() { this.x = 2; } }`,
       sourcePath,
       `function watched_value(): number { return 8; }
 class obj_player extends GMObject {
-  onCreate() { this.x = 3; }
-  onStep() { this.x += 1; }
+  protected onCreate() { this.x = 3; }
+  protected onStep() { this.x += 1; }
 }`,
     );
     await waitFor(async () => results.some((result) =>
@@ -1372,8 +1790,8 @@ class obj_player extends GMObject {
       sourcePath,
       `function watched_value(): number { return 9; }
 class obj_player extends GMObject {
-  onCreate() { this.x = 4; }
-  onStep() { this.x += 2; }
+  protected onCreate() { this.x = 4; }
+  protected onStep() { this.x += 2; }
 }`,
     );
     await waitFor(async () =>
@@ -1393,4 +1811,56 @@ class obj_player extends GMObject {
   assert.ok(results.some((result) => !(result instanceof Error)));
   assert.ok(results.some((result) => result instanceof Error));
   assert.ok(confirmationChanges);
+});
+
+
+test("watch rechecks declarations, TypeScript options, guard configuration, and unmanaged GML", async (context) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-watch-inputs-"));
+  const project = await createEmptyProject(directory, "Dependencies");
+  await installTool(directory);
+  const prepared = await prepareTypeScriptProject(project);
+  const source = path.join(prepared.sourceDirectory, "dependency.ts");
+  const types = path.join(prepared.sourceDirectory, "globals.d.ts");
+  await fs.writeFile(types, "type DependencyValue = number;");
+  await fs.writeFile(source, "function dependency(value: DependencyValue): number { return value; }");
+  const controller = new AbortController();
+  const results: Array<Error | object> = [];
+  const watching = watchGameMakerProject(project, { debounceMs: 20, signal: controller.signal,
+    onBuild: (result) => results.push(result), confirmStructuralChanges: () => true, saveSettleMs: 0 });
+  context.after(async () => { controller.abort(); await watching; });
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+  results.length = 0;
+  await fs.writeFile(types, "type DependencyValue = string;");
+  await waitFor(async () => results.some((result) => result instanceof Error && /not assignable/.test(result.message)));
+  results.length = 0;
+  await fs.writeFile(types, "type DependencyValue = number;");
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+  results.length = 0;
+  const config = await fs.readFile(prepared.configPath, "utf8");
+  await fs.writeFile(prepared.configPath, "{ broken tsconfig");
+  await waitFor(async () => results.some((result) => result instanceof Ts2GmlError));
+  await fs.writeFile(prepared.configPath, config);
+  results.length = 0;
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+  const guards = await fs.readFile(prepared.runtimeGuardConfigPath, "utf8");
+  results.length = 0;
+  await fs.writeFile(prepared.runtimeGuardConfigPath, "{ broken guards");
+  await waitFor(async () => results.some((result) => result instanceof Error));
+  await fs.writeFile(prepared.runtimeGuardConfigPath, guards);
+  results.length = 0;
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+  const resource = "scripts/native_dependency/native_dependency.yy";
+  await fs.mkdir(path.join(directory, "scripts/native_dependency"), { recursive: true });
+  await fs.writeFile(path.join(directory, resource), JSON.stringify({ name: "native_dependency", resourceType: "GMScript" }));
+  const native = path.join(directory, "scripts/native_dependency/native_dependency.gml");
+  await fs.writeFile(native, "/// @param {real} value\nfunction native_dependency(value) { return value; }");
+  const metadata = JSON.parse(await fs.readFile(project, "utf8")) as { resources: Array<{ id: { name: string; path: string } }> };
+  metadata.resources.push({ id: { name: "native_dependency", path: resource } });
+  await fs.writeFile(project, JSON.stringify(metadata));
+  await fs.writeFile(source, "function dependency(value: DependencyValue): number { return native_dependency(value); }");
+  results.length = 0;
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+  results.length = 0;
+  await fs.writeFile(native, "/// @param {string} value\nfunction native_dependency(value) { return value; }");
+  await waitFor(async () => results.some((result) => result instanceof Error && /not assignable/.test(result.message)), 10_000);
 });

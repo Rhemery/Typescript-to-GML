@@ -1,0 +1,84 @@
+{
+  "name": "typescript-to-gml",
+  "displayName": "TypeScript to GML",
+  "description": "Compiler diagnostics and GameMaker manual links for TypeScript-authored GameMaker projects.",
+  "version": "0.2.5",
+  "ts2gmlCompilerVersion": "0.2.0-beta.5",
+  "publisher": "rhemery",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.134.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "gamemaker",
+    "gml",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rhemery/Typescript-to-GML.git"
+  },
+  "main": "./dist/extension.cjs",
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onCommand:typescriptToGml.openManual",
+    "onCommand:typescriptToGml.checkProject",
+    "workspaceContains:**/*.yyp",
+    "onCommand:typescriptToGml.openGeneratedGml"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "typescriptToGml.openManual",
+        "title": "TypeScript to GML: Open GameMaker Manual for Symbol"
+      },
+      {
+        "command": "typescriptToGml.checkProject",
+        "title": "TypeScript to GML: Check Project"
+      },
+      {
+        "command": "typescriptToGml.openGeneratedGml",
+        "title": "TypeScript to GML: Open Generated GML"
+      }
+    ],
+    "configuration": {
+      "title": "TypeScript to GML",
+      "properties": {
+        "typescriptToGml.manualChannel": {
+          "type": "string",
+          "enum": [
+            "monthly",
+            "lts"
+          ],
+          "default": "monthly",
+          "description": "The official GameMaker manual channel opened for built-ins."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "[typescript]": {
+        "editor.mouseMiddleClickAction": "openLink"
+      },
+      "[typescriptreact]": {
+        "editor.mouseMiddleClickAction": "openLink"
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "node ../scripts/build-vscode-extension.mjs"
+  }
+}

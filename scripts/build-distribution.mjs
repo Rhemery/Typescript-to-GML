@@ -2,6 +2,10 @@ import { promises as fs } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { build } from "esbuild";
+import { copyPackageLicenses } from "./copy-package-licenses.mjs";
+import { readReleaseMetadata } from "./release-metadata.mjs";
+
+await readReleaseMetadata();
 
 const require = createRequire(import.meta.url);
 const outputDirectory = path.resolve("dist", "ts2gml");
@@ -15,7 +19,7 @@ await build({
   bundle: true,
   platform: "node",
   format: "cjs",
-  target: "node20",
+  target: "node22",
   legalComments: "none",
 });
 
@@ -45,38 +49,13 @@ await fs.copyFile("LICENSE", path.join(outputDirectory, "LICENSE"));
 await fs.copyFile("docs/Datafiles-README.txt", path.join(outputDirectory, "README.txt"));
 await fs.cp("docs", path.join(outputDirectory, "docs"), { recursive: true });
 const licenseDirectory = path.join(outputDirectory, "licenses");
-await fs.mkdir(licenseDirectory, { recursive: true });
-for (const [packageName, licenseFiles] of [
-  ["typescript", ["LICENSE.txt", "ThirdPartyNoticeText.txt"]],
-  ["json5", ["LICENSE.md"]],
-  ["fast-xml-parser", ["LICENSE"]],
-  ["strnum", ["LICENSE"]],
-]) {
-  let packageDirectory = path.dirname(require.resolve(packageName));
-  while (path.dirname(packageDirectory) !== packageDirectory) {
-    try {
-      const metadata = JSON.parse(
-        await fs.readFile(path.join(packageDirectory, "package.json"), "utf8"),
-      );
-      if (metadata.name === packageName) break;
-    } catch {
-      // Continue toward the package root.
-    }
-    packageDirectory = path.dirname(packageDirectory);
-  }
-  for (const licenseFile of licenseFiles) {
-    await fs.copyFile(
-      path.join(packageDirectory, licenseFile),
-      path.join(licenseDirectory, `${packageName}-${licenseFile}`),
-    );
-  }
-}
+await copyPackageLicenses(licenseDirectory);
 
 const batch = `@echo off\r
 setlocal\r
 where node >nul 2>nul\r
 if errorlevel 1 (\r
-  echo Node.js 20 or newer is required to run ts2gml.\r
+  echo Node.js 22 or newer is required to run ts2gml.\r
   pause\r
   exit /b 1\r
 )\r

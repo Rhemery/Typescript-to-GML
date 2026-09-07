@@ -1,0 +1,42 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "rooms/TestRoom/RoomCreationCode.gml",
+  "mappings": [
+    {
+      "generatedLine": 1,
+      "source": "typescript/scope_context.ts",
+      "line": 183,
+      "column": 5
+    },
+    {
+      "generatedLine": 2,
+      "source": "typescript/scope_context.ts",
+      "line": 184,
+      "column": 7
+    },
+    {
+      "generatedLine": 3,
+      "source": "typescript/scope_context.ts",
+      "line": 185,
+      "column": 7
+    },
+    {
+      "generatedLine": 5,
+      "source": "typescript/scope_context.ts",
+      "line": 187,
+      "column": 5
+    },
+    {
+      "generatedLine": 6,
+      "source": "typescript/scope_context.ts",
+      "line": 188,
+      "column": 5
+    },
+    {
+      "generatedLine": 7,
+      "source": "typescript/scope_context.ts",
+      "line": 189,
+      "column": 5
+    }
+  ]
+}

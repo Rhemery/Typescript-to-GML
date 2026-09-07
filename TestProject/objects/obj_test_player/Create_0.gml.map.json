@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "objects/obj_test_player/Create_0.gml",
+  "mappings": [
+    {
+      "generatedLine": 2,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 14,
+      "column": 5
+    },
+    {
+      "generatedLine": 4,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 5,
+      "column": 5
+    },
+    {
+      "generatedLine": 5,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 6,
+      "column": 5
+    }
+  ]
+}

@@ -1062,6 +1062,18 @@
     },
     {
       "id": {
+        "name": "__ts2gml_collections",
+        "path": "scripts/__ts2gml_collections/__ts2gml_collections.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "__ts2gml_runtime_guards",
+        "path": "scripts/__ts2gml_runtime_guards/__ts2gml_runtime_guards.yy"
+      }
+    },
+    {
+      "id": {
         "name": "lowering_matrix",
         "path": "scripts/lowering_matrix/lowering_matrix.yy"
       }
@@ -1076,6 +1088,24 @@
       "id": {
         "name": "scope_context",
         "path": "scripts/scope_context/scope_context.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "__ts2gml_class_statics",
+        "path": "scripts/__ts2gml_class_statics/__ts2gml_class_statics.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "__ts2gml_values",
+        "path": "scripts/__ts2gml_values/__ts2gml_values.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "semantic_contract",
+        "path": "scripts/semantic_contract/semantic_contract.yy"
       }
     }
   ],

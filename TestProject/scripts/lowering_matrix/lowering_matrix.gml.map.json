@@ -1,0 +1,1242 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/lowering_matrix/lowering_matrix.gml",
+  "mappings": [
+    {
+      "generatedLine": 6,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 8,
+      "column": 1
+    },
+    {
+      "generatedLine": 7,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 9,
+      "column": 3
+    },
+    {
+      "generatedLine": 10,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 12,
+      "column": 1
+    },
+    {
+      "generatedLine": 11,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 15,
+      "column": 3
+    },
+    {
+      "generatedLine": 18,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 18,
+      "column": 1
+    },
+    {
+      "generatedLine": 19,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 19,
+      "column": 3
+    },
+    {
+      "generatedLine": 20,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 20,
+      "column": 3
+    },
+    {
+      "generatedLine": 25,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 27,
+      "column": 5
+    },
+    {
+      "generatedLine": 31,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 39,
+      "column": 5
+    },
+    {
+      "generatedLine": 34,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 43,
+      "column": 5
+    },
+    {
+      "generatedLine": 41,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 50,
+      "column": 49
+    },
+    {
+      "generatedLine": 44,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 51,
+      "column": 36
+    },
+    {
+      "generatedLine": 47,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 52,
+      "column": 54
+    },
+    {
+      "generatedLine": 50,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 53,
+      "column": 52
+    },
+    {
+      "generatedLine": 53,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 54,
+      "column": 37
+    },
+    {
+      "generatedLine": 56,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 55,
+      "column": 33
+    },
+    {
+      "generatedLine": 59,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 56,
+      "column": 32
+    },
+    {
+      "generatedLine": 62,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 57,
+      "column": 47
+    },
+    {
+      "generatedLine": 65,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 58,
+      "column": 36
+    },
+    {
+      "generatedLine": 68,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 59,
+      "column": 34
+    },
+    {
+      "generatedLine": 71,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 60,
+      "column": 53
+    },
+    {
+      "generatedLine": 74,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 61,
+      "column": 50
+    },
+    {
+      "generatedLine": 77,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 62,
+      "column": 35
+    },
+    {
+      "generatedLine": 87,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 71,
+      "column": 27
+    },
+    {
+      "generatedLine": 90,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 72,
+      "column": 39
+    },
+    {
+      "generatedLine": 91,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 72,
+      "column": 60
+    },
+    {
+      "generatedLine": 94,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 73,
+      "column": 53
+    },
+    {
+      "generatedLine": 97,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 74,
+      "column": 35
+    },
+    {
+      "generatedLine": 100,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 75,
+      "column": 40
+    },
+    {
+      "generatedLine": 115,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 82,
+      "column": 1
+    },
+    {
+      "generatedLine": 116,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 83,
+      "column": 3
+    },
+    {
+      "generatedLine": 117,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 84,
+      "column": 3
+    },
+    {
+      "generatedLine": 118,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 85,
+      "column": 3
+    },
+    {
+      "generatedLine": 119,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 86,
+      "column": 3
+    },
+    {
+      "generatedLine": 120,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 87,
+      "column": 3
+    },
+    {
+      "generatedLine": 121,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 88,
+      "column": 3
+    },
+    {
+      "generatedLine": 122,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 89,
+      "column": 3
+    },
+    {
+      "generatedLine": 123,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 90,
+      "column": 3
+    },
+    {
+      "generatedLine": 124,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 91,
+      "column": 3
+    },
+    {
+      "generatedLine": 125,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 92,
+      "column": 3
+    },
+    {
+      "generatedLine": 126,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 93,
+      "column": 3
+    },
+    {
+      "generatedLine": 127,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 94,
+      "column": 3
+    },
+    {
+      "generatedLine": 130,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 95,
+      "column": 3
+    },
+    {
+      "generatedLine": 131,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 96,
+      "column": 3
+    },
+    {
+      "generatedLine": 132,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 97,
+      "column": 3
+    },
+    {
+      "generatedLine": 133,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 98,
+      "column": 3
+    },
+    {
+      "generatedLine": 134,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 99,
+      "column": 3
+    },
+    {
+      "generatedLine": 135,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 100,
+      "column": 3
+    },
+    {
+      "generatedLine": 136,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 101,
+      "column": 3
+    },
+    {
+      "generatedLine": 137,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 103,
+      "column": 3
+    },
+    {
+      "generatedLine": 139,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 105,
+      "column": 5
+    },
+    {
+      "generatedLine": 140,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 106,
+      "column": 5
+    },
+    {
+      "generatedLine": 141,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 106,
+      "column": 20
+    },
+    {
+      "generatedLine": 143,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 108,
+      "column": 3
+    },
+    {
+      "generatedLine": 144,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 110,
+      "column": 3
+    },
+    {
+      "generatedLine": 146,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 112,
+      "column": 5
+    },
+    {
+      "generatedLine": 148,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 114,
+      "column": 3
+    },
+    {
+      "generatedLine": 149,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 116,
+      "column": 3
+    },
+    {
+      "generatedLine": 150,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 117,
+      "column": 3
+    },
+    {
+      "generatedLine": 151,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 118,
+      "column": 5
+    },
+    {
+      "generatedLine": 154,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 120,
+      "column": 5
+    },
+    {
+      "generatedLine": 157,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 122,
+      "column": 5
+    },
+    {
+      "generatedLine": 159,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 124,
+      "column": 3
+    },
+    {
+      "generatedLine": 160,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 126,
+      "column": 3
+    },
+    {
+      "generatedLine": 161,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 127,
+      "column": 3
+    },
+    {
+      "generatedLine": 162,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 128,
+      "column": 3
+    },
+    {
+      "generatedLine": 163,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 129,
+      "column": 3
+    },
+    {
+      "generatedLine": 164,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 130,
+      "column": 3
+    },
+    {
+      "generatedLine": 167,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 132,
+      "column": 3
+    },
+    {
+      "generatedLine": 183,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 133,
+      "column": 3
+    },
+    {
+      "generatedLine": 184,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 135,
+      "column": 3
+    },
+    {
+      "generatedLine": 187,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 136,
+      "column": 3
+    },
+    {
+      "generatedLine": 188,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 137,
+      "column": 3
+    },
+    {
+      "generatedLine": 189,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 138,
+      "column": 3
+    },
+    {
+      "generatedLine": 190,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 140,
+      "column": 3
+    },
+    {
+      "generatedLine": 206,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 145,
+      "column": 3
+    },
+    {
+      "generatedLine": 207,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 146,
+      "column": 3
+    },
+    {
+      "generatedLine": 208,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 147,
+      "column": 3
+    },
+    {
+      "generatedLine": 209,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 149,
+      "column": 3
+    },
+    {
+      "generatedLine": 212,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 150,
+      "column": 34
+    },
+    {
+      "generatedLine": 214,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 151,
+      "column": 3
+    },
+    {
+      "generatedLine": 215,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 153,
+      "column": 3
+    },
+    {
+      "generatedLine": 218,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 155,
+      "column": 5
+    },
+    {
+      "generatedLine": 221,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 155,
+      "column": 46
+    },
+    {
+      "generatedLine": 223,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 157,
+      "column": 3
+    },
+    {
+      "generatedLine": 224,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 159,
+      "column": 3
+    },
+    {
+      "generatedLine": 225,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 160,
+      "column": 3
+    },
+    {
+      "generatedLine": 226,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 161,
+      "column": 3
+    },
+    {
+      "generatedLine": 227,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 163,
+      "column": 3
+    },
+    {
+      "generatedLine": 228,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 164,
+      "column": 3
+    },
+    {
+      "generatedLine": 241,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 165,
+      "column": 3
+    },
+    {
+      "generatedLine": 254,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 166,
+      "column": 3
+    },
+    {
+      "generatedLine": 267,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 167,
+      "column": 3
+    },
+    {
+      "generatedLine": 280,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 168,
+      "column": 3
+    },
+    {
+      "generatedLine": 293,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 169,
+      "column": 3
+    },
+    {
+      "generatedLine": 306,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 170,
+      "column": 3
+    },
+    {
+      "generatedLine": 307,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 171,
+      "column": 3
+    },
+    {
+      "generatedLine": 308,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 173,
+      "column": 3
+    },
+    {
+      "generatedLine": 309,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 174,
+      "column": 3
+    },
+    {
+      "generatedLine": 310,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 175,
+      "column": 3
+    },
+    {
+      "generatedLine": 311,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 176,
+      "column": 3
+    },
+    {
+      "generatedLine": 312,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 177,
+      "column": 3
+    },
+    {
+      "generatedLine": 313,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 178,
+      "column": 3
+    },
+    {
+      "generatedLine": 316,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 180,
+      "column": 3
+    },
+    {
+      "generatedLine": 317,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 181,
+      "column": 3
+    },
+    {
+      "generatedLine": 318,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 182,
+      "column": 3
+    },
+    {
+      "generatedLine": 319,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 183,
+      "column": 3
+    },
+    {
+      "generatedLine": 320,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 184,
+      "column": 3
+    },
+    {
+      "generatedLine": 321,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 185,
+      "column": 3
+    },
+    {
+      "generatedLine": 322,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 186,
+      "column": 3
+    },
+    {
+      "generatedLine": 323,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 187,
+      "column": 3
+    },
+    {
+      "generatedLine": 324,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 188,
+      "column": 3
+    },
+    {
+      "generatedLine": 325,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 189,
+      "column": 3
+    },
+    {
+      "generatedLine": 326,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 190,
+      "column": 3
+    },
+    {
+      "generatedLine": 327,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 191,
+      "column": 3
+    },
+    {
+      "generatedLine": 328,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 192,
+      "column": 3
+    },
+    {
+      "generatedLine": 329,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 193,
+      "column": 3
+    },
+    {
+      "generatedLine": 330,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 194,
+      "column": 3
+    },
+    {
+      "generatedLine": 331,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 196,
+      "column": 3
+    },
+    {
+      "generatedLine": 332,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 197,
+      "column": 3
+    },
+    {
+      "generatedLine": 333,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 198,
+      "column": 3
+    },
+    {
+      "generatedLine": 334,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 200,
+      "column": 3
+    },
+    {
+      "generatedLine": 335,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 201,
+      "column": 3
+    },
+    {
+      "generatedLine": 336,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 202,
+      "column": 3
+    },
+    {
+      "generatedLine": 337,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 203,
+      "column": 3
+    },
+    {
+      "generatedLine": 338,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 204,
+      "column": 5
+    },
+    {
+      "generatedLine": 339,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 205,
+      "column": 5
+    },
+    {
+      "generatedLine": 342,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 207,
+      "column": 5
+    },
+    {
+      "generatedLine": 344,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 209,
+      "column": 3
+    },
+    {
+      "generatedLine": 345,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 210,
+      "column": 3
+    },
+    {
+      "generatedLine": 346,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 211,
+      "column": 3
+    },
+    {
+      "generatedLine": 347,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 212,
+      "column": 3
+    },
+    {
+      "generatedLine": 348,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 213,
+      "column": 3
+    },
+    {
+      "generatedLine": 349,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 214,
+      "column": 3
+    },
+    {
+      "generatedLine": 350,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 216,
+      "column": 3
+    },
+    {
+      "generatedLine": 351,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 217,
+      "column": 3
+    },
+    {
+      "generatedLine": 352,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 218,
+      "column": 3
+    },
+    {
+      "generatedLine": 353,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 219,
+      "column": 3
+    },
+    {
+      "generatedLine": 354,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 220,
+      "column": 3
+    },
+    {
+      "generatedLine": 355,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 221,
+      "column": 3
+    },
+    {
+      "generatedLine": 356,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 222,
+      "column": 3
+    },
+    {
+      "generatedLine": 357,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 223,
+      "column": 3
+    },
+    {
+      "generatedLine": 358,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 225,
+      "column": 3
+    },
+    {
+      "generatedLine": 359,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 226,
+      "column": 3
+    },
+    {
+      "generatedLine": 360,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 227,
+      "column": 3
+    },
+    {
+      "generatedLine": 361,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 228,
+      "column": 3
+    },
+    {
+      "generatedLine": 362,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 229,
+      "column": 3
+    },
+    {
+      "generatedLine": 363,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 231,
+      "column": 3
+    },
+    {
+      "generatedLine": 364,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 232,
+      "column": 3
+    },
+    {
+      "generatedLine": 365,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 233,
+      "column": 3
+    },
+    {
+      "generatedLine": 366,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 234,
+      "column": 3
+    },
+    {
+      "generatedLine": 367,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 235,
+      "column": 3
+    },
+    {
+      "generatedLine": 368,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 237,
+      "column": 3
+    },
+    {
+      "generatedLine": 369,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 238,
+      "column": 3
+    },
+    {
+      "generatedLine": 370,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 239,
+      "column": 3
+    },
+    {
+      "generatedLine": 371,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 241,
+      "column": 3
+    },
+    {
+      "generatedLine": 372,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 242,
+      "column": 3
+    },
+    {
+      "generatedLine": 373,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 243,
+      "column": 3
+    },
+    {
+      "generatedLine": 374,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 245,
+      "column": 3
+    },
+    {
+      "generatedLine": 375,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 246,
+      "column": 3
+    },
+    {
+      "generatedLine": 376,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 247,
+      "column": 3
+    },
+    {
+      "generatedLine": 377,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 249,
+      "column": 3
+    },
+    {
+      "generatedLine": 378,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 250,
+      "column": 3
+    },
+    {
+      "generatedLine": 379,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 251,
+      "column": 3
+    },
+    {
+      "generatedLine": 380,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 252,
+      "column": 3
+    },
+    {
+      "generatedLine": 381,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 254,
+      "column": 3
+    },
+    {
+      "generatedLine": 382,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 255,
+      "column": 3
+    },
+    {
+      "generatedLine": 383,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 256,
+      "column": 3
+    },
+    {
+      "generatedLine": 384,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 257,
+      "column": 3
+    },
+    {
+      "generatedLine": 385,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 258,
+      "column": 3
+    },
+    {
+      "generatedLine": 386,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 259,
+      "column": 3
+    },
+    {
+      "generatedLine": 387,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 260,
+      "column": 3
+    },
+    {
+      "generatedLine": 388,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 261,
+      "column": 3
+    },
+    {
+      "generatedLine": 389,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 262,
+      "column": 3
+    },
+    {
+      "generatedLine": 390,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 263,
+      "column": 3
+    },
+    {
+      "generatedLine": 391,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 264,
+      "column": 3
+    },
+    {
+      "generatedLine": 392,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 265,
+      "column": 3
+    },
+    {
+      "generatedLine": 393,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 265,
+      "column": 9
+    },
+    {
+      "generatedLine": 396,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 265,
+      "column": 41
+    },
+    {
+      "generatedLine": 398,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 266,
+      "column": 3
+    },
+    {
+      "generatedLine": 399,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 267,
+      "column": 3
+    },
+    {
+      "generatedLine": 400,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 268,
+      "column": 3
+    },
+    {
+      "generatedLine": 401,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 269,
+      "column": 3
+    },
+    {
+      "generatedLine": 402,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 270,
+      "column": 3
+    },
+    {
+      "generatedLine": 403,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 271,
+      "column": 3
+    },
+    {
+      "generatedLine": 404,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 272,
+      "column": 3
+    },
+    {
+      "generatedLine": 405,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 274,
+      "column": 3
+    },
+    {
+      "generatedLine": 406,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 275,
+      "column": 3
+    },
+    {
+      "generatedLine": 407,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 276,
+      "column": 3
+    },
+    {
+      "generatedLine": 408,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 277,
+      "column": 3
+    },
+    {
+      "generatedLine": 409,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 278,
+      "column": 3
+    },
+    {
+      "generatedLine": 410,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 279,
+      "column": 3
+    },
+    {
+      "generatedLine": 411,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 281,
+      "column": 3
+    },
+    {
+      "generatedLine": 412,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 282,
+      "column": 3
+    },
+    {
+      "generatedLine": 415,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 283,
+      "column": 3
+    },
+    {
+      "generatedLine": 416,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 284,
+      "column": 3
+    },
+    {
+      "generatedLine": 417,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 286,
+      "column": 3
+    },
+    {
+      "generatedLine": 418,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 287,
+      "column": 3
+    },
+    {
+      "generatedLine": 419,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 287,
+      "column": 43
+    },
+    {
+      "generatedLine": 420,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 288,
+      "column": 3
+    },
+    {
+      "generatedLine": 421,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 288,
+      "column": 24
+    },
+    {
+      "generatedLine": 422,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 289,
+      "column": 3
+    },
+    {
+      "generatedLine": 424,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 291,
+      "column": 7
+    },
+    {
+      "generatedLine": 425,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 292,
+      "column": 7
+    },
+    {
+      "generatedLine": 427,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 294,
+      "column": 7
+    },
+    {
+      "generatedLine": 429,
+      "source": "typescript/lowering_matrix.ts",
+      "line": 296,
+      "column": 3
+    }
+  ]
+}

@@ -1,0 +1,366 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "objects/obj_scope_runner/Create_0.gml",
+  "mappings": [
+    {
+      "generatedLine": 2,
+      "source": "typescript/scope_context.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 3,
+      "source": "typescript/scope_context.ts",
+      "line": 177,
+      "column": 5
+    },
+    {
+      "generatedLine": 5,
+      "source": "typescript/scope_context.ts",
+      "line": 77,
+      "column": 5
+    },
+    {
+      "generatedLine": 6,
+      "source": "typescript/scope_context.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 7,
+      "source": "typescript/scope_context.ts",
+      "line": 81,
+      "column": 5
+    },
+    {
+      "generatedLine": 8,
+      "source": "typescript/scope_context.ts",
+      "line": 82,
+      "column": 5
+    },
+    {
+      "generatedLine": 9,
+      "source": "typescript/scope_context.ts",
+      "line": 83,
+      "column": 5
+    },
+    {
+      "generatedLine": 10,
+      "source": "typescript/scope_context.ts",
+      "line": 84,
+      "column": 5
+    },
+    {
+      "generatedLine": 11,
+      "source": "typescript/scope_context.ts",
+      "line": 85,
+      "column": 5
+    },
+    {
+      "generatedLine": 12,
+      "source": "typescript/scope_context.ts",
+      "line": 87,
+      "column": 5
+    },
+    {
+      "generatedLine": 13,
+      "source": "typescript/scope_context.ts",
+      "line": 88,
+      "column": 5
+    },
+    {
+      "generatedLine": 14,
+      "source": "typescript/scope_context.ts",
+      "line": 89,
+      "column": 5
+    },
+    {
+      "generatedLine": 15,
+      "source": "typescript/scope_context.ts",
+      "line": 91,
+      "column": 5
+    },
+    {
+      "generatedLine": 16,
+      "source": "typescript/scope_context.ts",
+      "line": 92,
+      "column": 5
+    },
+    {
+      "generatedLine": 17,
+      "source": "typescript/scope_context.ts",
+      "line": 93,
+      "column": 5
+    },
+    {
+      "generatedLine": 18,
+      "source": "typescript/scope_context.ts",
+      "line": 94,
+      "column": 5
+    },
+    {
+      "generatedLine": 19,
+      "source": "typescript/scope_context.ts",
+      "line": 95,
+      "column": 5
+    },
+    {
+      "generatedLine": 20,
+      "source": "typescript/scope_context.ts",
+      "line": 96,
+      "column": 5
+    },
+    {
+      "generatedLine": 21,
+      "source": "typescript/scope_context.ts",
+      "line": 97,
+      "column": 5
+    },
+    {
+      "generatedLine": 22,
+      "source": "typescript/scope_context.ts",
+      "line": 99,
+      "column": 5
+    },
+    {
+      "generatedLine": 23,
+      "source": "typescript/scope_context.ts",
+      "line": 100,
+      "column": 5
+    },
+    {
+      "generatedLine": 24,
+      "source": "typescript/scope_context.ts",
+      "line": 101,
+      "column": 5
+    },
+    {
+      "generatedLine": 25,
+      "source": "typescript/scope_context.ts",
+      "line": 102,
+      "column": 5
+    },
+    {
+      "generatedLine": 26,
+      "source": "typescript/scope_context.ts",
+      "line": 103,
+      "column": 5
+    },
+    {
+      "generatedLine": 27,
+      "source": "typescript/scope_context.ts",
+      "line": 104,
+      "column": 5
+    },
+    {
+      "generatedLine": 28,
+      "source": "typescript/scope_context.ts",
+      "line": 105,
+      "column": 5
+    },
+    {
+      "generatedLine": 29,
+      "source": "typescript/scope_context.ts",
+      "line": 107,
+      "column": 5
+    },
+    {
+      "generatedLine": 30,
+      "source": "typescript/scope_context.ts",
+      "line": 108,
+      "column": 5
+    },
+    {
+      "generatedLine": 31,
+      "source": "typescript/scope_context.ts",
+      "line": 109,
+      "column": 5
+    },
+    {
+      "generatedLine": 32,
+      "source": "typescript/scope_context.ts",
+      "line": 111,
+      "column": 5
+    },
+    {
+      "generatedLine": 33,
+      "source": "typescript/scope_context.ts",
+      "line": 112,
+      "column": 5
+    },
+    {
+      "generatedLine": 34,
+      "source": "typescript/scope_context.ts",
+      "line": 113,
+      "column": 5
+    },
+    {
+      "generatedLine": 35,
+      "source": "typescript/scope_context.ts",
+      "line": 114,
+      "column": 5
+    },
+    {
+      "generatedLine": 36,
+      "source": "typescript/scope_context.ts",
+      "line": 115,
+      "column": 5
+    },
+    {
+      "generatedLine": 37,
+      "source": "typescript/scope_context.ts",
+      "line": 116,
+      "column": 5
+    },
+    {
+      "generatedLine": 38,
+      "source": "typescript/scope_context.ts",
+      "line": 117,
+      "column": 5
+    },
+    {
+      "generatedLine": 39,
+      "source": "typescript/scope_context.ts",
+      "line": 118,
+      "column": 5
+    },
+    {
+      "generatedLine": 40,
+      "source": "typescript/scope_context.ts",
+      "line": 119,
+      "column": 5
+    },
+    {
+      "generatedLine": 41,
+      "source": "typescript/scope_context.ts",
+      "line": 121,
+      "column": 5
+    },
+    {
+      "generatedLine": 45,
+      "source": "typescript/scope_context.ts",
+      "line": 123,
+      "column": 7
+    },
+    {
+      "generatedLine": 46,
+      "source": "typescript/scope_context.ts",
+      "line": 124,
+      "column": 7
+    },
+    {
+      "generatedLine": 47,
+      "source": "typescript/scope_context.ts",
+      "line": 125,
+      "column": 7
+    },
+    {
+      "generatedLine": 48,
+      "source": "typescript/scope_context.ts",
+      "line": 126,
+      "column": 7
+    },
+    {
+      "generatedLine": 50,
+      "source": "typescript/scope_context.ts",
+      "line": 128,
+      "column": 5
+    },
+    {
+      "generatedLine": 51,
+      "source": "typescript/scope_context.ts",
+      "line": 129,
+      "column": 5
+    },
+    {
+      "generatedLine": 58,
+      "source": "typescript/scope_context.ts",
+      "line": 133,
+      "column": 9
+    },
+    {
+      "generatedLine": 59,
+      "source": "typescript/scope_context.ts",
+      "line": 134,
+      "column": 9
+    },
+    {
+      "generatedLine": 60,
+      "source": "typescript/scope_context.ts",
+      "line": 135,
+      "column": 9
+    },
+    {
+      "generatedLine": 61,
+      "source": "typescript/scope_context.ts",
+      "line": 136,
+      "column": 9
+    },
+    {
+      "generatedLine": 64,
+      "source": "typescript/scope_context.ts",
+      "line": 139,
+      "column": 5
+    },
+    {
+      "generatedLine": 65,
+      "source": "typescript/scope_context.ts",
+      "line": 140,
+      "column": 5
+    },
+    {
+      "generatedLine": 66,
+      "source": "typescript/scope_context.ts",
+      "line": 142,
+      "column": 5
+    },
+    {
+      "generatedLine": 67,
+      "source": "typescript/scope_context.ts",
+      "line": 143,
+      "column": 5
+    },
+    {
+      "generatedLine": 68,
+      "source": "typescript/scope_context.ts",
+      "line": 144,
+      "column": 5
+    },
+    {
+      "generatedLine": 69,
+      "source": "typescript/scope_context.ts",
+      "line": 145,
+      "column": 5
+    },
+    {
+      "generatedLine": 70,
+      "source": "typescript/scope_context.ts",
+      "line": 146,
+      "column": 5
+    },
+    {
+      "generatedLine": 71,
+      "source": "typescript/scope_context.ts",
+      "line": 157,
+      "column": 5
+    },
+    {
+      "generatedLine": 72,
+      "source": "typescript/scope_context.ts",
+      "line": 158,
+      "column": 5
+    },
+    {
+      "generatedLine": 73,
+      "source": "typescript/scope_context.ts",
+      "line": 159,
+      "column": 5
+    },
+    {
+      "generatedLine": 74,
+      "source": "typescript/scope_context.ts",
+      "line": 160,
+      "column": 5
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/scope_context/scope_context.gml",
+  "mappings": [
+    {
+      "generatedLine": 1,
+      "source": "typescript/scope_context.ts",
+      "line": 5,
+      "column": 1
+    },
+    {
+      "generatedLine": 2,
+      "source": "typescript/scope_context.ts",
+      "line": 6,
+      "column": 3
+    },
+    {
+      "generatedLine": 3,
+      "source": "typescript/scope_context.ts",
+      "line": 7,
+      "column": 5
+    },
+    {
+      "generatedLine": 7,
+      "source": "typescript/scope_context.ts",
+      "line": 11,
+      "column": 1
+    },
+    {
+      "generatedLine": 8,
+      "source": "typescript/scope_context.ts",
+      "line": 12,
+      "column": 3
+    },
+    {
+      "generatedLine": 9,
+      "source": "typescript/scope_context.ts",
+      "line": 13,
+      "column": 3
+    },
+    {
+      "generatedLine": 17,
+      "source": "typescript/scope_context.ts",
+      "line": 26,
+      "column": 5
+    },
+    {
+      "generatedLine": 20,
+      "source": "typescript/scope_context.ts",
+      "line": 30,
+      "column": 5
+    },
+    {
+      "generatedLine": 21,
+      "source": "typescript/scope_context.ts",
+      "line": 31,
+      "column": 5
+    },
+    {
+      "generatedLine": 24,
+      "source": "typescript/scope_context.ts",
+      "line": 35,
+      "column": 5
+    },
+    {
+      "generatedLine": 27,
+      "source": "typescript/scope_context.ts",
+      "line": 39,
+      "column": 5
+    },
+    {
+      "generatedLine": 29,
+      "source": "typescript/scope_context.ts",
+      "line": 22,
+      "column": 5
+    },
+    {
+      "generatedLine": 34,
+      "source": "typescript/scope_context.ts",
+      "line": 45,
+      "column": 32
+    },
+    {
+      "generatedLine": 35,
+      "source": "typescript/scope_context.ts",
+      "line": 45,
+      "column": 49
+    },
+    {
+      "generatedLine": 38,
+      "source": "typescript/scope_context.ts",
+      "line": 46,
+      "column": 48
+    }
+  ]
+}

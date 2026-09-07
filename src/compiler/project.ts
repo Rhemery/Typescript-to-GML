@@ -1,10 +1,22 @@
+import { atomicWriteFile } from "../files.js";
 import { promises as fs } from "node:fs";
-import { createHash } from "node:crypto";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import JSON5 from "json5";
 import ts from "typescript";
+import { VERSION } from "../version.js";
+import { collectNativeAccessPlan } from "./access.js";
+import { extractGmlSourceMap } from "./source-maps.js";
+import { commitProjectFiles, projectFilePath, withProjectLock } from "./project-state.js";
 import {
+  collectionRuntimeGml,
+  collectionRuntimeScriptName,
+  classStaticRuntimeGml,
+  classStaticRuntimeScriptName,
+  collectStaticClassNames,
+  collectStaticReceivers,
+  emitClassStatics,
+  createRuntimeTypeGuardPlan,
   emitTopLevelGml,
   collectTopLevelVariableBindings,
   fromTypeScriptDiagnostic,
@@ -16,10 +28,15 @@ import {
   validateGmlBindingConflicts,
   validateTopLevelVariableReferences,
   validateTypeScriptSource,
+  validateRuntimeAccesses,
+  usesCollectionRuntime,
+  type RuntimeTypeGuardPlan,
 } from "./compile.js";
+import { usesValueRuntime, valueRuntimeGml, valueRuntimeScriptName } from "./values.js";
 import {
   compileObjectClass,
   isObjectClass,
+  validateObjectEvents,
   type CompiledObject,
 } from "./object-events.js";
 import {
@@ -37,15 +54,32 @@ import {
   getProjectTypesDirectory,
   projectTypesInclude,
 } from "../project-layout.js";
-import { readManifest, type Manifest } from "./manifest.js";
+import { hashGeneratedContents, readManifest, type Manifest } from "./manifest.js";
 import { isGmlIdentifier } from "./gml-identifiers.js";
 import { isGameMakerProjectOpen } from "./gamemaker-ide.js";
+import {
+  consumeRuntimeGuardRunMarker,
+  createRuntimeGuardGml,
+  createRuntimeGuardHooks,
+  detectRuntimeGuardConfiguration,
+  ensureRuntimeGuardConfiguration,
+  readRuntimeGuardConfiguration,
+  resolveRuntimeGuardLevel,
+  runtimeGuardHookPaths,
+  runtimeGuardScriptName,
+  type RuntimeGuardProfile,
+  type RuntimeGuardProfileApplyOptions,
+  type RuntimeGuardProfileResult,
+  writeRuntimeGuardRunMarker,
+} from "./runtime-guards.js";
 
 interface SourceUnit {
   fileName: string;
   folder: string[];
+  source: string;
   sourceFile: ts.SourceFile;
   typeScriptSourceFile: ts.SourceFile;
+  runtimeTypeGuards?: RuntimeTypeGuardPlan;
 }
 
 interface GeneratedGlobalSymbol {
@@ -110,9 +144,39 @@ export interface BuildSummary {
 }
 
 export interface BuildOptions {
+  guardConfiguration?: string;
+  guardProfile?: RuntimeGuardProfile;
   hotReloadOnly?: boolean;
   ideProjectSaved?: boolean;
+  /** @deprecated Managed output is always refreshed from TypeScript. */
   overwriteChangedGeneratedFiles?: boolean;
+}
+
+export interface ResourceConflict {
+  assetName: string;
+  assetType: "object" | "script";
+  gameMakerName: string;
+  gameMakerResourcePath: string;
+  generatedResourcePath: string;
+  typeScriptFile: string;
+}
+
+export class ResourceConflictError extends Error {
+  constructor(
+    readonly projectPath: string,
+    readonly conflicts: readonly ResourceConflict[],
+  ) {
+    super(
+      `Cannot generate ${conflicts.length === 1 ? "a resource" : "resources"} because both GameMaker and TypeScript claim the same asset:\n${
+        conflicts.map((conflict) =>
+          `  - ${conflict.assetName}\n` +
+          `    GameMaker: ${conflict.gameMakerResourcePath}\n` +
+          `    TypeScript: ${conflict.typeScriptFile}`
+        ).join("\n")
+      }\nNo generated GameMaker assets were changed. Delete the conflicting asset in GameMaker and save the project if you want ts2gml to manage it, or rename the TypeScript asset and retry.`,
+    );
+    this.name = "ResourceConflictError";
+  }
 }
 
 export class StructuralGameMakerChangesError extends Error {
@@ -146,8 +210,10 @@ export interface CheckSummary {
 export interface TypeScriptProjectSummary {
   sourceDirectory: string;
   configPath: string;
+  runtimeGuardConfigPath: string;
   typeDirectory: string;
   createdConfig: boolean;
+  createdRuntimeGuardConfig: boolean;
 }
 
 export async function buildGameMakerProject(
@@ -155,13 +221,59 @@ export async function buildGameMakerProject(
   projectFile: string,
   options: BuildOptions = {},
 ): Promise<BuildSummary> {
-  const compiled = await compileGameMakerProject(inputs, projectFile);
-  const blockStructuralChanges = options.hotReloadOnly ||
-    (!options.ideProjectSaved && await isGameMakerProjectOpen(compiled.projectPath));
-  const summary = await writeGeneratedAssets(compiled, { ...options, blockStructuralChanges });
+  return withProjectLock(projectFile, async () => {
+    const compiled = await compileGameMakerProject(
+      inputs,
+      projectFile,
+      options.guardProfile ?? "build",
+      options.guardConfiguration,
+    );
+    const blockStructuralChanges = options.hotReloadOnly ||
+      (!options.ideProjectSaved && await isGameMakerProjectOpen(compiled.projectPath));
+    const summary = await writeGeneratedAssets(compiled, { ...options, blockStructuralChanges });
+    return {
+      ...summary,
+      declarations: compiled.declarations,
+    };
+  });
+}
+
+export async function applyRuntimeGuardProfile(
+  projectFile: string,
+  requestedProfile: RuntimeGuardProfile,
+  options: RuntimeGuardProfileApplyOptions = {},
+): Promise<RuntimeGuardProfileResult> {
+  const projectPath = path.resolve(projectFile);
+  const config = await readRuntimeGuardConfiguration(path.dirname(projectPath));
+  const activeConfiguration = options.configuration ??
+    detectRuntimeGuardConfiguration(config, process.env);
+
+  if (
+    requestedProfile === "build" &&
+    options.preserveRunProfile !== false &&
+    await consumeRuntimeGuardRunMarker(projectPath)
+  ) {
+    return {
+      profile: "run",
+      level: resolveRuntimeGuardLevel(config, "run", activeConfiguration),
+      ...(activeConfiguration ? { configuration: activeConfiguration } : {}),
+      skippedForRun: true,
+      written: false,
+    };
+  }
+
+  const summary = await buildGameMakerProject([], projectPath, {
+    ...(activeConfiguration ? { guardConfiguration: activeConfiguration } : {}),
+    guardProfile: requestedProfile,
+    hotReloadOnly: true,
+  });
+  if (requestedProfile === "run") await writeRuntimeGuardRunMarker(projectPath);
   return {
-    ...summary,
-    declarations: compiled.declarations,
+    profile: requestedProfile,
+    level: resolveRuntimeGuardLevel(config, requestedProfile, activeConfiguration),
+    ...(activeConfiguration ? { configuration: activeConfiguration } : {}),
+    skippedForRun: false,
+    written: summary.writtenFiles.length > 0,
   };
 }
 
@@ -169,20 +281,24 @@ export async function checkGameMakerProject(
   inputs: readonly string[],
   projectFile: string,
 ): Promise<CheckSummary> {
-  const compiled = await compileGameMakerProject(inputs, projectFile);
-  return {
-    projectPath: compiled.projectPath,
-    typescriptDirectory: compiled.typeScriptDirectory,
-    sourceFiles: compiled.sourceFiles,
-    objects: compiled.objects.map((object) => object.name).sort(),
-    rooms: compiled.rooms.map((room) => room.name).sort(),
-    scripts: [...compiled.scripts.keys()].sort(),
-  };
+  return withProjectLock(projectFile, async () => {
+    const compiled = await compileGameMakerProject(inputs, projectFile, "build");
+    return {
+      projectPath: compiled.projectPath,
+      typescriptDirectory: compiled.typeScriptDirectory,
+      sourceFiles: compiled.sourceFiles,
+      objects: compiled.objects.map((object) => object.name).sort(),
+      rooms: compiled.rooms.map((room) => room.name).sort(),
+      scripts: [...compiled.scripts.keys()].sort(),
+    };
+  });
 }
 
 async function compileGameMakerProject(
   inputs: readonly string[],
   projectFile: string,
+  guardProfile: RuntimeGuardProfile,
+  guardConfiguration?: string,
 ): Promise<CompiledProject> {
   const projectPath = path.resolve(projectFile);
   const projectDirectory = path.dirname(projectPath);
@@ -193,10 +309,16 @@ async function compileGameMakerProject(
   }
 
   const typeScriptProject = await prepareTypeScriptProject(projectPath);
+  const runtimeGuardConfig = await readRuntimeGuardConfiguration(projectDirectory);
+  const runtimeGuardLevel = resolveRuntimeGuardLevel(
+    runtimeGuardConfig,
+    guardProfile,
+    guardConfiguration,
+  );
   const sourceInputs = inputs.length > 0 ? inputs : [typeScriptProject.sourceDirectory];
   const sourceFiles = await discoverTypeScriptFiles(sourceInputs);
-  const unitResults = await Promise.all(
-    sourceFiles.map(async (fileName): Promise<SourceUnit | Error> => {
+  const sourceResults = await Promise.all(
+    sourceFiles.map(async (fileName): Promise<Omit<SourceUnit, "sourceFile"> | Error> => {
       try {
         const source = await fs.readFile(fileName, "utf8");
         validateTypeScriptSource(source, fileName);
@@ -207,9 +329,6 @@ async function compileGameMakerProject(
           true,
           ts.ScriptKind.TS,
         );
-        const javascript = toJavaScript(source, fileName);
-        const sourceFile = parseJavaScript(javascript, fileName);
-        validateJavaScript(sourceFile);
         const relativeDirectory = path.relative(
           typeScriptProject.sourceDirectory,
           path.dirname(fileName),
@@ -222,19 +341,56 @@ async function compileGameMakerProject(
           !path.isAbsolute(relativeDirectory)
             ? relativeDirectory.split(path.sep).filter(Boolean)
             : [];
-        return { fileName, folder, sourceFile, typeScriptSourceFile };
+        return { fileName, folder, source, typeScriptSourceFile };
       } catch (error) {
         return error instanceof Error ? error : new Error(String(error));
       }
     }),
   );
-  const diagnostics = unitResults.flatMap((result) =>
+  const diagnostics = sourceResults.flatMap((result) =>
     result instanceof Ts2GmlError ? result.diagnostics : []
   );
   if (diagnostics.length > 0) throw new Ts2GmlError(diagnostics);
-  const otherFailure = unitResults.find((result) => result instanceof Error);
+  const otherFailure = sourceResults.find((result) => result instanceof Error);
   if (otherFailure instanceof Error) throw otherFailure;
-  const units = unitResults.filter((result): result is SourceUnit => !(result instanceof Error));
+  const parsedUnits = sourceResults.filter(
+    (result): result is Omit<SourceUnit, "sourceFile"> => !(result instanceof Error),
+  );
+  const objectNames = findObjectNames(parsedUnits.map((unit) => unit.typeScriptSourceFile));
+  const guardProgram = loadTypeScriptProgram(
+    typeScriptProject.configPath,
+    typeScriptProject.typeDirectory,
+    sourceFiles,
+  ).program;
+  const guardChecker = guardProgram.getTypeChecker();
+  const staticClasses = collectStaticClassNames(parsedUnits.map((unit) => unit.typeScriptSourceFile));
+  const units = parsedUnits.map((unit): SourceUnit => {
+    const programSource = guardProgram.getSourceFile(unit.fileName) ??
+      [...guardProgram.getSourceFiles()].find((candidate) =>
+        path.resolve(candidate.fileName).toLowerCase() === path.resolve(unit.fileName).toLowerCase()
+      );
+    const runtimeTypeGuards = programSource
+      ? createRuntimeTypeGuardPlan(
+        programSource,
+        guardChecker,
+        objectNames,
+        runtimeGuardLevel,
+      )
+      : undefined;
+    const staticReceivers = programSource && staticClasses.size > 0
+      ? collectStaticReceivers(programSource, guardChecker, staticClasses)
+      : undefined;
+    if (programSource) validateRuntimeAccesses(programSource, guardChecker);
+    const nativeAccess = programSource ? collectNativeAccessPlan(programSource, guardChecker) : undefined;
+    const javascript = toJavaScript(unit.source, unit.fileName, runtimeTypeGuards, staticReceivers, nativeAccess);
+    const sourceFile = parseJavaScript(javascript, unit.fileName);
+    validateJavaScript(sourceFile);
+    return {
+      ...unit,
+      sourceFile,
+      ...(runtimeTypeGuards ? { runtimeTypeGuards } : {}),
+    };
+  });
 
   const projectGlobalBindings = new Set(
     units.flatMap((unit) => [...collectTopLevelVariableBindings(unit.typeScriptSourceFile)]),
@@ -249,13 +405,13 @@ async function compileGameMakerProject(
   }
   if (diagnostics.length > 0) throw new Ts2GmlError(diagnostics);
 
-  const objectNames = findObjectNames(units);
   const objectResources = await readManagedObjectResources(projectDirectory, objectNames);
   const objects: CompiledObject[] = [];
   const rooms: CompiledRoomCreationCode[] = [];
   const scripts = new Map<string, string>();
   const generatedSymbols: GeneratedGlobalSymbol[] = [];
   const assetFolders = new Map<string, string[]>();
+  const assetSourceFiles = new Map<string, string>();
   const emissionDiagnostics: CompilerDiagnostic[] = [];
 
   for (const unit of units) {
@@ -275,7 +431,10 @@ async function compileGameMakerProject(
               : undefined,
           );
           objects.push(object);
+          const statics = emitClassStatics(statement, unit.sourceFile, staticClasses);
+          if (statics) scriptChunks.push(statics);
           assetFolders.set(object.name, unit.folder);
+          assetSourceFiles.set(object.name, unit.fileName);
           continue;
         }
         if (ts.isClassDeclaration(statement) && isRoomClass(statement)) {
@@ -283,18 +442,22 @@ async function compileGameMakerProject(
           continue;
         }
         unitSymbols.push(...topLevelGeneratedNames(statement));
-        const gml = emitTopLevelGml(statement, unit.sourceFile);
+        const gml = emitTopLevelGml(statement, unit.sourceFile, staticClasses);
         if (gml.trim()) scriptChunks.push(gml);
       }
 
       if (scriptChunks.length > 0) {
-        const scriptName = path.basename(unit.fileName, path.extname(unit.fileName));
+        const sourceName = path.basename(unit.fileName, path.extname(unit.fileName));
+        const scriptName = objectNames.has(sourceName) && staticClasses.has(sourceName)
+          ? `${sourceName.slice(0, 56)}_statics`
+          : sourceName;
         assertIdentifier(scriptName, "script", unit.fileName);
         if (scripts.has(scriptName)) {
           throw new Error(`Multiple source files would generate the script '${scriptName}'.`);
         }
         scripts.set(scriptName, `${scriptChunks.join("\n\n").trim()}\n`);
         assetFolders.set(scriptName, unit.folder);
+        assetSourceFiles.set(scriptName, unit.fileName);
         generatedSymbols.push(...unitSymbols.map((name) => ({
           name,
           fileName: unit.fileName,
@@ -308,10 +471,52 @@ async function compileGameMakerProject(
   }
   if (emissionDiagnostics.length > 0) throw new Ts2GmlError(emissionDiagnostics);
 
+  const staticUnit = units.find((unit) => unit.sourceFile.statements.some((statement) =>
+    ts.isClassDeclaration(statement) && statement.name && staticClasses.has(statement.name.text)
+  ));
+  if (staticUnit) {
+    scripts.set(classStaticRuntimeScriptName, `${classStaticRuntimeGml}\n`);
+    assetFolders.set(classStaticRuntimeScriptName, []);
+    assetSourceFiles.set(classStaticRuntimeScriptName, staticUnit.fileName);
+  }
+
+  const collectionUnit = units.find((unit) => usesCollectionRuntime(unit.sourceFile));
+  if (collectionUnit) {
+    scripts.set(collectionRuntimeScriptName, `${collectionRuntimeGml.trim()}\n`);
+    assetFolders.set(collectionRuntimeScriptName, []);
+    assetSourceFiles.set(collectionRuntimeScriptName, collectionUnit.fileName);
+  }
+
+  const runtimeGuardUnit = units.find((unit) =>
+    unit.runtimeTypeGuards &&
+    (
+      unit.runtimeTypeGuards.contextObjects.size > 0 ||
+      unit.runtimeTypeGuards.guardedArguments.size > 0
+    )
+  );
+  if (runtimeGuardUnit) {
+    scripts.set(runtimeGuardScriptName, createRuntimeGuardGml());
+    assetFolders.set(runtimeGuardScriptName, []);
+    assetSourceFiles.set(runtimeGuardScriptName, runtimeGuardUnit.fileName);
+  }
+
+  if ([...scripts.values(), ...rooms.map((room) => room.code),
+    ...objects.flatMap((object) => object.events.map((event) => event.code))].some(usesValueRuntime)) {
+    scripts.set(valueRuntimeScriptName, valueRuntimeGml);
+    assetFolders.set(valueRuntimeScriptName, []);
+    assetSourceFiles.set(valueRuntimeScriptName, units[0]!.fileName);
+  }
   assertUniqueAssets(objects, scripts);
   const roomResources = resolveRoomResources(rooms, project.resources);
   await validateObjectReferences(objects, project.resources, projectDirectory);
-  await assertNoUnmanagedAssetConflicts(project, projectDirectory, objects, scripts);
+  await assertNoUnmanagedAssetConflicts(
+    project,
+    projectPath,
+    projectDirectory,
+    objects,
+    scripts,
+    assetSourceFiles,
+  );
   await assertNoRoomCreationCodeConflicts(projectDirectory, rooms, roomResources);
   const declarations = await generateProjectDeclarations(projectPath, {
     excludedAssetNames: new Set(rooms.map((room) => room.name)),
@@ -367,6 +572,10 @@ async function compileGameMakerProject(
   const internalNameConflict = [...runtimeDeclarationBindings, ...generatedRuntimeBindings]
     .find((name) =>
       name.startsWith("__ts2gml_") &&
+      name !== collectionRuntimeScriptName &&
+      name !== classStaticRuntimeScriptName &&
+      name !== runtimeGuardScriptName &&
+      name !== valueRuntimeScriptName &&
       !(name === legacyEventScriptName && hasManagedLegacyEventScript)
     );
   if (internalNameConflict) {
@@ -492,6 +701,7 @@ export async function prepareTypeScriptProject(
       `The project-local tool is missing. Copy the built ts2gml folder to datafiles/ts2gml in the project containing ${path.basename(projectPath)}.`,
     );
   }
+  const runtimeGuardConfig = await ensureRuntimeGuardConfiguration(projectDirectory);
   await ensureProjectRuntimeDeclarations(projectPath);
 
   let createdConfig = false;
@@ -500,7 +710,9 @@ export async function prepareTypeScriptProject(
 
   try {
     const contents = await fs.readFile(configPath, "utf8");
-    const config = JSON5.parse(contents) as { include?: unknown };
+    const parsedConfig = ts.parseConfigFileTextToJson(configPath.split(path.sep).join("/"), contents);
+    if (parsedConfig.error) throw new Ts2GmlError([fromTypeScriptDiagnostic(parsedConfig.error, configPath)]);
+    const config = parsedConfig.config as { include?: unknown };
     const oldTypesIncludes = new Set(["../.env/**/*.d.ts", "../ts2gml/types/**/*.d.ts"]);
     if (
       Array.isArray(config.include) &&
@@ -509,7 +721,7 @@ export async function prepareTypeScriptProject(
       config.include = config.include.map((entry) =>
         typeof entry === "string" && oldTypesIncludes.has(entry) ? projectTypesInclude : entry,
       );
-      await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+      await atomicWriteFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -526,11 +738,18 @@ export async function prepareTypeScriptProject(
       },
       include: ["**/*.ts", projectTypesInclude],
     };
-    await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+    await atomicWriteFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
     createdConfig = true;
   }
 
-  return { sourceDirectory, configPath, typeDirectory, createdConfig };
+  return {
+    sourceDirectory,
+    configPath,
+    runtimeGuardConfigPath: runtimeGuardConfig.path,
+    typeDirectory,
+    createdConfig,
+    createdRuntimeGuardConfig: runtimeGuardConfig.created,
+  };
 }
 
 async function discoverTypeScriptFiles(inputs: readonly string[]): Promise<string[]> {
@@ -557,7 +776,36 @@ function validateTypeScriptProject(
   typeDirectory: string,
   sourceFiles: readonly string[],
 ): void {
+  const loaded = loadTypeScriptProgram(configPath, typeDirectory, sourceFiles);
+  const diagnostics = [
+    ...loaded.configErrors,
+    ...ts.getPreEmitDiagnostics(loaded.program),
+  ]
+    .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
+    .filter((diagnostic) => sourceFiles.length > 0 || diagnostic.code !== 18003)
+    .map((diagnostic) => fromTypeScriptDiagnostic(diagnostic, configPath))
+    .sort((left, right) =>
+      left.fileName.localeCompare(right.fileName) ||
+      left.line - right.line ||
+      left.column - right.column ||
+      left.code.localeCompare(right.code)
+    );
+  if (diagnostics.length > 0) throw new Ts2GmlError(diagnostics);
+
+  const sources = loaded.program.getSourceFiles().filter((source) => !source.isDeclarationFile);
+  const objectNames = findObjectNames(sources);
+  const checker = loaded.program.getTypeChecker();
+  for (const source of sources) validateObjectEvents(source, checker, objectNames);
+}
+
+function loadTypeScriptProgram(
+  configPath: string,
+  typeDirectory: string,
+  sourceFiles: readonly string[],
+): { program: ts.Program; configErrors: ts.Diagnostic[] } {
+  configPath = path.resolve(configPath).split(path.sep).join("/");
   const loaded = ts.readConfigFile(configPath, ts.sys.readFile);
+  if (loaded.error) throw new Ts2GmlError([fromTypeScriptDiagnostic(loaded.error, configPath)]);
   const configDirectory = path.dirname(configPath);
   const parsed = ts.parseJsonConfigFileContent(
     loaded.config ?? {},
@@ -586,27 +834,15 @@ function validateTypeScriptProject(
     "lib",
   );
   programOptions.host = compilerHost;
-  const program = ts.createProgram(programOptions);
-  const diagnostics = [
-    ...(loaded.error ? [loaded.error] : []),
-    ...parsed.errors,
-    ...ts.getPreEmitDiagnostics(program),
-  ]
-    .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
-    .filter((diagnostic) => sourceFiles.length > 0 || diagnostic.code !== 18003)
-    .map((diagnostic) => fromTypeScriptDiagnostic(diagnostic, configPath))
-    .sort((left, right) =>
-      left.fileName.localeCompare(right.fileName) ||
-      left.line - right.line ||
-      left.column - right.column ||
-      left.code.localeCompare(right.code)
-    );
-  if (diagnostics.length > 0) throw new Ts2GmlError(diagnostics);
+  return {
+    program: ts.createProgram(programOptions),
+    configErrors: [...(loaded.error ? [loaded.error] : []), ...parsed.errors],
+  };
 }
 
-function findObjectNames(units: readonly SourceUnit[]): Set<string> {
-  const classes = units.flatMap((unit) =>
-    unit.sourceFile.statements.filter(ts.isClassDeclaration),
+function findObjectNames(sourceFiles: readonly ts.SourceFile[]): Set<string> {
+  const classes = sourceFiles.flatMap((sourceFile) =>
+    sourceFile.statements.filter(ts.isClassDeclaration),
   );
   const names = new Set<string>();
   let changed = true;
@@ -685,9 +921,11 @@ function generatedResourceReferences(
 
 async function assertNoUnmanagedAssetConflicts(
   project: GMProject,
+  projectPath: string,
   projectDirectory: string,
   objects: readonly CompiledObject[],
   scripts: ReadonlyMap<string, string>,
+  assetSourceFiles: ReadonlyMap<string, string>,
 ): Promise<void> {
   const previous = await readManifest(path.join(projectDirectory, ".ts2gml", "manifest.json"));
   const managedPaths = new Set(previous.resources.map(normalizeResourcePath));
@@ -696,15 +934,46 @@ async function assertNoUnmanagedAssetConflicts(
     generatedResources.map((resource) => normalizeResourcePath(resource.id.path)),
   );
   const generatedNames = new Set(generatedResources.map((resource) => resource.id.name));
+  const generatedByPath = new Map(generatedResources.map((resource) => [
+    normalizeResourcePath(resource.id.path),
+    resource,
+  ]));
+  const generatedByName = new Map(generatedResources.map((resource) => [resource.id.name, resource]));
+  const objectNames = new Set(objects.map((object) => object.name));
+  const conflicts: ResourceConflict[] = [];
   for (const resource of project.resources) {
     const resourcePath = normalizeResourcePath(resource.id.path);
     if (managedPaths.has(resourcePath)) continue;
     if (generatedPaths.has(resourcePath) || generatedNames.has(resource.id.name)) {
-      throw new Error(
-        `Cannot generate '${resource.id.name}': the project already has an unmanaged asset with that name or path.`,
-      );
+      const generated = generatedByPath.get(resourcePath) ?? generatedByName.get(resource.id.name)!;
+      conflicts.push({
+        assetName: generated.id.name,
+        assetType: objectNames.has(generated.id.name) ? "object" : "script",
+        gameMakerName: resource.id.name,
+        gameMakerResourcePath: resourcePath,
+        generatedResourcePath: normalizeResourcePath(generated.id.path),
+        typeScriptFile: assetSourceFiles.get(generated.id.name)!,
+      });
     }
   }
+  // A resource may still exist on disk after its project reference was removed.
+  for (const resource of generatedResources) {
+    const resourcePath = normalizeResourcePath(resource.id.path);
+    if (managedPaths.has(resourcePath) || conflicts.some((conflict) =>
+      conflict.generatedResourcePath === resourcePath
+    )) continue;
+    const contents = await readFileIfPresent(safeProjectPath(projectDirectory, resourcePath));
+    if (contents === undefined) continue;
+    conflicts.push({
+      assetName: resource.id.name,
+      assetType: objectNames.has(resource.id.name) ? "object" : "script",
+      gameMakerName: resource.id.name,
+      gameMakerResourcePath: resourcePath,
+      generatedResourcePath: resourcePath,
+      typeScriptFile: assetSourceFiles.get(resource.id.name)!,
+    });
+  }
+  if (conflicts.length > 0) throw new ResourceConflictError(projectPath, conflicts);
 }
 
 function resolveRoomResources(
@@ -871,8 +1140,40 @@ async function writeGeneratedAssets(input: {
     generatedFiles.set(`scripts/${name}/${name}.gml`, code);
   }
 
-  if (!options.overwriteChangedGeneratedFiles) {
-    await assertGeneratedFilesUnchanged(input.projectDirectory, previous);
+  for (const [relativePath, contents] of createRuntimeGuardHooks(projectFileName)) {
+    generatedFiles.set(relativePath, contents);
+  }
+
+  await assertNoUnmanagedRuntimeGuardHooks(
+    input.projectDirectory,
+    generatedFiles,
+    previous,
+  );
+
+  const managedAssetDirectories = new Set(previous.resources.map((resourcePath) =>
+    path.posix.dirname(normalizeResourcePath(resourcePath))
+  ));
+  for (const relativePath of generatedFiles.keys()) {
+    if (
+      previous.files.includes(relativePath) ||
+      managedAssetDirectories.has(path.posix.dirname(relativePath)) ||
+      runtimeGuardHookPaths.some((hookPath) => hookPath === relativePath)
+    ) continue;
+    if (await readFileIfPresent(safeProjectPath(input.projectDirectory, relativePath)) !== undefined) {
+      throw new Error(
+        `Cannot generate '${relativePath}': the file already exists and is unmanaged. ` +
+        "Delete the conflicting GameMaker asset and save the project if you want ts2gml to manage it.",
+      );
+    }
+  }
+
+  for (const [relativePath, contents] of [...generatedFiles]) {
+    if (!relativePath.endsWith(".gml")) continue;
+    const mapped = extractGmlSourceMap(contents, relativePath, input.projectDirectory);
+    generatedFiles.set(relativePath, mapped.code);
+    if (mapped.map.mappings.length > 0) {
+      generatedFiles.set(`${relativePath}.map.json`, `${JSON.stringify(mapped.map, null, 2)}\n`);
+    }
   }
 
   const currentPaths = new Set(generatedFiles.keys());
@@ -949,8 +1250,18 @@ async function writeGeneratedAssets(input: {
   input.project.resources = [...retained, ...generatedResources].sort((left, right) =>
     left.id.path.localeCompare(right.id.path),
   );
+  input.project.resources = preserveEntryOrder(
+    input.project.resources,
+    existingProjectResources,
+    (resource) => normalizeResourcePath(resource.id.path),
+  );
   input.project.Folders = [...retainedFolders.values()].sort((left, right) =>
     left.folderPath.localeCompare(right.folderPath),
+  );
+  input.project.Folders = preserveEntryOrder(
+    input.project.Folders,
+    projectFolders,
+    (folder) => folder.folderPath,
   );
   const projectContents = stringifyGameMakerResource(input.project);
   const currentResourceReferences = new Map(
@@ -981,15 +1292,18 @@ async function writeGeneratedAssets(input: {
     );
   }
 
+  const pendingWrites = new Map<string, string>();
   for (const [relativePath, contents] of generatedFiles) {
-    const absolute = safeProjectPath(input.projectDirectory, relativePath);
-    if (await writeFileIfChanged(absolute, contents)) writtenGeneratedFiles.add(relativePath);
+    if (await queueFileIfChanged(pendingWrites, input.projectDirectory, relativePath, contents)) {
+      writtenGeneratedFiles.add(relativePath);
+    }
   }
 
   const writtenRoomResources = new Set<string>();
   for (const resourcePath of currentRoomResourcePaths) {
     if (
       await setRoomCreationCodeFile(
+        pendingWrites,
         input.projectDirectory,
         resourcePath,
         roomCreationCodeFileName,
@@ -1001,29 +1315,26 @@ async function writeGeneratedAssets(input: {
   for (const staleRoom of previous.roomCreationCodes) {
     const resourcePath = normalizeResourcePath(staleRoom);
     if (currentRoomResourcePaths.has(resourcePath)) continue;
-    if (await setRoomCreationCodeFile(input.projectDirectory, resourcePath, "", true)) {
+    if (await setRoomCreationCodeFile(pendingWrites, input.projectDirectory, resourcePath, "", true)) {
       writtenRoomResources.add(resourcePath);
     }
   }
 
   if (!options.blockStructuralChanges) {
-    await writeFileIfChanged(input.projectPath, projectContents);
+    await queueFileIfChanged(pendingWrites, input.projectDirectory, path.basename(input.projectPath), projectContents);
   }
 
-  for (const stalePath of previous.files) {
-    if (currentPaths.has(stalePath)) continue;
-    const absolute = safeProjectPath(input.projectDirectory, stalePath);
-    await fs.rm(absolute, { force: true });
-    await removeEmptyAssetDirectories(input.projectDirectory, stalePath);
-  }
+  const stalePaths = previous.files.filter((stalePath) => !currentPaths.has(stalePath));
 
   const manifest: Manifest = {
+    formatVersion: 1,
+    compilerVersion: VERSION,
     files: [...generatedFiles.keys()].sort(),
     generatedFileHashes: Object.fromEntries(
       [...generatedFiles.entries()]
         .filter(([relativePath]) => !generatedObjectResourcePaths.has(relativePath))
         .sort(([left], [right]) => left.localeCompare(right))
-        .map(([relativePath, contents]) => [relativePath, hashContents(contents)]),
+        .map(([relativePath, contents]) => [relativePath, hashGeneratedContents(contents)]),
     ),
     folders: managedFolders.map((folder) => folder.folderPath).sort(),
     objectVariables: Object.fromEntries(
@@ -1038,7 +1349,10 @@ async function writeGeneratedAssets(input: {
     resources: [...generatedResourcePaths].sort(),
     roomCreationCodes: [...currentRoomResourcePaths].sort(),
   };
-  await writeFileIfChanged(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await queueFileIfChanged(pendingWrites, input.projectDirectory,
+    path.relative(input.projectDirectory, manifestPath), `${JSON.stringify(manifest, null, 2)}\n`);
+  await commitProjectFiles(input.projectDirectory, pendingWrites, stalePaths);
+  for (const stalePath of stalePaths) await removeEmptyAssetDirectories(input.projectDirectory, stalePath);
 
   return {
     projectPath: input.projectPath,
@@ -1102,43 +1416,42 @@ async function assertOnlyHotReloadChanges(
   throw new StructuralGameMakerChangesError([...structuralChanges]);
 }
 
+async function assertNoUnmanagedRuntimeGuardHooks(
+  projectDirectory: string,
+  generatedFiles: ReadonlyMap<string, string>,
+  previous: Manifest,
+): Promise<void> {
+  for (const relativePath of runtimeGuardHookPaths) {
+    if (previous.files.includes(relativePath)) continue;
+    const current = await readFileIfPresent(safeProjectPath(projectDirectory, relativePath));
+    const desired = generatedFiles.get(relativePath);
+    if (current === undefined || current === desired) continue;
+    throw new Error(
+      `Cannot install runtime guard hook '${relativePath}' because the project already owns that file. ` +
+      "Relocate the existing hook logic or remove the file, then run the build again.",
+    );
+  }
+}
+
 function isHotReloadableCodePath(relativePath: string): boolean {
-  return normalizeResourcePath(relativePath).toLowerCase().endsWith(".gml");
+  return /\.gml(?:\.map\.json)?$/i.test(normalizeResourcePath(relativePath));
 }
 
 function setsEqual<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
   return left.size === right.size && [...left].every((value) => right.has(value));
 }
 
-async function assertGeneratedFilesUnchanged(
-  projectDirectory: string,
-  previous: Manifest,
-): Promise<void> {
-  const changes: string[] = [];
-  for (const relativePath of previous.files) {
-    const expectedHash = previous.generatedFileHashes[relativePath];
-    if (!expectedHash) continue;
-    try {
-      const contents = await fs.readFile(safeProjectPath(projectDirectory, relativePath), "utf8");
-      if (hashContents(contents) !== expectedHash) changes.push(`modified: ${relativePath}`);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        changes.push(`deleted: ${relativePath}`);
-        continue;
-      }
-      throw error;
-    }
+function preserveEntryOrder<T>(entries: readonly T[], previous: readonly T[], key: (entry: T) => string): T[] {
+  const remaining = new Map(entries.map((entry) => [key(entry), entry]));
+  const ordered: T[] = [];
+  for (const entry of previous) {
+    const entryKey = key(entry);
+    const current = remaining.get(entryKey);
+    if (current === undefined) continue;
+    ordered.push(current);
+    remaining.delete(entryKey);
   }
-  if (changes.length === 0) return;
-  throw new Error(
-    `Cannot update generated files because they were changed outside ts2gml:\n${changes
-      .map((change) => `  - ${change}`)
-      .join("\n")}\nMove the changes into TypeScript, restore the generated files, or run build with --overwrite-generated to discard them.`,
-  );
-}
-
-function hashContents(contents: string): string {
-  return createHash("sha256").update(contents).digest("hex");
+  return [...ordered, ...remaining.values()];
 }
 
 async function readRoomResource(
@@ -1154,6 +1467,7 @@ async function readRoomResource(
 }
 
 async function setRoomCreationCodeFile(
+  writes: Map<string, string>,
   projectDirectory: string,
   resourcePath: string,
   creationCodeFile: string,
@@ -1169,8 +1483,8 @@ async function setRoomCreationCodeFile(
   if (onlyIfManaged && resource.creationCodeFile !== roomCreationCodeFileName) return false;
   if (resource.creationCodeFile === creationCodeFile) return false;
   resource.creationCodeFile = creationCodeFile;
-  return writeFileIfChanged(
-    safeProjectPath(projectDirectory, resourcePath),
+  return queueFileIfChanged(
+    writes, projectDirectory, resourcePath,
     stringifyGameMakerResource(resource),
   );
 }
@@ -1298,13 +1612,7 @@ function toFolderResourcePath(folder: readonly string[]): string {
 }
 
 function safeProjectPath(projectDirectory: string, relativePath: string): string {
-  const normalized = relativePath.replaceAll("/", path.sep);
-  const absolute = path.resolve(projectDirectory, normalized);
-  const prefix = `${path.resolve(projectDirectory)}${path.sep}`;
-  if (!absolute.startsWith(prefix)) {
-    throw new Error(`Generated path escapes the GameMaker project: ${relativePath}`);
-  }
-  return absolute;
+  return projectFilePath(projectDirectory, relativePath);
 }
 
 function normalizeResourcePath(resourcePath: string): string {
@@ -1332,11 +1640,12 @@ async function removeEmptyAssetDirectories(
   }
 }
 
-async function writeFileIfChanged(fileName: string, contents: string): Promise<boolean> {
+async function queueFileIfChanged(writes: Map<string, string>, directory: string,
+  relativePath: string, contents: string): Promise<boolean> {
+  const fileName = safeProjectPath(directory, relativePath);
   const current = await readFileIfPresent(fileName);
   if (current !== undefined && fileContentsEqual(fileName, current, contents)) return false;
-  await fs.mkdir(path.dirname(fileName), { recursive: true });
-  await fs.writeFile(fileName, contents, "utf8");
+  writes.set(relativePath, contents);
   return true;
 }
 

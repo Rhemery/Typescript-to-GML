@@ -3,9 +3,9 @@
 TypeScript to GML provides typed declarations for the GameMaker API and compiles a deliberately supported TypeScript/JavaScript subset into GML. Ordinary classes become GML constructors. Classes derived from `GMObject` become GameMaker object assets and event files. Classes derived from `GMRoom` provide creation code for existing rooms.
 
 > [!WARNING]
-> Version `0.2.0-beta.3` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
+> Version `0.2.0-beta.5` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
 
-The compiler is intentionally conservative: unsupported syntax produces a source-located `TS2GML` diagnostic instead of known-invalid GML. Generated assets are deterministic, and a manifest prevents external edits to compiler-owned files from being silently overwritten.
+The compiler is intentionally conservative: unsupported syntax produces a source-located `TS2GML` diagnostic instead of known-invalid GML. Generated assets are deterministic, and a manifest records which assets ts2gml owns. Generated content follows TypeScript; unmanaged GameMaker assets are protected from takeover.
 
 ## Install into a GameMaker project
 
@@ -14,21 +14,26 @@ The recommended release artifact is `typescript-to-gml-<version>.yymps`.
 1. Commit or back up the GameMaker project.
 2. Drag the `.yymps` file into the GameMaker IDE, or use **Tools > Import Local Package**.
 3. Import all files under `datafiles/ts2gml`.
-4. Install [Node.js 20 or newer](https://nodejs.org/).
+4. Install [Node.js 22 or newer](https://nodejs.org/).
 5. Save the GameMaker project and run `datafiles\ts2gml\ts2gml.bat build --project-saved` once from the game directory.
-6. Open the game folder in Visual Studio Code, open **Terminal > New Terminal**, and run `.\datafiles\ts2gml\ts2gml.bat watch`.
+6. Install the companion `typescript-to-gml-vscode-<version>.vsix` release artifact in Visual Studio Code.
+7. Open the game folder in Visual Studio Code, open **Terminal > New Terminal**, and run `.\datafiles\ts2gml\ts2gml.bat watch`.
 
-The first run creates `typescript/tsconfig.json` and generates the project-local GameMaker API declarations from the active compatible runtime's installed `GmlSpec.xml`. Put authored `.ts` files in `typescript/`; generated Script, Object, and room creation-code resources are written into the GameMaker project.
+The first run creates `typescript/tsconfig.json` and `ts2gml.config.json`, then generates the project-local GameMaker API declarations from the active compatible runtime's installed `GmlSpec.xml`. Put authored `.ts` files in `typescript/`; generated Script, Object, and room creation-code resources are written into the GameMaker project.
+
+Runtime guards default to `standard`: explicit `gm_self<T>()` and `gm_other<T>()` assertions are checked once per execution scope. The project configuration provides separate `run` and `build` levels, GameMaker configuration overrides, and a `maximum` level that also checks typed array and collection mutations. Generated GameMaker compiler hooks apply the right profile directly to generated GML before GameMaker loads it. See [runtime type guards](docs/Runtime-Guards.md).
+
+The VS Code extension displays compiler diagnostics in the editor and in **Problems**. It resolves names found in the generated runtime declarations through the official manual index and links them to their exact GameMaker manual topics; middle-click a built-in such as `instance_create_layer`, or run **TypeScript to GML: Open GameMaker Manual for Symbol**. Set `typescriptToGml.manualChannel` to `lts` when the project targets the LTS manual.
 
 ```ts
 class obj_player extends GMObject {
   health = 100;
 
-  onCreate() {
+  protected onCreate() {
     this.x = 64;
   }
 
-  onStep() {
+  protected onStep() {
     this.x += 2;
   }
 }
@@ -78,7 +83,9 @@ For day-to-day work, run watch mode in the Visual Studio Code terminal from the 
 
 Keep this terminal visible while editing. When a structural change needs GameMaker to be saved, the prompt appears here and waits for Enter. Double-clicking `ts2gml.bat` remains supported and starts the same watch command, but the integrated terminal makes prompts and diagnostics easier to notice.
 
-Use `check` in continuous integration. During `watch`, body-only changes update immediately. For a resource, event, field, room-link, or source-folder change, save GameMaker and press Enter at the watcher prompt. Use `build --project-saved` as the explicit non-interactive equivalent. Use `build --overwrite-generated` only when intentionally discarding edits made directly to compiler-owned generated files.
+Use `check` in continuous integration. During `watch`, body-only changes update immediately. For a resource, event, field, room-link, or source-folder change, save GameMaker and press Enter at the watcher prompt. Use `build --project-saved` as the explicit non-interactive equivalent. Compiler-owned output is automatically refreshed from TypeScript, including after GameMaker edits it.
+
+If an unmanaged GameMaker asset has the same name or path as a TypeScript asset, the compiler rejects it and reports both paths. Delete the asset in GameMaker and save the project if you want ts2gml to manage it, or rename the TypeScript asset.
 
 ## Documentation
 
@@ -87,7 +94,9 @@ Use `check` in continuous integration. During `watch`, body-only changes update 
 - [How the compiler works](docs/How-It-Works.md)
 - [Authoring guide](docs/Authoring-Guide.md)
 - [Supported language subset](docs/Supported-Language.md)
+- [Runtime type guards](docs/Runtime-Guards.md)
 - [CLI reference](docs/CLI-Reference.md)
+- [Visual Studio Code extension](docs/VS-Code-Extension.md)
 - [Generated files and ownership](docs/Generated-Files-and-Ownership.md)
 - [Known issues and beta warnings](docs/Known-Issues.md)
 - [Troubleshooting](docs/Troubleshooting.md)

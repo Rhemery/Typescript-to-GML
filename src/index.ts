@@ -7,19 +7,36 @@ export {
   type CompilerDiagnostic,
 } from "./compiler/compile.js";
 export {
+  applyRuntimeGuardProfile,
   buildGameMakerProject,
   checkGameMakerProject,
   prepareTypeScriptProject,
+  ResourceConflictError,
   StructuralGameMakerChangesError,
   type BuildOptions,
   type BuildSummary,
   type CheckSummary,
+  type ResourceConflict,
   type TypeScriptProjectSummary,
 } from "./compiler/project.js";
 export {
   watchGameMakerProject,
   type WatchOptions,
 } from "./compiler/watch.js";
+export {
+  createRuntimeGuardGml,
+  defaultRuntimeGuardConfiguration,
+  detectRuntimeGuardConfiguration,
+  detectRuntimeGuardProfile,
+  readRuntimeGuardConfiguration,
+  resolveRuntimeGuardLevel,
+  runtimeGuardConfigFileName,
+  type RuntimeGuardConfiguration,
+  type RuntimeGuardLevel,
+  type RuntimeGuardProfile,
+  type RuntimeGuardProfileApplyOptions,
+  type RuntimeGuardProfileResult,
+} from "./compiler/runtime-guards.js";
 export {
   clearProjectRuntimeSelection,
   discoverInstalledGmlSpecs,

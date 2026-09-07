@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "objects/obj_scope_target/Create_0.gml",
+  "mappings": [
+    {
+      "generatedLine": 2,
+      "source": "typescript/scope_context.ts",
+      "line": 50,
+      "column": 5
+    },
+    {
+      "generatedLine": 5,
+      "source": "typescript/scope_context.ts",
+      "line": 54,
+      "column": 5
+    },
+    {
+      "generatedLine": 8,
+      "source": "typescript/scope_context.ts",
+      "line": 58,
+      "column": 5
+    },
+    {
+      "generatedLine": 9,
+      "source": "typescript/scope_context.ts",
+      "line": 59,
+      "column": 5
+    },
+    {
+      "generatedLine": 12,
+      "source": "typescript/scope_context.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 13,
+      "source": "typescript/scope_context.ts",
+      "line": 63,
+      "column": 5
+    },
+    {
+      "generatedLine": 16,
+      "source": "typescript/scope_context.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 17,
+      "source": "typescript/scope_context.ts",
+      "line": 67,
+      "column": 5
+    }
+  ]
+}

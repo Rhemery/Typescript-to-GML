@@ -1,3 +1,4 @@
+import { atomicWriteFile } from "../files.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import JSON5 from "json5";
@@ -260,14 +261,15 @@ export async function generateProjectDeclarations(
     ...(collisionObjectNames.length > 0
       ? [
           "",
-          "interface GMObject {",
+          "declare abstract class GMObjectCollisionEvents {",
           ...collisionObjectNames.map((name) => {
             const otherType = authoredObjectNames.has(name)
               ? `GMInstance<${name}>`
               : "GMInstance";
-            return `  onCollision_${name}?(other: ${otherType}): void;`;
+            return `  protected onCollision_${name}?(other: ${otherType}): void;`;
           }),
           "}",
+          "interface GMObject extends GMObjectCollisionEvents {}",
         ]
       : []),
     "",
@@ -282,7 +284,7 @@ export async function generateProjectDeclarations(
   const written = previous !== contents;
   if (written) {
     await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, contents, "utf8");
+    await atomicWriteFile(outputPath, contents);
   }
 
   return {
