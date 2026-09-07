@@ -1,4 +1,4 @@
-import { watch, type FSWatcher } from "node:fs";
+import { promises as fs, watch, type FSWatcher } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { withProjectLock } from "./project-state.js";
@@ -154,10 +154,16 @@ export async function watchGameMakerProject(
     }, debounceMs);
   };
 
-  sourceWatcher = watch(project.sourceDirectory, { recursive: true }, (event, fileName) => {
+  // Windows events use long paths. Passing an 8.3 alias to libuv can abort Node
+  // when it compares an event's path with the watched directory.
+  const [sourceWatchDirectory, projectWatchDirectory] = await Promise.all([
+    fs.realpath(project.sourceDirectory),
+    fs.realpath(projectDirectory),
+  ]);
+  sourceWatcher = watch(sourceWatchDirectory, { recursive: true }, (event, fileName) => {
     scheduleBuild(event, fileName);
   });
-  projectWatcher = watch(projectDirectory, { recursive: true }, (_event, fileName) => {
+  projectWatcher = watch(projectWatchDirectory, { recursive: true }, (_event, fileName) => {
     const changed = fileName?.toString().replaceAll("\\", "/");
     if (changed && (changed === "ts2gml.config.json" || changed === ".ts2gml/runtime-selection.json" ||
       /^datafiles\/ts2gml\/types\/.*\.d\.ts$/i.test(changed))) {

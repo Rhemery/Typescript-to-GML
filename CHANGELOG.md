@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+- Resolve watch directories to their full paths to prevent native Node crashes on Windows 8.3 aliases, including hosted CI temporary directories.
+
 ## 0.2.0-beta.5 - Unreleased
 
 - Protect standalone source files from output collisions, including links and Windows path casing.

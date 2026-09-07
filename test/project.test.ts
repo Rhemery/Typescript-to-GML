@@ -1668,6 +1668,52 @@ test("migrates TypeScript configs that reference the former root-level tool", as
   assert.deepEqual(config.include, ["**/*.ts", "../datafiles/ts2gml/types/**/*.d.ts"]);
 });
 
+test("watch rebuilds source and project configuration through Windows short paths", {
+  skip: process.platform !== "win32",
+}, async (context) => {
+  const directory = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-watch-short-path-")));
+  const { stdout } = await execFileAsync("powershell.exe", [
+    "-NoProfile", "-NonInteractive", "-Command",
+    "(New-Object -ComObject Scripting.FileSystemObject).GetFolder($env:TS2GML_WATCH_TEST_DIRECTORY).ShortPath",
+  ], { env: { ...process.env, TS2GML_WATCH_TEST_DIRECTORY: directory } });
+  const shortDirectory = stdout.trim();
+  assert.ok(shortDirectory);
+  if (shortDirectory.toLowerCase() === directory.toLowerCase()) {
+    context.skip("The temporary volume does not provide Windows 8.3 path aliases.");
+    return;
+  }
+  assert.equal(await fs.realpath(shortDirectory), directory);
+  const project = await createEmptyProject(shortDirectory, "ShortPath");
+  await installTool(shortDirectory);
+  const prepared = await prepareTypeScriptProject(project);
+  const source = path.join(directory, "typescript", "short_path.ts");
+  const output = path.join(directory, "scripts", "short_path", "short_path.gml");
+  await fs.writeFile(source, "function short_path_value(): number { return 1; }");
+  await buildGameMakerProject([], project);
+  const controller = new AbortController();
+  const results: Array<Error | object> = [];
+  const watching = watchGameMakerProject(project, {
+    debounceMs: 20,
+    saveSettleMs: 0,
+    signal: controller.signal,
+    confirmStructuralChanges: () => true,
+    onBuild: (result) => results.push(result),
+  });
+  context.after(async () => { controller.abort(); await watching; });
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+  await fs.writeFile(source, "function short_path_value(): number { return 2; }");
+  await waitFor(async () => (await fs.readFile(output, "utf8")).includes("return 2"));
+  assert.ok(results.every((result) => !(result instanceof Error)));
+
+  const config = await fs.readFile(prepared.runtimeGuardConfigPath, "utf8");
+  results.length = 0;
+  await fs.writeFile(path.join(directory, "ts2gml.config.json"), "{ broken guards");
+  await waitFor(async () => results.some((result) => result instanceof Error));
+  results.length = 0;
+  await fs.writeFile(prepared.runtimeGuardConfigPath, config);
+  await waitFor(async () => results.some((result) => !(result instanceof Error)));
+});
+
 test("watch hot-reloads code and confirms saved IDE state before structural changes", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-watch-"));
   const projectPath = await createEmptyProject(temporary, "WatchedGame");
