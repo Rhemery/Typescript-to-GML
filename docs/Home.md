@@ -2,7 +2,7 @@
 
 TypeScript to GML is a project-local compiler and declaration library for authoring GameMaker code with TypeScript tooling. It does not embed JavaScript into a game. TypeScript first erases the types, then the compiler translates a supported JavaScript AST into native GML and GameMaker resources.
 
-The current release candidate is `0.2.0-beta.5`. It is best described as a public beta with an explicitly limited runtime contract: the tested lowering paths compile and execute in the GameMaker VM integration fixture, but target coverage and real-project mileage are still limited. Teams adopting it should pin the version, keep generated assets under source control, and retain ordinary GameMaker builds as a release gate.
+The current release candidate is `0.2.0-beta.6`. It is best described as a public beta with an explicitly limited runtime contract: the tested lowering paths compile and execute in the GameMaker VM integration fixture, but target coverage and real-project mileage are still limited. Teams adopting it should pin the version, keep generated assets under source control, and retain ordinary GameMaker builds as a release gate.
 
 ## What it provides
 
@@ -15,7 +15,7 @@ The current release candidate is `0.2.0-beta.5`. It is best described as a publi
 - Typed authoring intrinsics for macros, `with`, `other`, `self`, and `global`.
 - Configurable runtime guards for typed context assertions and collection mutations.
 - Deterministic project updates with TypeScript-owned generated content and protection for unmanaged assets.
-- A self-contained distribution stored in each game's `datafiles/ts2gml` folder.
+- A project-local distribution stored in each game's `datafiles/ts2gml` folder, using separately installed Node.js and TypeScript libraries.
 
 ## Read next
 
@@ -36,7 +36,7 @@ The current release candidate is `0.2.0-beta.5`. It is best described as a publi
 
 ## Project status
 
-- Package version: `0.2.0-beta.5`.
+- Package version: `0.2.0-beta.6`.
 - Node.js requirement: 22 or newer.
 - Primary user package: `.yymps` local asset package.
 - Fully exercised integration target: Windows VM, GameMaker runtime `2026.0.0.23`.

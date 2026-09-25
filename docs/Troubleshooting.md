@@ -12,6 +12,12 @@ Install Node.js 22 or newer and reopen the terminal so `PATH` refreshes. Confirm
 node --version
 ```
 
+## TypeScript libraries are missing or incompatible
+
+Install TypeScript 5.9.x with `npm install --global typescript@5.9`, or run `npm install --save-dev typescript@5.9` in the game directory. The CLI checks the project's installation first, then global `tsc` on `PATH`. A project installation with the wrong version must be updated even if a compatible global installation exists.
+
+The YYMPS does not include TypeScript standard-library declarations. VS Code's built-in language support does not make them available to this CLI automatically. For a custom installation, set `TS2GML_TYPESCRIPT_LIB` to its absolute `lib` directory. Clear an outdated override if it points to a removed installation, and restart the watcher after changes. `doctor --json` reports the selected library directory and version after a successful check.
+
 ## No `.yyp` project was found
 
 Run the batch file from inside the game tree or pass the project explicitly:

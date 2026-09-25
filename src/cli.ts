@@ -28,6 +28,7 @@ import {
 import { generateProjectDeclarations } from "./declarations/project.js";
 import { checkForUpdate } from "./update-check.js";
 import { VERSION } from "./version.js";
+import { findTypeScriptLibraries } from "./typescript-libraries.js";
 import { atomicWriteFile, sameFilePath } from "./files.js";
 
 async function main(args: string[]): Promise<void> {
@@ -154,7 +155,8 @@ async function main(args: string[]): Promise<void> {
     const manifest = await readManifest(path.join(path.dirname(project), ".ts2gml", "manifest.json"));
     const summary = await checkGameMakerProject([], project);
     const report = { protocolVersion: 1, compilerVersion: VERSION, nodeVersion: process.versions.node,
-      project, runtimeSpec: spec, manifestVersion: manifest.formatVersion,
+      project, typeScriptLibraries: findTypeScriptLibraries(path.join(path.dirname(project), "typescript")),
+      runtimeSpec: spec, manifestVersion: manifest.formatVersion,
       previousCompilerVersion: manifest.compilerVersion, ownedFiles: manifest.files.length,
       sourceFiles: summary.sourceFiles, diagnostics: [] };
     console.log(json ? JSON.stringify(report) : JSON.stringify(report, null, 2));

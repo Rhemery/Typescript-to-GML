@@ -9,4 +9,6 @@ This companion extension adds editor support to projects that use
 
 The extension activates only for TypeScript files beneath a directory containing one GameMaker `.yyp` project. Run the CLI's `init` command first so the project-local runtime declarations exist.
 
+Project checks require Node.js 22+ and TypeScript 5.9.x installed in the game (`npm install --save-dev typescript@5.9`) or globally (`npm install --global typescript@5.9`). The editor's built-in TypeScript language service is separate from the CLI's library installation.
+
 The extension uses the official manual's published topic index. The Monthly channel is used by default; set `typescriptToGml.manualChannel` to `lts` for an LTS project.

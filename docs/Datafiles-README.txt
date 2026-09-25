@@ -1,6 +1,8 @@
 TypeScript to GML beta
 
-This is a beta, project-local TypeScript-to-GML compiler. Node.js 22 or newer is required.
+This is a beta, project-local TypeScript-to-GML compiler. Node.js 22 or newer and TypeScript 5.9.x are required.
+
+Install TypeScript with npm install --global typescript@5.9, or run npm install --save-dev typescript@5.9 in the game directory. The CLI reads its standard-library declarations from that installation; they are not included in this package. A project installation takes precedence over global tsc on PATH. VS Code's built-in language support alone does not install the command-line tools. For a custom installation, set TS2GML_TYPESCRIPT_LIB to its absolute lib directory. Restart watch mode after changing the installation.
 
 From the GameMaker project directory, run:
 
@@ -22,6 +24,6 @@ Keep authored code in the project's typescript directory. Keep the project under
 
 Runtime guard levels are configured in ts2gml.config.json beside the .yyp. Generated pre_project_step, pre_run_step, and pre_build_step files apply separate testing and package-build profiles directly to generated GML. Both profiles default to standard guards when no configuration is present.
 
-If GameMaker and TypeScript claim the same Script or Object, interactive build/watch lists both paths and offers to delete either side, retry after a manual rename, or cancel. Destructive choices require typed confirmation; close GameMaker before deleting its resource.
+If GameMaker and TypeScript claim the same Script or Object, the compiler lists both paths and stops. Delete the conflicting asset in GameMaker and save the project if you want ts2gml to manage it, or rename the TypeScript asset and retry.
 
 If the batch file cannot find Node.js, install Node.js 22+ and reopen the terminal.

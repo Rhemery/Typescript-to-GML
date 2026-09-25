@@ -3,6 +3,7 @@ import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { test } from "node:test";
 import { promisify } from "node:util";
@@ -74,6 +75,9 @@ async function createEmptyProject(directory: string, name: string): Promise<stri
 async function installTool(directory: string): Promise<string> {
   const toolDirectory = path.join(directory, "datafiles", "ts2gml");
   await fs.cp(path.resolve("dist", "ts2gml"), toolDirectory, { recursive: true });
+  const installedTypeScript = path.dirname(createRequire(import.meta.url).resolve("typescript/package.json"));
+  await fs.mkdir(path.join(directory, "node_modules"), { recursive: true });
+  await fs.symlink(installedTypeScript, path.join(directory, "node_modules", "typescript"), "junction");
   await fs.writeFile(
     path.join(toolDirectory, "types", "gamemaker.generated.d.ts"),
     testRuntimeDeclarations,
@@ -1527,8 +1531,9 @@ test("rejects unmanaged resources until the GameMaker asset is deleted", async (
   }
 });
 
-test("project-local distribution discovers and builds its GameMaker project", async () => {
+test("project-local distribution discovers and builds its GameMaker project", async (context) => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-cli-"));
+  context.after(() => fs.rm(temporary, { recursive: true, force: true }));
   await createEmptyProject(temporary, "PortableGame");
   const toolDirectory = await installTool(temporary);
   const sourceDirectory = path.join(temporary, "typescript");
@@ -1539,8 +1544,17 @@ test("project-local distribution discovers and builds its GameMaker project", as
   );
 
   const cliPath = path.join(toolDirectory, "cli.cjs");
+  // Exercise the actual bundle with no copied libraries and no global tsc fallback.
+  const environment = { ...process.env, PATH: "", Path: "", TS2GML_TYPESCRIPT_LIB: "" };
+  await assert.rejects(fs.access(path.join(toolDirectory, "typescript")), { code: "ENOENT" });
+  await assert.rejects(execFileAsync(process.execPath, [cliPath, "init"], {
+    cwd: sourceDirectory,
+    env: { ...environment, TS2GML_TYPESCRIPT_LIB: path.join(temporary, "missing-sdk", "lib") },
+  }), /Cannot read TypeScript libraries.*npm install/);
+  await assert.rejects(fs.access(path.join(sourceDirectory, "tsconfig.json")), { code: "ENOENT" });
   const checked = await execFileAsync(process.execPath, [cliPath, "check"], {
     cwd: sourceDirectory,
+    env: environment,
   });
   assert.match(checked.stdout, /Checked 1 source file\(s\)/);
   await assert.rejects(
@@ -1549,6 +1563,7 @@ test("project-local distribution discovers and builds its GameMaker project", as
   );
   const result = await execFileAsync(process.execPath, [cliPath, "build", "--project-saved"], {
     cwd: sourceDirectory,
+    env: environment,
   });
 
   assert.match(
@@ -1562,6 +1577,17 @@ test("project-local distribution discovers and builds its GameMaker project", as
     /pushd "%TS2GML_DIR%\.\.\\\.\."[\s\S]*node "%TS2GML_DIR%cli\.cjs" watch/,
   );
   await fs.access(path.join(sourceDirectory, "tsconfig.json"));
+
+  // Existing games may let TypeScript select libraries from target instead of lib.
+  const configPath = path.join(sourceDirectory, "tsconfig.json");
+  const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+  delete config.compilerOptions.lib;
+  await fs.writeFile(configPath, JSON.stringify(config));
+  const defaultLibraries = await execFileAsync(process.execPath, [cliPath, "check"], {
+    cwd: sourceDirectory,
+    env: environment,
+  });
+  assert.match(defaultLibraries.stdout, /Checked 1 source file\(s\)/);
 });
 
 test("project-local CLI remembers an explicit Beta or LTS runtime selection", {

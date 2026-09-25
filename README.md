@@ -3,7 +3,7 @@
 TypeScript to GML provides typed declarations for the GameMaker API and compiles a deliberately supported TypeScript/JavaScript subset into GML. Ordinary classes become GML constructors. Classes derived from `GMObject` become GameMaker object assets and event files. Classes derived from `GMRoom` provide creation code for existing rooms.
 
 > [!WARNING]
-> Version `0.2.0-beta.5` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
+> Version `0.2.0-beta.6` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
 
 The compiler is intentionally conservative: unsupported syntax produces a source-located `TS2GML` diagnostic instead of known-invalid GML. Generated assets are deterministic, and a manifest records which assets ts2gml owns. Generated content follows TypeScript; unmanaged GameMaker assets are protected from takeover.
 
@@ -14,12 +14,14 @@ The recommended release artifact is `typescript-to-gml-<version>.yymps`.
 1. Commit or back up the GameMaker project.
 2. Drag the `.yymps` file into the GameMaker IDE, or use **Tools > Import Local Package**.
 3. Import all files under `datafiles/ts2gml`.
-4. Install [Node.js 22 or newer](https://nodejs.org/).
+4. Install [Node.js 22 or newer](https://nodejs.org/) and TypeScript 5.9.x (`npm install --global typescript@5.9`, or `npm install --save-dev typescript@5.9` in the game directory).
 5. Save the GameMaker project and run `datafiles\ts2gml\ts2gml.bat build --project-saved` once from the game directory.
 6. Install the companion `typescript-to-gml-vscode-<version>.vsix` release artifact in Visual Studio Code.
 7. Open the game folder in Visual Studio Code, open **Terminal > New Terminal**, and run `.\datafiles\ts2gml\ts2gml.bat watch`.
 
 The first run creates `typescript/tsconfig.json` and `ts2gml.config.json`, then generates the project-local GameMaker API declarations from the active compatible runtime's installed `GmlSpec.xml`. Put authored `.ts` files in `typescript/`; generated Script, Object, and room creation-code resources are written into the GameMaker project.
+
+TypeScript standard-library declarations are read from your installed TypeScript package and are not included in the YYMPS. The CLI prefers a project installation, then a global installation available through `tsc` on `PATH`. VS Code's built-in TypeScript language support does not install `tsc` for terminal commands. See [TypeScript setup](docs/Getting-Started.md#requirements) for custom installations.
 
 Runtime guards default to `standard`: explicit `gm_self<T>()` and `gm_other<T>()` assertions are checked once per execution scope. The project configuration provides separate `run` and `build` levels, GameMaker configuration overrides, and a `maximum` level that also checks typed array and collection mutations. Generated GameMaker compiler hooks apply the right profile directly to generated GML before GameMaker loads it. See [runtime type guards](docs/Runtime-Guards.md).
 

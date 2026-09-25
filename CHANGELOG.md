@@ -2,9 +2,12 @@
 
 All notable changes to this project are documented here.
 
-## Unreleased
+## 0.2.0-beta.6 - Unreleased
 
+- Stop shipping TypeScript standard-library declarations in the distribution and YYMPS. Resolve a compatible project or global TypeScript installation, support `TS2GML_TYPESCRIPT_LIB`, and report setup errors and the selected libraries through the CLI.
 - Resolve watch directories to their full paths to prevent native Node crashes on Windows 8.3 aliases, including hosted CI temporary directories.
+- Resolve target-selected default libraries from the same external TypeScript installation when a game's tsconfig omits `lib`.
+- Advance the companion VSIX to `0.2.6` with matching compiler metadata and document the external TypeScript installation and upgrade requirements.
 
 ## 0.2.0-beta.5 - Unreleased
 

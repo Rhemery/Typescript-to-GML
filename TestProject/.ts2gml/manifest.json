@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "compilerVersion": "0.2.0-beta.5",
+  "compilerVersion": "0.2.0-beta.6",
   "files": [
     "objects/obj_scope_runner/Alarm_0.gml",
     "objects/obj_scope_runner/Alarm_0.gml.map.json",

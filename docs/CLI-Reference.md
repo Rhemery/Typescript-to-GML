@@ -6,11 +6,13 @@
 
 `diagnose source.ts --json` reads unsaved TypeScript from standard input and runs syntax/subset validation. Full receiver/type/resource checks require `check`. This is the protocol used by the editor extension.
 
-`doctor Game.yyp --json` resolves the project's runtime, validates manifest state, runs a project check, and reports Node/compiler/runtime paths and versions. It uses the same installed-runtime selection rules as declarations and the GameMaker smoke runner.
+`doctor Game.yyp --json` resolves the project's runtime, validates manifest state, runs a project check, and reports Node/compiler/runtime paths and versions. `typeScriptLibraries` records the external TypeScript library directory and version. It uses the same installed-runtime selection rules as declarations and the GameMaker smoke runner.
 
 Standalone `compile` accepts `.ts`, `.tsx`, `.js`, and `.jsx` paths, case-insensitively, with syntax still restricted by the compiler. It defaults to a distinct `.gml` path and writes a `.gml.map.json` sidecar. Output cannot resolve to or hard-link the source input.
 
 The release is project-local. On Windows, use `datafiles\ts2gml\ts2gml.bat`; on another operating system, invoke `node datafiles/ts2gml/cli.cjs` with the same arguments.
+
+Project commands require TypeScript 5.9.x installed separately. Libraries resolve from `typescript/` and its parent directories through normal Node package resolution, then from a global `tsc` launcher on `PATH`. `TS2GML_TYPESCRIPT_LIB` overrides discovery with a custom installation's absolute `lib` directory. See [setup](Getting-Started.md#requirements).
 
 The recommended Windows workflow is to open the GameMaker project folder in Visual Studio Code and run `.\datafiles\ts2gml\ts2gml.bat watch` from its integrated terminal. Keep that terminal visible so structural-save prompts and diagnostics are noticed immediately. Double-clicking the batch file is also supported and starts watch mode with no arguments.
 

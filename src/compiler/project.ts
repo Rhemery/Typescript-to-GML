@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from "node:util";
 import JSON5 from "json5";
 import ts from "typescript";
 import { VERSION } from "../version.js";
+import { findTypeScriptLibraries } from "../typescript-libraries.js";
 import { collectNativeAccessPlan } from "./access.js";
 import { extractGmlSourceMap } from "./source-maps.js";
 import { commitProjectFiles, projectFilePath, withProjectLock } from "./project-state.js";
@@ -359,7 +360,6 @@ async function compileGameMakerProject(
   const objectNames = findObjectNames(parsedUnits.map((unit) => unit.typeScriptSourceFile));
   const guardProgram = loadTypeScriptProgram(
     typeScriptProject.configPath,
-    typeScriptProject.typeDirectory,
     sourceFiles,
   ).program;
   const guardChecker = guardProgram.getTypeChecker();
@@ -599,7 +599,6 @@ async function compileGameMakerProject(
   if (bindingDiagnostics.length > 0) throw new Ts2GmlError(bindingDiagnostics);
   validateTypeScriptProject(
     typeScriptProject.configPath,
-    typeScriptProject.typeDirectory,
     sourceFiles,
   );
   return {
@@ -691,6 +690,7 @@ export async function prepareTypeScriptProject(
   await fs.access(projectPath);
   const projectDirectory = path.dirname(projectPath);
   const sourceDirectory = path.join(projectDirectory, "typescript");
+  findTypeScriptLibraries(sourceDirectory);
   const typeDirectory = getProjectTypesDirectory(projectDirectory);
   const configPath = path.join(sourceDirectory, "tsconfig.json");
   try {
@@ -773,10 +773,9 @@ async function discoverTypeScriptFiles(inputs: readonly string[]): Promise<strin
 
 function validateTypeScriptProject(
   configPath: string,
-  typeDirectory: string,
   sourceFiles: readonly string[],
 ): void {
-  const loaded = loadTypeScriptProgram(configPath, typeDirectory, sourceFiles);
+  const loaded = loadTypeScriptProgram(configPath, sourceFiles);
   const diagnostics = [
     ...loaded.configErrors,
     ...ts.getPreEmitDiagnostics(loaded.program),
@@ -800,7 +799,6 @@ function validateTypeScriptProject(
 
 function loadTypeScriptProgram(
   configPath: string,
-  typeDirectory: string,
   sourceFiles: readonly string[],
 ): { program: ts.Program; configErrors: ts.Diagnostic[] } {
   configPath = path.resolve(configPath).split(path.sep).join("/");
@@ -828,11 +826,9 @@ function loadTypeScriptProgram(
   };
   if (parsed.projectReferences) programOptions.projectReferences = parsed.projectReferences;
   const compilerHost = ts.createCompilerHost(programOptions.options);
-  compilerHost.getDefaultLibLocation = () => path.join(
-    path.dirname(typeDirectory),
-    "typescript",
-    "lib",
-  );
+  const libraries = findTypeScriptLibraries(configDirectory);
+  compilerHost.getDefaultLibLocation = () => libraries.directory;
+  compilerHost.getDefaultLibFileName = (options) => path.join(libraries.directory, ts.getDefaultLibFileName(options));
   programOptions.host = compilerHost;
   return {
     program: ts.createProgram(programOptions),

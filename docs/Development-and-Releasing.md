@@ -11,6 +11,8 @@ npm run package:vscode
 
 Use Node.js 24 for release builds; Node.js 22 is the supported minimum. CI tests Node 22 and 24 on Windows and Linux. The repository commits `package-lock.json`, but intentionally ignores `types/gamemaker.generated.d.ts` because it depends on the locally installed GameMaker runtime.
 
+`npm ci` installs the TypeScript libraries needed for repository checks and the integration game. They are not copied into the distribution or YYMPS. Installed games require their own local or global TypeScript 5.9.x installation; package tests exercise external library discovery and reject bundled standard-library files. Keep the documented TypeScript prerequisite aligned with the bundled engine's major/minor version when upgrading the dependency.
+
 Generate the local declaration used by the full verification suite from the installed runtime specification. Do not edit or commit it:
 
 ```powershell
@@ -30,7 +32,7 @@ npm run verify
 
 `verify:release` is portable and runs strict tool type checking, compiler/project tests, distribution smoke checks, and YYMPS construction/validation. Its project tests create isolated local declaration fixtures; the release artifacts contain no runtime declaration snapshot.
 
-It also builds and validates the prerelease VSIX at `release/typescript-to-gml-vscode-<version>.vsix`. The extension has its own increasing numeric version: compiler `0.2.0-beta.4` used VSIX `0.2.0`; compiler `0.2.0-beta.5` uses VSIX `0.2.5`. Never reuse or decrease a published VSIX version. Its `ts2gmlCompilerVersion` records the matching compiler. Package, lockfile, CLI, changelog, minimum editor API, and archive metadata are checked during packaging. `package.json` is the authoritative compiler version.
+It also builds and validates the prerelease VSIX at `release/typescript-to-gml-vscode-<version>.vsix`. The extension has its own increasing numeric version: compiler `0.2.0-beta.4` used VSIX `0.2.0`; compiler `0.2.0-beta.5` used VSIX `0.2.5`; compiler `0.2.0-beta.6` uses VSIX `0.2.6`. Never reuse or decrease a published VSIX version. Its `ts2gmlCompilerVersion` records the matching compiler. Package, lockfile, CLI, changelog, minimum editor API, and archive metadata are checked during packaging. `package.json` is the authoritative compiler version.
 
 `verify` additionally regenerates and type-checks declarations from the installed GameMaker runtime, regenerates and checks `TestProject`, and uses that runtime to compile and run the game. On Windows, successful VM execution prints `TS2GML_SCOPE_CONTEXT_OK`. Runtime discovery can be overridden with `GAMEMAKER_GML_SPEC`, `GAMEMAKER_RUNTIME_PATH`, `GAMEMAKER_IGOR`, `GAMEMAKER_RUNNER`, and `GAMEMAKER_USER_DIR`.
 
@@ -41,6 +43,9 @@ Before a release, keep these values identical:
 - `package.json` and the lockfile root package version.
 - `src/version.ts`.
 - The release heading in `CHANGELOG.md`.
+- `vscode-extension/package.json`'s `ts2gmlCompilerVersion`; increase its separate numeric `version` too.
+
+Update current-version references in the README, documentation, and issue template, then regenerate `TestProject` so its manifest records the new compiler. Preserve historical versions in the changelog and evaluation. Keep the new changelog heading marked `Unreleased` until publication.
 
 Use semantic versioning. Until compatibility and target coverage are broader, publish prereleases such as `0.2.0-beta.1`.
 

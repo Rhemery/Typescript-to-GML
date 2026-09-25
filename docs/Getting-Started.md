@@ -4,10 +4,21 @@
 
 - GameMaker capable of importing a local asset package.
 - Node.js 22 or newer available as `node` on `PATH`.
+- TypeScript 5.9.x installed locally in the game or globally with `tsc` on `PATH`.
 - A source-controlled or backed-up GameMaker project.
 - Visual Studio Code 1.134 or newer. The companion extension is optional but recommended for inline compiler diagnostics and manual links.
 
-The compiler runs beside the game rather than as a global install. This keeps each game pinned to its own compiler and declaration version.
+The ts2gml compiler runs beside the game. TypeScript standard-library declarations come from a separate TypeScript installation with the same major/minor version as the TypeScript engine bundled into ts2gml (currently 5.9.x).
+
+Install TypeScript once on the machine:
+
+```powershell
+npm install --global typescript@5.9
+```
+
+Alternatively, pin it per game by running `npm install --save-dev typescript@5.9` in the game directory; commit `package.json` and `package-lock.json`, and run `npm ci` on other machines and in CI. Project installations take precedence over global installations. VS Code's built-in language support is separate from a [command-line TypeScript installation](https://code.visualstudio.com/docs/typescript/typescript-transpiling). With a local installation, use **TypeScript: Select TypeScript Version > Use Workspace Version** to align the editor.
+
+For a custom installation, set `TS2GML_TYPESCRIPT_LIB` to the absolute path of its `typescript/lib` directory. This overrides discovery. The CLI validates the package version and required library files, and reports an installation command if they are missing or incompatible. Restart watch mode after installing or switching TypeScript.
 
 ## Install the YYMPS package
 
@@ -17,7 +28,7 @@ The compiler runs beside the game rather than as a global install. This keeps ea
 4. Select every included file and import them. They should appear on disk below `datafiles/ts2gml`.
 5. Do not move individual files out of that directory; the batch launcher uses its location to find the project root.
 
-The package contains only the compiler, compiler authoring declarations, TypeScript standard-library declarations, documentation, licenses, and launcher. It does not contain a GameMaker runtime declaration snapshot or source assets that could overwrite a game's rooms, objects, or scripts. The first project command generates the GameMaker API declaration from the active compatible installed runtime; no repository checkout is needed.
+The package contains the compiler, compiler authoring declarations, documentation, licenses, and launcher. TypeScript standard-library declarations are not packaged. It does not contain a GameMaker runtime declaration snapshot or source assets that could overwrite a game's rooms, objects, or scripts. The first project command generates the GameMaker API declaration from the active compatible installed runtime; no repository checkout is needed.
 
 Install the `typescript-to-gml-vscode-<version>.vsix` attached to the same release through **Extensions: Install from VSIX...**. It is a separate artifact because the GameMaker local package and the VS Code extension have different installers. See [Visual Studio Code extension](VS-Code-Extension.md).
 
@@ -60,8 +71,7 @@ MyGame/
 |   `-- ts2gml/
 |       |-- cli.cjs
 |       |-- ts2gml.bat
-|       |-- types/
-|       `-- typescript/
+|       `-- types/
 |-- typescript/
 |   |-- tsconfig.json
 |   `-- player.ts
@@ -124,8 +134,11 @@ Continue with the [authoring guide](Authoring-Guide.md) and [known issues](Known
 ## Upgrade the tool
 
 1. Stop the watcher, close GameMaker, and commit the game.
-2. Import the newer `.yymps` and replace the existing packaged files under `datafiles/ts2gml`.
-3. Confirm `ts2gml.bat --version` prints the intended version.
-4. Run `init`, `check`, and `build`, then review the generated diff.
+2. For beta.6 or newer, install TypeScript 5.9.x as described in [Requirements](#requirements). Earlier packages included these libraries.
+3. Import the newer `.yymps` and replace the existing packaged files under `datafiles/ts2gml`.
+4. Confirm `ts2gml.bat --version` prints the intended version.
+5. Run `init`, `doctor`, `check`, and `build`, then review the generated diff.
 
 The package does not include either generated declaration file or the `typescript/` game source, so a normal upgrade does not replace them. Runtime declarations are checked against the locally selected GameMaker runtime on the next project command. Do not delete `.ts2gml/manifest.json` during an upgrade; it carries the ownership history used to protect generated files.
+
+An import may leave the old `datafiles/ts2gml/typescript/` files and their Included File entries behind. The new compiler ignores those libraries. Remove that obsolete folder and its Included File entries in GameMaker after confirming the external installation with `doctor`; keep the game's separate root `typescript/` source directory.

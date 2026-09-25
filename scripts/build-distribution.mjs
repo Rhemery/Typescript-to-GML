@@ -1,5 +1,4 @@
 import { promises as fs } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { build } from "esbuild";
 import { copyPackageLicenses } from "./copy-package-licenses.mjs";
@@ -7,7 +6,6 @@ import { readReleaseMetadata } from "./release-metadata.mjs";
 
 await readReleaseMetadata();
 
-const require = createRequire(import.meta.url);
 const outputDirectory = path.resolve("dist", "ts2gml");
 await fs.rm(outputDirectory, { recursive: true, force: true });
 await fs.mkdir(path.join(outputDirectory, "types"), { recursive: true });
@@ -29,21 +27,6 @@ for (const fileName of ["core.d.ts", "index.d.ts"]) {
     path.join(outputDirectory, "types", fileName),
   );
 }
-
-const typescriptLibDirectory = path.dirname(require.resolve("typescript"));
-const distributedTypeScriptLib = path.join(outputDirectory, "typescript", "lib");
-await fs.mkdir(distributedTypeScriptLib, { recursive: true });
-const typeScriptLibraries = (await fs.readdir(typescriptLibDirectory))
-  .filter((fileName) => /^lib(?:\..+)?\.d\.ts$/.test(fileName))
-  .sort();
-await Promise.all(
-  typeScriptLibraries.map((fileName) =>
-    fs.copyFile(
-      path.join(typescriptLibDirectory, fileName),
-      path.join(distributedTypeScriptLib, fileName),
-    ),
-  ),
-);
 
 await fs.copyFile("LICENSE", path.join(outputDirectory, "LICENSE"));
 await fs.copyFile("docs/Datafiles-README.txt", path.join(outputDirectory, "README.txt"));

@@ -52,6 +52,8 @@ test("builds a deterministic YYMPS containing only the distribution", async (con
   assert.ok(includedPaths.includes("datafiles/ts2gml/README.txt"));
   assert.ok(includedPaths.includes("datafiles/ts2gml/docs/Known-Issues.md"));
   assert.ok(includedPaths.includes("datafiles/ts2gml/types/core.d.ts"));
+  assert.ok(!Object.keys(files).some((file) => file.startsWith("datafiles/ts2gml/typescript/")));
+  assert.ok(!includedPaths.some((file) => /\/lib(?:\..+)?\.d\.ts$/.test(file)));
   assert.ok(!includedPaths.includes("datafiles/ts2gml/types/gamemaker.generated.d.ts"));
   assert.ok(!includedPaths.some((file) => file.endsWith("gamemaker.project.generated.d.ts")));
   assert.deepEqual([...files["yymanifest.xml"]!.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
