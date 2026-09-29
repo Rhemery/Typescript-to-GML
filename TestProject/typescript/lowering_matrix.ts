@@ -3,7 +3,7 @@ interface GMGlobal {
   loweringMatrixEffect: number;
 }
 
-const LOWERING_MATRIX_GLOBAL = 17;
+gm_global.LOWERING_MATRIX_GLOBAL = 17;
 
 function loweringMatrixAdd(left: number, right: number): number {
   return left + right;

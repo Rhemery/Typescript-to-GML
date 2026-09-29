@@ -329,7 +329,7 @@ test("rejects invalid GameMaker macro declarations before GML emission", () => {
   );
 });
 
-test("allows context-safe arrows and rejects unsupported lexical captures", () => {
+test("allows context-safe arrows and captures parameters and locals", () => {
   const safe = compileTypeScript(`
 class Counter {
   value = 1;
@@ -342,27 +342,18 @@ const double = (value: number) => value * 2;
 `, "safe-arrows.ts");
   assert.match(safe.gml, /return self\.value \+ amount/);
 
-  assert.throws(
-    () => compileTypeScript(`
+  const captured = compileTypeScript(`
 function createScaler(multiplier: number) {
   const offset = 1;
   return (value: number) => value * multiplier + offset;
 }
-`, "capturing-arrow.ts"),
-    (error: unknown) => {
-      assert.ok(error instanceof Ts2GmlError);
-      assert.deepEqual(
-        error.diagnostics.map((diagnostic) => diagnostic.code),
-        ["TS2GML1014", "TS2GML1014"],
-      );
-      assert.match(error.message, /capturing-arrow\.ts:4:\d+ - error TS2GML1014/);
-      assert.match(error.message, /captures local variable 'multiplier'/);
-      assert.match(error.message, /captures local variable 'offset'/);
-      assert.match(error.message, /\|   return \(value: number\) => value \* multiplier \+ offset;/);
-      assert.match(error.message, /hint: Pass 'multiplier' as an argument/);
-      return true;
-    },
-  );
+`, "capturing-arrow.ts");
+  assert.match(captured.gml, /__ts2gml_capture_1: __ts2gml_capture_1_parameter/);
+  assert.match(captured.gml, /return value \* __ts2gml_env_1\.__ts2gml_capture_1 \+ __ts2gml_env_1\.__ts2gml_capture_2/);
+  assert.doesNotMatch(captured.gml, /with \(|__ts2gml_receiver/);
+  assert.match(captured.javascript, /value \* multiplier \+ offset/);
+  assert.doesNotMatch(captured.javascript, /__ts2gml_env/);
+  assert.ok(captured.sourceMap.mappings.some((mapping) => mapping.line === 4));
 });
 
 test("rejects lexical arrow context that GML methods cannot preserve", () => {
@@ -402,16 +393,66 @@ test("rejects lexical arrow context that GML methods cannot preserve", () => {
       error instanceof Ts2GmlError &&
       error.diagnostics[0]?.code === "TS2GML1018",
   );
-  assert.throws(
+  assert.doesNotThrow(
     () => compileTypeScript(
       "function outer() { const value = 1; return function inner() { return value; }; }",
       "nested-function.ts",
     ),
-    (error: unknown) =>
-      error instanceof Ts2GmlError &&
-      error.diagnostics[0]?.code === "TS2GML1014" &&
-      /Nested function captures local variable 'value'/.test(error.message),
   );
+});
+
+test("shares mutable captured bindings and carries environments through nested closures", () => {
+  const source = `function pair(initial: number) {
+    let count = initial;
+    const read = () => count;
+    const add = (amount: number) => { count += amount; return { count }; };
+    count += 2;
+    return { read, add };
+  }
+  function chain(first: number) { return (second: number) => (third: number) => first + second + third; }
+  function named(value: number) { function read() { return value; } return read; }
+  function shadow(value: number) { return (value: number) => () => value; }`;
+  const { gml } = compileTypeScript(source, "closures.ts");
+  assert.match(gml, /__ts2gml_env_1\.__ts2gml_capture_1 \+= amount/);
+  assert.match(gml, /__ts2gml_env_1\.__ts2gml_capture_1 \+= 2/);
+  assert.match(gml, /count: __ts2gml_env_1\.__ts2gml_capture_1/);
+  assert.match(gml, /(__ts2gml_capture_\d+): \1_parameter/);
+  assert.match(gml, /var read = method\(/);
+  assert.equal(compileTypeScript(source, "closures.ts").gml, gml);
+});
+
+test("rejects closure lifetime and context cases that are not lowered", () => {
+  const sources = [
+    "function make() { for (let index = 0; index < 2; index++) { save(() => index); } }",
+    "function make() { while (test()) { const value = 1; save(() => value); } }",
+    "function make() { if (test()) { const value = 1; return () => value; } }",
+    "function make() { const { value } = source; return () => value; }",
+    "function make() { try { run(); } catch (error) { return () => error; } }",
+    "function make(value) { return (amount = value) => amount; }",
+    "function make(value, read = () => value) { return read; }",
+    "class Base {} class Child extends Base { constructor(value) { super(() => value); } }",
+    "function make(value) { return () => value + gm_other().value; }",
+    "class Owner { make(value) { return (amount = this.value) => value + amount; } }",
+    "function make(value) { return (amount = x) => value + amount; }",
+    "class Owner { onCollision_target(other) { return () => other.value; } }",
+    "function make(value) { function read() { return value; } return () => read(); }",
+    "function make(value) { return read; function read() { return value; } }",
+    "function make() { var value = 1; var value; return () => value; }",
+  ];
+  for (const source of sources) {
+    assert.throws(() => compileTypeScript(`interface Erased {}\n${source}`, "closure-limits.ts"),
+      (error: unknown) => error instanceof Ts2GmlError && error.diagnostics.some((diagnostic) =>
+        diagnostic.code === "TS2GML1014" && diagnostic.fileName === "closure-limits.ts" && diagnostic.line === 2), source);
+  }
+});
+
+test("lowers closures assigned to top-level locals", () => {
+  const { gml } = compileTypeScript("const factory = (value: number) => () => value;", "global-closure.ts");
+  assert.match(gml, /__ts2gml_capture_1: __ts2gml_capture_1_parameter/);
+  assert.match(gml, /return method\(/);
+  assert.match(gml, /var factory = function/);
+  assert.doesNotMatch(gml, /global\.factory/);
+  assert.doesNotMatch(gml, /return value;/);
 });
 
 test("lowers optional chains and JavaScript-only operators", () => {
@@ -431,6 +472,77 @@ const nothing = void reset();
   assert.match(result.gml, /reset\(\)/);
 });
 
+test("lowers optional method-call statements to inline guards", () => {
+  const { gml } = compileTypeScript(`
+class Player {
+  onEndStep() { this.weapon?.onEndStep(); }
+}
+function tick(player) { player?.weapon?.onEndStep(argument()); }
+`, "optional-method.ts");
+  assert.match(gml, /if \(__ts2gml_value_truthy\(self\.weapon\)\) \{\s+self\.weapon\.onEndStep\(\);\s+\}/);
+  assert.match(gml, /if \(__ts2gml_value_truthy\(player\)\) \{\s+if \(__ts2gml_value_truthy\(player\.weapon\)\) \{\s+player\.weapon\.onEndStep\(argument\(\)\);/);
+  assert.doesNotMatch(gml, /\?\.|__ts2gml_optional_/);
+});
+
+test("evaluates optional method receivers once and keeps arguments inside their guards", () => {
+  const { gml } = compileTypeScript(`
+function tick(player, amount) {
+  getWeapon()?.onEndStep(amount);
+  player?.getWeapon()?.onEndStep(argument());
+  weapons[index()]?.onEndStep(amount);
+}
+`, "optional-receivers.ts");
+  assert.match(gml, /var (__ts2gml_optional_\w+) = getWeapon\(\);\s+if \(__ts2gml_value_truthy\(\1\)\) \{\s+\1\.onEndStep\(amount\);/);
+  assert.match(gml, /if \(__ts2gml_value_truthy\(player\)\) \{\s+\{\s+var (__ts2gml_optional_\w+) = player\.getWeapon\(\);\s+if \(__ts2gml_value_truthy\(\1\)\) \{\s+\1\.onEndStep\(argument\(\)\);/);
+  assert.match(gml, /var (__ts2gml_optional_\w+) = __ts2gml_value_get\(weapons, index\(\)\);\s+if \(__ts2gml_value_truthy\(\1\)\) \{\s+\1\.onEndStep\(amount\);/);
+  assert.equal(gml.match(/getWeapon\(\)/g)?.length, 2);
+  assert.equal(gml.match(/argument\(\)/g)?.length, 1);
+  assert.equal(gml.match(/index\(\)/g)?.length, 1);
+});
+
+test("keeps optional method calls inside unbraced control flow", () => {
+  const { gml } = compileTypeScript(`
+function tick(ready, player) {
+  if (ready) (player?.onEndStep()); else fallback();
+  if (ready) while (running) player?.onEndStep(); else fallback();
+}
+`, "optional-control-flow.ts");
+  assert.match(gml, /if \(__ts2gml_value_truthy\(ready\)\) \{\s+if \(__ts2gml_value_truthy\(player\)\) \{\s+player\.onEndStep\(\);\s+\}\s+\}\s+else/);
+  assert.match(gml, /while \(__ts2gml_value_truthy\(running\)\) \{\s+if \(__ts2gml_value_truthy\(player\)\) \{\s+player\.onEndStep\(\);\s+\}\s+\}\s+else/);
+});
+
+test("reuses normal call lowering inside optional method guards", () => {
+  const { gml } = compileTypeScript(`
+function tick(player, values: number[], args: number[]) {
+  player?.onEndStep(...args);
+  values?.push(argument());
+}
+`, "optional-call-lowering.ts");
+  assert.match(gml, /if \(__ts2gml_value_truthy\(player\)\) \{[\s\S]*var __ts2gml_method = __ts2gml_receiver\.onEndStep;/);
+  assert.match(gml, /\}\)\(undefined, player, args\)/);
+  assert.match(gml, /if \(__ts2gml_value_truthy\(values\)\) \{\s+__ts2gml_collection_push\(values, \[argument\(\)\]\);/);
+  assert.doesNotMatch(gml, /\?\.|\.\.\./);
+});
+
+test("keeps unsupported optional calls source-located", () => {
+  for (const expression of [
+    "const result = player?.onEndStep();",
+    "return player?.onEndStep();",
+    "consume(player?.onEndStep());",
+    "player?.onEndStep(callback?.());",
+    "(player?.getWeapon())?.onEndStep();",
+    "callback?.();",
+    "player.onEndStep?.();",
+    "player?.[key]();",
+    "player?.onEndStep(/unsupported/);",
+  ]) {
+    assert.throws(() => compileTypeScript(`function tick() {\n  ${expression}\n}`, "optional-unsupported.ts"),
+      (error: unknown) => error instanceof Ts2GmlError &&
+        error.diagnostics.some((diagnostic) => diagnostic.fileName === "optional-unsupported.ts" &&
+          diagnostic.line === 2 && ["TS2GML1007", "TS2GML1012"].includes(diagnostic.code)));
+  }
+});
+
 test("lowers array, object, and call spread", () => {
   const result = compileTypeScript(`
 function spreadValues(left: number[], right: number[], source: GMStruct, calculator: GMStruct) {
@@ -446,8 +558,10 @@ function spreadValues(left: number[], right: number[], source: GMStruct, calcula
   assert.match(result.gml, /variable_struct_get_names\(__ts2gml_part\)/);
   assert.match(result.gml, /variable_struct_set\(__ts2gml_result/);
   assert.match(result.gml, /is_method\(__ts2gml_callable\) \? method_call/);
-  assert.match(result.gml, /\}\)\(sum, array_concat\(\[\], \[1\], values\)\)/);
-  assert.match(result.gml, /method\(__ts2gml_receiver, __ts2gml_receiver\.sum\)/);
+  assert.match(result.gml, /var __ts2gml_callable = sum;/);
+  assert.match(result.gml, /var __ts2gml_arguments = array_concat\(\[\], \[1\], values\)/);
+  assert.match(result.gml, /var __ts2gml_method = __ts2gml_receiver\.sum/);
+  assert.match(result.gml, /method_get_self\(__ts2gml_method\)/);
   assert.doesNotMatch(result.gml, /\.\.\./);
 });
 
@@ -599,6 +713,123 @@ class obj_player {
   assert.doesNotMatch(result.gml, /other\.other/);
 });
 
+test("allows stored projectile callbacks inside gm_with", () => {
+  const { gml } = compileTypeScript(`
+class Spawner {
+  spawn() {
+    gm_with<oProjectile>(instance_create_depth(this.x, this.y, this.depth, oProjectile), (self, other) => {
+      self.on_step = () => {
+        x += lengthdir_x(5 * dt, direction);
+        y += lengthdir_y(5 * dt, direction);
+      };
+      self.read = function () { return gm_self<oProjectile>().x; };
+    });
+  }
+}
+`, "with-projectile.ts");
+  assert.match(gml, /with \(instance_create_depth\(self\.x, self\.y, self\.depth, oProjectile\)\) \{/);
+  assert.match(gml, /var __ts2gml_with_self_\w+ = self;/);
+  assert.match(gml, /var __ts2gml_with_other_\w+ = other;/);
+  assert.match(gml, /__ts2gml_with_self_\w+\.on_step = function \(\) \{\s+x \+= lengthdir_x\(5 \* dt, direction\);\s+y \+= lengthdir_y\(5 \* dt, direction\);/);
+  assert.match(gml, /\.read = function \(\) \{[\s\S]*return self\.x;/);
+  assert.doesNotMatch(gml, /=>|gm_with|gm_self/);
+});
+
+test("initializes nested gm_with aliases from native self and other regardless of parameter names", () => {
+  for (const [selected, caller] of [["self", "other"], ["other", "self"], ["selected", "caller"]]) {
+    const { gml } = compileTypeScript(`
+gm_with(target, (${selected}, ${caller}) => {
+  gm_with(${selected}, (nested, nestedOther) => {
+    nested.value = nestedOther.value;
+    ${caller}.value += 1;
+  });
+  ${selected}.value = ${caller}.value;
+});
+`, "with-native-context.ts");
+    assert.equal(gml.match(/var __ts2gml_with_self_\w+ = self;/g)?.length, 2, gml);
+    assert.equal(gml.match(/var __ts2gml_with_other_\w+ = other;/g)?.length, 2, gml);
+    assert.doesNotMatch(gml, /var __ts2gml_with_\w+ = __ts2gml_with_/);
+    assert.match(gml, /with \(__ts2gml_with_self_\w+\)/);
+  }
+});
+
+test("binds arrows inside gm_with to lexical this without capturing inline aliases", () => {
+  const { gml } = compileTypeScript(`
+class Spawner {
+  value = 10;
+  configure() {
+    this.gm_with(obj_target, (selected) => {
+      selected.read = () => this.value;
+      selected.factory = () => () => this.value;
+      selected.defaultValue = (value = this.value) => value;
+      gm_with(obj_target, (nested) => {
+        nested.read = () => this.value;
+      });
+      selected.value = this.value;
+    });
+  }
+}
+`, "with-lexical-callback.ts");
+  const binding = /\.read = method\((__ts2gml_with_other_\w+), function \(\) \{ return self\.value; \}\)/.exec(gml);
+  assert.ok(binding, gml);
+  assert.equal(gml.match(new RegExp(`\\.read = method\\(${binding[1]},`, "g"))?.length, 2);
+  assert.match(gml, /\.factory = method\(__ts2gml_with_other_\w+, function \(\) \{ return method\(self, function \(\) \{ return self\.value; \}\); \}\)/);
+  assert.match(gml, /\.defaultValue = method\(__ts2gml_with_other_\w+, function \(value = self\.value\) \{ return value; \}\)/);
+  assert.match(gml, new RegExp(`__ts2gml_with_self_\\w+\\.value = ${binding[1]}\\.value;`));
+});
+
+test("isolates callback locals and nested with blocks from enclosing with aliases", () => {
+  const { gml } = compileTypeScript(`
+gm_with(obj_target, (selected, caller) => {
+  selected.read = (selected) => selected.value;
+  selected.otherRead = function (caller) { return caller.value; };
+  selected.localRead = () => { const selected = 3; return selected; };
+  selected.nested = () => {
+    let result = 0;
+    gm_with(obj_target, (selected) => { result = selected.value; });
+    return result;
+  };
+  selected.value = caller.value;
+});
+`, "with-callback-scope.ts");
+  assert.match(gml, /\.read = function \(selected\) \{ return selected\.value; \}/);
+  assert.match(gml, /\.otherRead = function \(caller\) \{\s+return caller\.value; \}/);
+  assert.match(gml, /\.localRead = function \(\) \{\s+var selected = 3;\s+return selected; \}/);
+  assert.match(gml, /var result = 0;[\s\S]*result = __ts2gml_with_self_\w+\.value;[\s\S]*return result;/);
+  assert.match(gml, /__ts2gml_with_self_\w+\.value = __ts2gml_with_other_\w+\.value;/);
+});
+
+test("supports captures in callbacks inside gm_with", () => {
+  const sources = [
+    "gm_with(target, (selected) => { selected.read = () => selected.value; });",
+    "gm_with(target, (selected, caller) => { selected.read = function () { return caller.value; }; });",
+    "gm_with(target, (selected) => { const amount = 5; selected.read = () => amount; });",
+    "function setup(amount) { gm_with(target, (selected) => { selected.read = () => amount; }); }",
+    "gm_with(target, (selected) => { gm_with(target, (nested) => { nested.read = () => selected.value; }); });",
+    "gm_with(target, (selected) => { selected.read = () => () => selected.value; });",
+    "gm_with(target, (selected) => { selected.read = () => { gm_with(target, () => { selected.value += 1; }); }; });",
+    "function setup(amount) { gm_with(target, (selected) => { selected.read = () => { gm_with(target, () => { use(amount); }); }; }); }",
+  ];
+  for (const source of sources) {
+    const { gml } = compileTypeScript(source, "with-capture.ts");
+    assert.match(gml, /with \(target\)/);
+    assert.match(gml, /method\(\{ __ts2gml_env_/);
+    assert.equal(compileTypeScript(source, "with-capture.ts").gml, gml);
+  }
+});
+
+test("rejects captures before with environments exist and inside nested blocks", () => {
+  for (const source of [
+    "gm_with(target, (selected) => { selected.read = (value = selected.value) => value; });",
+    "gm_with(target, selected => { if (ready) { const value = 1; selected.read = () => value; } });",
+  ]) {
+    assert.throws(() => compileTypeScript(source, "with-capture.ts"),
+      (error: unknown) => error instanceof Ts2GmlError &&
+        error.diagnostics.some((diagnostic) => diagnostic.code === "TS2GML1014" &&
+          diagnostic.fileName === "with-capture.ts" && diagnostic.line === 1));
+  }
+});
+
 test("rejects scopes that would change meaning after GML lowering", () => {
   const invalidSources = [
     [
@@ -638,6 +869,7 @@ test("rejects compiler context forms that cannot be emitted inline", () => {
     ["with-expression.ts", "const result = gm_with(target, () => {});", "TS2GML1044"],
     ["with-concise.ts", "gm_with(target, () => reset());", "TS2GML1044"],
     ["with-return.ts", "gm_with(target, () => { return; });", "TS2GML1044"],
+    ["with-nested-return.ts", "gm_with(target, () => { gm_with(target, () => { return; }); });", "TS2GML1044"],
     ["self-argument.ts", "const value = gm_self(target);", "TS2GML1045"],
     ["self-reference.ts", "const getSelf = gm_self;", "TS2GML1045"],
     ["other-argument.ts", "const value = gm_other(target);", "TS2GML1045"],
@@ -763,15 +995,50 @@ function run(limit: number): number {
   assert.doesNotMatch(result.gml, /\bdo\s*\{|catch\s*\{/);
 });
 
-test("initializes top-level runtime declarations in explicit global scope", () => {
+test("keeps top-level declarations local and available to later initialization statements", () => {
   const result = compileTypeScript(`
-const value = 1;
-const [first, ...rest] = values;
-`, "globals.ts");
+var seed = 1;
+let total = seed + 2;
+const [first, ...rest] = [total, 4, 5];
+const { value } = { value: first };
+const SCALE = gm_macro<number>("2"), scaled = value * SCALE;
+if (value) total += scaled;
+gm_with(0, () => { total += 1; });
+show_debug_message(total);
+function read(total: number) { return total; }
+`, "locals.ts");
 
-  assert.match(result.gml, /global\.value = value;/);
-  assert.match(result.gml, /global\.first = first;/);
-  assert.match(result.gml, /global\.rest = rest;/);
+  assert.match(result.gml, /var seed = 1;/);
+  assert.match(result.gml, /var total = .*seed/);
+  assert.match(result.gml, /(?:var |, )first =/);
+  assert.match(result.gml, /(?:var |, )rest =/);
+  assert.match(result.gml, /(?:var |, )value =/);
+  assert.match(result.gml, /#macro SCALE 2/);
+  assert.match(result.gml, /var scaled =/);
+  assert.match(result.gml, /with \(0\)/);
+  assert.match(result.gml, /show_debug_message\(total\);/);
+  assert.doesNotMatch(result.gml, /global\.(seed|total|first|rest|value|scaled)\b/);
+  assert.ok(result.sourceMap.mappings.some((mapping) => mapping.line === 2));
+  assert.equal(compileTypeScript(`
+var seed = 1;
+show_debug_message(seed);
+`, "simple-locals.ts").gml, "var seed = 1;\n\nshow_debug_message(seed);\n");
+});
+
+test("rejects top-level local captures by functions, stored callbacks, and classes", () => {
+  for (const statement of [
+    "function read() { return value; }",
+    "const read = () => value;",
+    "class Data { field = value; }",
+    "class Data { static field = value; }",
+    "class Data { read() { return value; } }",
+    "gm_with(0, () => { const read = () => value; });",
+  ]) {
+    assert.throws(() => compileTypeScript(`const value = 1;\n${statement}`, "local-capture.ts"),
+      (error: unknown) => error instanceof Ts2GmlError && error.diagnostics.some((diagnostic) =>
+        diagnostic.code === "TS2GML1067" && diagnostic.line === 2 &&
+        diagnostic.message.includes("initialization of its own script")));
+  }
 });
 
 test("rejects accepted TypeScript syntax that cannot produce safe GML", () => {

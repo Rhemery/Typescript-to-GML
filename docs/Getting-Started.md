@@ -105,11 +105,11 @@ Create `typescript/objects/obj_player.ts`:
 class obj_player extends GMObject {
   health = 100;
 
-  protected onCreate() {
+  onCreate() {
     this.x = room_width * 0.5;
   }
 
-  protected onStep() {
+  onStep() {
     this.x += keyboard_check(vk_right) - keyboard_check(vk_left);
   }
 

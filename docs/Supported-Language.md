@@ -6,21 +6,23 @@ This is not a JavaScript compatibility layer. A feature is supported only when i
 
 | Area | Supported |
 | --- | --- |
-| Declarations | Functions, variables, ordinary classes, object classes, room classes, type-erased interfaces and type aliases |
+| Declarations | Functions, variables, enums, ordinary classes, object classes, room classes, type-erased interfaces and type aliases |
 | Control flow | Blocks, `if`, `switch`, `while`, `do...while`, classic `for`, `for...of`, `for...in`, `break`, `continue`, `return`, `throw`, `try`/`catch`/`finally` |
 | Expressions | Literals, calls, property and element access, unary/binary/conditional expressions, assignments supported by GML, template strings |
 | Data | Typed GameMaker data structures, JavaScript-style collections, arrays, struct literals, nested destructuring declarations, declaration defaults and rest bindings |
 | Spread | Array spread, object spread, and spread calls |
-| Functions | Named functions, class methods, supported arrows and nested functions without unsafe captures |
+| Functions | Named functions, class methods, arrows and nested functions, closures over plain parameters and function-body locals |
 | Class statics | Static fields and methods on ordinary and `GMObject` classes, inherited statics, class aliases, and literal member access |
 | Operators | JavaScript `instanceof`, `in`, `typeof`, `void`, and collection/property `delete` through defined GML lowering |
-| Null access | Property-only optional chains such as `player?.transform?.position.x` |
+| Null access | Property-only optional chains such as `player?.transform?.position.x`; standalone method calls such as `this.weapon?.onEndStep()` |
 | Modules | Type-only imports/exports; named exported declarations become GameMaker globals without module isolation |
 | Compiler forms | `gm_macro`, `gm_with`, `gm_self`, `gm_other`, `GMObject`, and `GMRoom` |
 
 Typed `gm_self<T>()` and `gm_other<T>()` context assertions receive runtime object guards by default. Repeated assertions of the same context and object type are checked once at the containing function or event boundary. The `maximum` runtime guard level additionally checks reifiable values inserted through typed arrays and compiler collections. Guard profiles come from the project-level `ts2gml.config.json`; see [runtime type guards](Runtime-Guards.md).
 
 `for...of` expects a GameMaker array at runtime. `for...in` enumerates a struct's own variable names. Spread operands similarly need GameMaker arrays, structs, and callable scripts or methods of the appropriate kind.
+
+Standalone optional method calls lower to truthiness guards: `this.weapon?.onEndStep();` behaves like `if (this.weapon) { this.weapon.onEndStep(); }`. GML uses `self` for `this` and the compiler's truthiness helper for the condition. Arguments stay inside the guard, and receivers containing calls or computed access are evaluated once. Nested optional properties are supported. This statement form skips falsy receivers; property-only optional expressions retain their nullish checks.
 
 Class `static` members belong to the class and are available before creating an instance:
 
@@ -42,6 +44,49 @@ The compiler initializes a shared class struct at the class declaration, install
 
 Use `Counter.count` or `Counter["count"]` for static member access. Dynamic static member keys, static initialization blocks, static accessors, and `super.member` remain unsupported. `GMRoom` classes still only define their room creation event. Startup initializers follow GameMaker's script initialization order; keep classes with dependent static initializers together, with parents before children.
 
+## Enums
+
+Numeric, string, mixed, and `const enum` declarations are supported:
+
+```ts
+enum PlayerState { Idle, Moving, Attacking = 10 }
+enum WeaponKind { Rifle = "rifle", Pistol = "pistol" }
+
+class obj_player extends GMObject {
+  state: PlayerState = PlayerState.Idle;
+  onStep() {
+    if (this.state === PlayerState.Moving) this.x += 1;
+  }
+}
+```
+
+Enums become GML structs. Numeric members have TypeScript reverse mappings (`PlayerState[10]` is `"Attacking"`); string members have only name-to-value entries. Automatic numbering, constant expressions, computed numeric initializers, aliases, bracket access, and enum object values are supported. Computed initializers run once, in declaration order. Top-level enums are shared across project scripts and object events through generated macros backed by compiler-owned global storage. Local enums stay local and can be captured under the usual closure rules. `const enum` is accepted and materialized through the same runtime representation; it is not promised to inline away.
+
+Merged enum declarations must be in the same file and scope. Keep dependent runtime initializers together, since script startup follows GameMaker's initialization order. Namespace declarations and local bindings that shadow a top-level enum remain unsupported. Ambient `declare enum` declarations are erased and refer to enums already supplied by GameMaker.
+
+## Closures
+
+Arrows and nested functions can capture plain parameters and locals declared directly in the enclosing function body:
+
+```ts
+function makeCounter(start: number) {
+  let count = start;
+  const read = () => count;
+  const add = (amount: number) => { count += amount; };
+  return { read, add };
+}
+```
+
+The callbacks and their enclosing function share each captured binding. Each call to `makeCounter` creates independent state, and returned callbacks keep that state alive. Nested closures, function-valued locals, and arrows combining captures with lexical `this` are supported. Captures can cross `gm_with` blocks, including captures of their parameters and directly declared locals. Each selected instance receives a fresh environment for that block's bindings, while enclosing bindings remain shared. The same lowering applies to class constructors/methods, object events, and room creation code. The [closure test matrix](Closure-Testing.md) records compiler, JavaScript, and GameMaker VM coverage.
+
+After TypeScript erasure, the compiler moves captured bindings into GML structs and binds callbacks to their environments. Functions without captures retain normal lowering. Context-dependent callbacks also retain a concrete receiver and execute a native `with` block to restore `self`; that instance must still exist when the callback runs. Callbacks using only captured values do not depend on the creating instance's lifetime.
+
+Authored `method(receiver, callback)` calls preserve captured variables while changing the native receiver. Rebinding creates a separate binding and shares the original capture cells; it does not change the original callback. Captured arrows retain lexical `this`, and `method(undefined, callback)` uses the calling scope for native instance variables. Aliases of `method` use the same adapter. Treat captured callbacks as opaque callables: `method_get_self()` still exposes the generated environment. Unmanaged GML that bypasses the adapter and rebinds a captured callback with native `method()` will lose that environment.
+
+Capturing arrows created in `gm_with` preserve lexical `this` separately from native `self`, `x`, and `y`. A projectile callback can therefore read an enclosing `weapon` parameter and update the selected projectile's coordinates. Captured parameters and parameters of closure factories use private GML names, so a parameter such as `weapon` can coexist with a generated script asset named `weapon` even when only the resulting projectile is captured.
+
+This subset rejects captures of ordinary nested block/loop locals, destructured bindings, catch variables, redeclared variables, local function declarations, and collision-event context parameters. It also rejects captures in parameter initializers or `super(...)` arguments, context-dependent parameter defaults, and direct native `other` access inside a capturing callback. Capture the `gm_with` caller parameter when its original value is needed later. Capturing callbacks may themselves execute `gm_with`. A capturing named function must be declared before it is referenced. Use a function-valued local for recursive callbacks. Existing restrictions on `arguments`, `super`, `new.target`, and dynamic call-site `this` remain in force. Unsupported cases report `TS2GML1014` or the corresponding existing context diagnostic.
+
 ## Rejected forms
 
 The compiler reports a source-located diagnostic for these known unsupported forms:
@@ -49,10 +94,10 @@ The compiler reports a source-located diagnostic for these known unsupported for
 - Runtime ES module imports, re-exports, default export expressions, dynamic `import()`, and `import.meta`.
 - Async functions, promises as a JavaScript runtime assumption, generators, and `yield`.
 - Regular expression and bigint literals.
-- JavaScript `using` declarations, decorators, namespaces, and runtime enums.
+- JavaScript `using` declarations, decorators, and namespaces.
 - JavaScript private fields, class accessors, auto-accessors, and static initialization blocks.
 - Rest parameters and destructuring parameters or assignment expressions.
-- Optional calls and optional element access.
+- Optional calls used as expression values, optional callable invocation (`callback?.()` or `object.method?.()`), and optional element access.
 - Spread arguments in constructor calls.
 - Object method/accessor shorthand and computed property names.
 - Labeled statements and labeled `break` or `continue`.
@@ -61,7 +106,7 @@ The compiler reports a source-located diagnostic for these known unsupported for
 - Increment/decrement used as an expression value; update in a separate statement.
 - Nested class declarations and unsafe constructor inheritance.
 - Ordinary functions whose behavior depends on dynamic call-site `this`.
-- Arrows or nested functions that capture an enclosing local, `arguments`, `super`, or `new.target`, except the special inline `gm_with` block.
+- Captures outside the [closure subset](#closures), and captures of `arguments`, `super`, or `new.target`.
 - Block-scoped shadowing that would collapse into one function-scoped GML local.
 
 Diagnostics have stable `TS2GML` codes, a source range, the source line, and a hint where a safe authoring alternative exists.
@@ -135,7 +180,7 @@ JavaScript array and string instance APIs without an explicit lowering, such as 
 
 GML locals are function-scoped; TypeScript `let` and `const` are block-scoped. The compiler accepts block scopes only when they preserve observable binding behavior. Shadowing that would create two TypeScript variables with one emitted GML name fails.
 
-`this.member` emits explicit `self.member`. Lexical arrows with a supported object or struct `this` capture the intended value explicitly. Top-level runtime variables emit on `global` and must be referenced through `gm_global`.
+`this.member` emits explicit `self.member`. Lexical arrows with a supported object or struct `this` capture the intended value explicitly. Top-level runtime variables emit as GML locals and can be referenced by later top-level statements in the same file, including inline `gm_with` blocks. They cannot be captured by functions, classes, or object events, or referenced from other files. Declare persistent globals on `GMGlobal` and initialize and access them explicitly through `gm_global`.
 
 ## Identifier rules
 

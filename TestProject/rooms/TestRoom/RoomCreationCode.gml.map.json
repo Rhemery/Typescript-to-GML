@@ -3,39 +3,75 @@
   "generatedFile": "rooms/TestRoom/RoomCreationCode.gml",
   "mappings": [
     {
-      "generatedLine": 1,
+      "generatedLine": 3,
       "source": "typescript/scope_context.ts",
-      "line": 183,
+      "line": 580,
       "column": 5
     },
     {
-      "generatedLine": 2,
+      "generatedLine": 4,
       "source": "typescript/scope_context.ts",
-      "line": 184,
-      "column": 7
-    },
-    {
-      "generatedLine": 3,
-      "source": "typescript/scope_context.ts",
-      "line": 185,
+      "line": 581,
       "column": 7
     },
     {
       "generatedLine": 5,
       "source": "typescript/scope_context.ts",
-      "line": 187,
+      "line": 582,
+      "column": 7
+    },
+    {
+      "generatedLine": 8,
+      "source": "typescript/scope_context.ts",
+      "line": 584,
       "column": 5
     },
     {
-      "generatedLine": 6,
+      "generatedLine": 9,
       "source": "typescript/scope_context.ts",
-      "line": 188,
+      "line": 585,
       "column": 5
     },
     {
-      "generatedLine": 7,
+      "generatedLine": 13,
       "source": "typescript/scope_context.ts",
-      "line": 189,
+      "line": 586,
+      "column": 5
+    },
+    {
+      "generatedLine": 14,
+      "source": "typescript/scope_context.ts",
+      "line": 587,
+      "column": 5
+    },
+    {
+      "generatedLine": 15,
+      "source": "typescript/scope_context.ts",
+      "line": 588,
+      "column": 5
+    },
+    {
+      "generatedLine": 16,
+      "source": "typescript/scope_context.ts",
+      "line": 589,
+      "column": 5
+    },
+    {
+      "generatedLine": 17,
+      "source": "typescript/scope_context.ts",
+      "line": 590,
+      "column": 5
+    },
+    {
+      "generatedLine": 18,
+      "source": "typescript/scope_context.ts",
+      "line": 591,
+      "column": 5
+    },
+    {
+      "generatedLine": 19,
+      "source": "typescript/scope_context.ts",
+      "line": 592,
       "column": 5
     }
   ]

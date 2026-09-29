@@ -1,0 +1,570 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/enum_contract/enum_contract.gml",
+  "mappings": [
+    {
+      "generatedLine": 3,
+      "source": "typescript/enum_contract.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 5,
+      "source": "typescript/enum_contract.ts",
+      "line": 2,
+      "column": 3
+    },
+    {
+      "generatedLine": 7,
+      "source": "typescript/enum_contract.ts",
+      "line": 3,
+      "column": 3
+    },
+    {
+      "generatedLine": 9,
+      "source": "typescript/enum_contract.ts",
+      "line": 4,
+      "column": 3
+    },
+    {
+      "generatedLine": 11,
+      "source": "typescript/enum_contract.ts",
+      "line": 5,
+      "column": 3
+    },
+    {
+      "generatedLine": 13,
+      "source": "typescript/enum_contract.ts",
+      "line": 6,
+      "column": 3
+    },
+    {
+      "generatedLine": 15,
+      "source": "typescript/enum_contract.ts",
+      "line": 7,
+      "column": 3
+    },
+    {
+      "generatedLine": 17,
+      "source": "typescript/enum_contract.ts",
+      "line": 8,
+      "column": 3
+    },
+    {
+      "generatedLine": 19,
+      "source": "typescript/enum_contract.ts",
+      "line": 9,
+      "column": 3
+    },
+    {
+      "generatedLine": 21,
+      "source": "typescript/enum_contract.ts",
+      "line": 10,
+      "column": 3
+    },
+    {
+      "generatedLine": 23,
+      "source": "typescript/enum_contract.ts",
+      "line": 11,
+      "column": 3
+    },
+    {
+      "generatedLine": 25,
+      "source": "typescript/enum_contract.ts",
+      "line": 12,
+      "column": 3
+    },
+    {
+      "generatedLine": 27,
+      "source": "typescript/enum_contract.ts",
+      "line": 13,
+      "column": 3
+    },
+    {
+      "generatedLine": 31,
+      "source": "typescript/enum_contract.ts",
+      "line": 16,
+      "column": 1
+    },
+    {
+      "generatedLine": 33,
+      "source": "typescript/enum_contract.ts",
+      "line": 17,
+      "column": 3
+    },
+    {
+      "generatedLine": 35,
+      "source": "typescript/enum_contract.ts",
+      "line": 18,
+      "column": 3
+    },
+    {
+      "generatedLine": 37,
+      "source": "typescript/enum_contract.ts",
+      "line": 19,
+      "column": 3
+    },
+    {
+      "generatedLine": 39,
+      "source": "typescript/enum_contract.ts",
+      "line": 20,
+      "column": 3
+    },
+    {
+      "generatedLine": 43,
+      "source": "typescript/enum_contract.ts",
+      "line": 23,
+      "column": 1
+    },
+    {
+      "generatedLine": 45,
+      "source": "typescript/enum_contract.ts",
+      "line": 23,
+      "column": 18
+    },
+    {
+      "generatedLine": 47,
+      "source": "typescript/enum_contract.ts",
+      "line": 23,
+      "column": 26
+    },
+    {
+      "generatedLine": 51,
+      "source": "typescript/enum_contract.ts",
+      "line": 24,
+      "column": 1
+    },
+    {
+      "generatedLine": 53,
+      "source": "typescript/enum_contract.ts",
+      "line": 24,
+      "column": 23
+    },
+    {
+      "generatedLine": 55,
+      "source": "typescript/enum_contract.ts",
+      "line": 24,
+      "column": 34
+    },
+    {
+      "generatedLine": 59,
+      "source": "typescript/enum_contract.ts",
+      "line": 25,
+      "column": 1
+    },
+    {
+      "generatedLine": 61,
+      "source": "typescript/enum_contract.ts",
+      "line": 25,
+      "column": 19
+    },
+    {
+      "generatedLine": 63,
+      "source": "typescript/enum_contract.ts",
+      "line": 26,
+      "column": 19
+    },
+    {
+      "generatedLine": 67,
+      "source": "typescript/enum_contract.ts",
+      "line": 27,
+      "column": 1
+    },
+    {
+      "generatedLine": 69,
+      "source": "typescript/enum_contract.ts",
+      "line": 29,
+      "column": 1
+    },
+    {
+      "generatedLine": 71,
+      "source": "typescript/enum_contract.ts",
+      "line": 30,
+      "column": 3
+    },
+    {
+      "generatedLine": 72,
+      "source": "typescript/enum_contract.ts",
+      "line": 31,
+      "column": 3
+    },
+    {
+      "generatedLine": 74,
+      "source": "typescript/enum_contract.ts",
+      "line": 31,
+      "column": 24
+    },
+    {
+      "generatedLine": 75,
+      "source": "typescript/enum_contract.ts",
+      "line": 31,
+      "column": 36
+    },
+    {
+      "generatedLine": 77,
+      "source": "typescript/enum_contract.ts",
+      "line": 32,
+      "column": 3
+    },
+    {
+      "generatedLine": 78,
+      "source": "typescript/enum_contract.ts",
+      "line": 32,
+      "column": 16
+    },
+    {
+      "generatedLine": 79,
+      "source": "typescript/enum_contract.ts",
+      "line": 32,
+      "column": 32
+    },
+    {
+      "generatedLine": 80,
+      "source": "typescript/enum_contract.ts",
+      "line": 32,
+      "column": 52
+    },
+    {
+      "generatedLine": 81,
+      "source": "typescript/enum_contract.ts",
+      "line": 33,
+      "column": 3
+    },
+    {
+      "generatedLine": 82,
+      "source": "typescript/enum_contract.ts",
+      "line": 34,
+      "column": 3
+    },
+    {
+      "generatedLine": 83,
+      "source": "typescript/enum_contract.ts",
+      "line": 35,
+      "column": 3
+    },
+    {
+      "generatedLine": 89,
+      "source": "typescript/enum_contract.ts",
+      "line": 38,
+      "column": 1
+    },
+    {
+      "generatedLine": 90,
+      "source": "typescript/enum_contract.ts",
+      "line": 39,
+      "column": 3
+    },
+    {
+      "generatedLine": 91,
+      "source": "typescript/enum_contract.ts",
+      "line": 40,
+      "column": 3
+    },
+    {
+      "generatedLine": 92,
+      "source": "typescript/enum_contract.ts",
+      "line": 41,
+      "column": 3
+    },
+    {
+      "generatedLine": 93,
+      "source": "typescript/enum_contract.ts",
+      "line": 42,
+      "column": 3
+    },
+    {
+      "generatedLine": 94,
+      "source": "typescript/enum_contract.ts",
+      "line": 43,
+      "column": 3
+    },
+    {
+      "generatedLine": 95,
+      "source": "typescript/enum_contract.ts",
+      "line": 44,
+      "column": 3
+    },
+    {
+      "generatedLine": 96,
+      "source": "typescript/enum_contract.ts",
+      "line": 45,
+      "column": 3
+    },
+    {
+      "generatedLine": 97,
+      "source": "typescript/enum_contract.ts",
+      "line": 46,
+      "column": 3
+    },
+    {
+      "generatedLine": 98,
+      "source": "typescript/enum_contract.ts",
+      "line": 47,
+      "column": 3
+    },
+    {
+      "generatedLine": 99,
+      "source": "typescript/enum_contract.ts",
+      "line": 48,
+      "column": 3
+    },
+    {
+      "generatedLine": 100,
+      "source": "typescript/enum_contract.ts",
+      "line": 49,
+      "column": 3
+    },
+    {
+      "generatedLine": 101,
+      "source": "typescript/enum_contract.ts",
+      "line": 50,
+      "column": 3
+    },
+    {
+      "generatedLine": 102,
+      "source": "typescript/enum_contract.ts",
+      "line": 51,
+      "column": 3
+    },
+    {
+      "generatedLine": 103,
+      "source": "typescript/enum_contract.ts",
+      "line": 52,
+      "column": 3
+    },
+    {
+      "generatedLine": 104,
+      "source": "typescript/enum_contract.ts",
+      "line": 53,
+      "column": 3
+    },
+    {
+      "generatedLine": 105,
+      "source": "typescript/enum_contract.ts",
+      "line": 54,
+      "column": 3
+    },
+    {
+      "generatedLine": 106,
+      "source": "typescript/enum_contract.ts",
+      "line": 55,
+      "column": 3
+    },
+    {
+      "generatedLine": 107,
+      "source": "typescript/enum_contract.ts",
+      "line": 56,
+      "column": 3
+    },
+    {
+      "generatedLine": 108,
+      "source": "typescript/enum_contract.ts",
+      "line": 57,
+      "column": 3
+    },
+    {
+      "generatedLine": 109,
+      "source": "typescript/enum_contract.ts",
+      "line": 58,
+      "column": 3
+    },
+    {
+      "generatedLine": 110,
+      "source": "typescript/enum_contract.ts",
+      "line": 59,
+      "column": 3
+    },
+    {
+      "generatedLine": 111,
+      "source": "typescript/enum_contract.ts",
+      "line": 60,
+      "column": 3
+    },
+    {
+      "generatedLine": 112,
+      "source": "typescript/enum_contract.ts",
+      "line": 61,
+      "column": 3
+    },
+    {
+      "generatedLine": 113,
+      "source": "typescript/enum_contract.ts",
+      "line": 62,
+      "column": 3
+    },
+    {
+      "generatedLine": 114,
+      "source": "typescript/enum_contract.ts",
+      "line": 63,
+      "column": 3
+    },
+    {
+      "generatedLine": 115,
+      "source": "typescript/enum_contract.ts",
+      "line": 64,
+      "column": 3
+    },
+    {
+      "generatedLine": 116,
+      "source": "typescript/enum_contract.ts",
+      "line": 65,
+      "column": 3
+    },
+    {
+      "generatedLine": 117,
+      "source": "typescript/enum_contract.ts",
+      "line": 66,
+      "column": 3
+    },
+    {
+      "generatedLine": 118,
+      "source": "typescript/enum_contract.ts",
+      "line": 67,
+      "column": 3
+    },
+    {
+      "generatedLine": 119,
+      "source": "typescript/enum_contract.ts",
+      "line": 68,
+      "column": 3
+    },
+    {
+      "generatedLine": 120,
+      "source": "typescript/enum_contract.ts",
+      "line": 69,
+      "column": 3
+    },
+    {
+      "generatedLine": 121,
+      "source": "typescript/enum_contract.ts",
+      "line": 70,
+      "column": 3
+    },
+    {
+      "generatedLine": 122,
+      "source": "typescript/enum_contract.ts",
+      "line": 71,
+      "column": 3
+    },
+    {
+      "generatedLine": 123,
+      "source": "typescript/enum_contract.ts",
+      "line": 72,
+      "column": 3
+    },
+    {
+      "generatedLine": 124,
+      "source": "typescript/enum_contract.ts",
+      "line": 73,
+      "column": 3
+    },
+    {
+      "generatedLine": 125,
+      "source": "typescript/enum_contract.ts",
+      "line": 74,
+      "column": 3
+    },
+    {
+      "generatedLine": 138,
+      "source": "typescript/enum_contract.ts",
+      "line": 75,
+      "column": 3
+    },
+    {
+      "generatedLine": 139,
+      "source": "typescript/enum_contract.ts",
+      "line": 76,
+      "column": 3
+    },
+    {
+      "generatedLine": 155,
+      "source": "typescript/enum_contract.ts",
+      "line": 77,
+      "column": 3
+    },
+    {
+      "generatedLine": 156,
+      "source": "typescript/enum_contract.ts",
+      "line": 78,
+      "column": 3
+    },
+    {
+      "generatedLine": 157,
+      "source": "typescript/enum_contract.ts",
+      "line": 79,
+      "column": 3
+    },
+    {
+      "generatedLine": 158,
+      "source": "typescript/enum_contract.ts",
+      "line": 80,
+      "column": 3
+    },
+    {
+      "generatedLine": 159,
+      "source": "typescript/enum_contract.ts",
+      "line": 81,
+      "column": 3
+    },
+    {
+      "generatedLine": 160,
+      "source": "typescript/enum_contract.ts",
+      "line": 82,
+      "column": 3
+    },
+    {
+      "generatedLine": 161,
+      "source": "typescript/enum_contract.ts",
+      "line": 83,
+      "column": 3
+    },
+    {
+      "generatedLine": 162,
+      "source": "typescript/enum_contract.ts",
+      "line": 84,
+      "column": 3
+    },
+    {
+      "generatedLine": 165,
+      "source": "typescript/enum_contract.ts",
+      "line": 85,
+      "column": 33
+    },
+    {
+      "generatedLine": 167,
+      "source": "typescript/enum_contract.ts",
+      "line": 86,
+      "column": 3
+    },
+    {
+      "generatedLine": 168,
+      "source": "typescript/enum_contract.ts",
+      "line": 87,
+      "column": 3
+    },
+    {
+      "generatedLine": 169,
+      "source": "typescript/enum_contract.ts",
+      "line": 88,
+      "column": 3
+    },
+    {
+      "generatedLine": 170,
+      "source": "typescript/enum_contract.ts",
+      "line": 89,
+      "column": 3
+    },
+    {
+      "generatedLine": 171,
+      "source": "typescript/enum_contract.ts",
+      "line": 90,
+      "column": 3
+    },
+    {
+      "generatedLine": 172,
+      "source": "typescript/enum_contract.ts",
+      "line": 91,
+      "column": 3
+    }
+  ]
+}

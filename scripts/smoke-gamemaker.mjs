@@ -56,10 +56,11 @@ try {
     "Compile",
   ]);
   await fs.access(outputPath);
-  await run(runnerPath, ["-game", outputPath], 30_000, "TS2GML_SCOPE_CONTEXT_OK");
+  const expectedOutput = ["TS2GML_ENUM_CONTRACT_OK", "TS2GML_CLOSURE_CONTRACT_OK", "TS2GML_CLOSURE_CONTEXT_OK", "TS2GML_WITH_CLOSURE_OK", "TS2GML_METHOD_CLOSURE_OK", "TS2GML_SCOPE_CONTEXT_OK"];
+  await run(runnerPath, ["-game", outputPath], 30_000, expectedOutput);
   const evidence = { compilerVersion: JSON.parse(await fs.readFile("package.json", "utf8")).version,
     project: projectPath, runtime: path.basename(runtimePath), target, compiler: runtime,
-    nodeVersion: process.versions.node, platform: process.platform, passedAt: new Date().toISOString() };
+    nodeVersion: process.versions.node, platform: process.platform, passedAt: new Date().toISOString(), passedSuites: expectedOutput };
   await fs.mkdir("output", { recursive: true });
   await fs.writeFile("output/gamemaker-verification.json", JSON.stringify(evidence, null, 2) + "\n");
   console.log(`GameMaker compile and runtime tests passed: ${target}/${runtime}, ${path.basename(runtimePath)}.`);
@@ -103,13 +104,14 @@ function run(executable, arguments_, timeoutMs, expectedOutput) {
     child.once("exit", (code, signal) => {
       finish(() => {
         const text = output.join("");
-        if (code === 0 && (!expectedOutput || text.includes(expectedOutput))) resolve();
+        const missing = (expectedOutput ?? []).filter((marker) => !text.includes(marker));
+        if (code === 0 && missing.length === 0) resolve();
         else reject(new Error(
           signal
             ? `${path.basename(executable)} was terminated by ${signal}.`
             : code !== 0
               ? `${path.basename(executable)} exited with code ${code}.`
-              : `${path.basename(executable)} did not report '${expectedOutput}'.`,
+              : `${path.basename(executable)} did not report '${missing.join("', '")}'.`,
         ));
       });
     });

@@ -1,0 +1,1242 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/closure_contract/closure_contract.gml",
+  "mappings": [
+    {
+      "generatedLine": 4,
+      "source": "typescript/closure_contract.ts",
+      "line": 4,
+      "column": 1
+    },
+    {
+      "generatedLine": 6,
+      "source": "typescript/closure_contract.ts",
+      "line": 5,
+      "column": 3
+    },
+    {
+      "generatedLine": 10,
+      "source": "typescript/closure_contract.ts",
+      "line": 6,
+      "column": 3
+    },
+    {
+      "generatedLine": 13,
+      "source": "typescript/closure_contract.ts",
+      "line": 7,
+      "column": 5
+    },
+    {
+      "generatedLine": 17,
+      "source": "typescript/closure_contract.ts",
+      "line": 8,
+      "column": 7
+    },
+    {
+      "generatedLine": 22,
+      "source": "typescript/closure_contract.ts",
+      "line": 9,
+      "column": 9
+    },
+    {
+      "generatedLine": 28,
+      "source": "typescript/closure_contract.ts",
+      "line": 10,
+      "column": 11
+    },
+    {
+      "generatedLine": 35,
+      "source": "typescript/closure_contract.ts",
+      "line": 11,
+      "column": 13
+    },
+    {
+      "generatedLine": 43,
+      "source": "typescript/closure_contract.ts",
+      "line": 12,
+      "column": 15
+    },
+    {
+      "generatedLine": 52,
+      "source": "typescript/closure_contract.ts",
+      "line": 13,
+      "column": 17
+    },
+    {
+      "generatedLine": 62,
+      "source": "typescript/closure_contract.ts",
+      "line": 14,
+      "column": 19
+    },
+    {
+      "generatedLine": 73,
+      "source": "typescript/closure_contract.ts",
+      "line": 15,
+      "column": 21
+    },
+    {
+      "generatedLine": 85,
+      "source": "typescript/closure_contract.ts",
+      "line": 16,
+      "column": 23
+    },
+    {
+      "generatedLine": 98,
+      "source": "typescript/closure_contract.ts",
+      "line": 17,
+      "column": 25
+    },
+    {
+      "generatedLine": 112,
+      "source": "typescript/closure_contract.ts",
+      "line": 18,
+      "column": 27
+    },
+    {
+      "generatedLine": 127,
+      "source": "typescript/closure_contract.ts",
+      "line": 19,
+      "column": 29
+    },
+    {
+      "generatedLine": 143,
+      "source": "typescript/closure_contract.ts",
+      "line": 20,
+      "column": 31
+    },
+    {
+      "generatedLine": 160,
+      "source": "typescript/closure_contract.ts",
+      "line": 21,
+      "column": 33
+    },
+    {
+      "generatedLine": 178,
+      "source": "typescript/closure_contract.ts",
+      "line": 22,
+      "column": 35
+    },
+    {
+      "generatedLine": 217,
+      "source": "typescript/closure_contract.ts",
+      "line": 25,
+      "column": 39
+    },
+    {
+      "generatedLine": 218,
+      "source": "typescript/closure_contract.ts",
+      "line": 25,
+      "column": 55
+    },
+    {
+      "generatedLine": 219,
+      "source": "typescript/closure_contract.ts",
+      "line": 25,
+      "column": 73
+    },
+    {
+      "generatedLine": 220,
+      "source": "typescript/closure_contract.ts",
+      "line": 25,
+      "column": 91
+    },
+    {
+      "generatedLine": 221,
+      "source": "typescript/closure_contract.ts",
+      "line": 26,
+      "column": 39
+    },
+    {
+      "generatedLine": 240,
+      "source": "typescript/closure_contract.ts",
+      "line": 45,
+      "column": 3
+    },
+    {
+      "generatedLine": 262,
+      "source": "typescript/closure_contract.ts",
+      "line": 59,
+      "column": 5
+    },
+    {
+      "generatedLine": 303,
+      "source": "typescript/closure_contract.ts",
+      "line": 66,
+      "column": 5
+    },
+    {
+      "generatedLine": 335,
+      "source": "typescript/closure_contract.ts",
+      "line": 72,
+      "column": 47
+    },
+    {
+      "generatedLine": 347,
+      "source": "typescript/closure_contract.ts",
+      "line": 54,
+      "column": 5
+    },
+    {
+      "generatedLine": 349,
+      "source": "typescript/closure_contract.ts",
+      "line": 55,
+      "column": 5
+    },
+    {
+      "generatedLine": 356,
+      "source": "typescript/closure_contract.ts",
+      "line": 56,
+      "column": 5
+    },
+    {
+      "generatedLine": 364,
+      "source": "typescript/closure_contract.ts",
+      "line": 74,
+      "column": 5
+    },
+    {
+      "generatedLine": 398,
+      "source": "typescript/closure_contract.ts",
+      "line": 83,
+      "column": 5
+    },
+    {
+      "generatedLine": 400,
+      "source": "typescript/closure_contract.ts",
+      "line": 84,
+      "column": 5
+    },
+    {
+      "generatedLine": 407,
+      "source": "typescript/closure_contract.ts",
+      "line": 85,
+      "column": 5
+    },
+    {
+      "generatedLine": 416,
+      "source": "typescript/closure_contract.ts",
+      "line": 89,
+      "column": 1
+    },
+    {
+      "generatedLine": 418,
+      "source": "typescript/closure_contract.ts",
+      "line": 90,
+      "column": 3
+    },
+    {
+      "generatedLine": 420,
+      "source": "typescript/closure_contract.ts",
+      "line": 90,
+      "column": 28
+    },
+    {
+      "generatedLine": 421,
+      "source": "typescript/closure_contract.ts",
+      "line": 90,
+      "column": 45
+    },
+    {
+      "generatedLine": 425,
+      "source": "typescript/closure_contract.ts",
+      "line": 93,
+      "column": 1
+    },
+    {
+      "generatedLine": 427,
+      "source": "typescript/closure_contract.ts",
+      "line": 94,
+      "column": 3
+    },
+    {
+      "generatedLine": 431,
+      "source": "typescript/closure_contract.ts",
+      "line": 95,
+      "column": 3
+    },
+    {
+      "generatedLine": 433,
+      "source": "typescript/closure_contract.ts",
+      "line": 96,
+      "column": 5
+    },
+    {
+      "generatedLine": 440,
+      "source": "typescript/closure_contract.ts",
+      "line": 97,
+      "column": 5
+    },
+    {
+      "generatedLine": 444,
+      "source": "typescript/closure_contract.ts",
+      "line": 98,
+      "column": 5
+    },
+    {
+      "generatedLine": 445,
+      "source": "typescript/closure_contract.ts",
+      "line": 99,
+      "column": 5
+    },
+    {
+      "generatedLine": 447,
+      "source": "typescript/closure_contract.ts",
+      "line": 101,
+      "column": 3
+    },
+    {
+      "generatedLine": 450,
+      "source": "typescript/closure_contract.ts",
+      "line": 104,
+      "column": 1
+    },
+    {
+      "generatedLine": 452,
+      "source": "typescript/closure_contract.ts",
+      "line": 105,
+      "column": 3
+    },
+    {
+      "generatedLine": 453,
+      "source": "typescript/closure_contract.ts",
+      "line": 106,
+      "column": 3
+    },
+    {
+      "generatedLine": 454,
+      "source": "typescript/closure_contract.ts",
+      "line": 107,
+      "column": 3
+    },
+    {
+      "generatedLine": 483,
+      "source": "typescript/closure_contract.ts",
+      "line": 108,
+      "column": 3
+    },
+    {
+      "generatedLine": 484,
+      "source": "typescript/closure_contract.ts",
+      "line": 109,
+      "column": 3
+    },
+    {
+      "generatedLine": 513,
+      "source": "typescript/closure_contract.ts",
+      "line": 110,
+      "column": 3
+    },
+    {
+      "generatedLine": 542,
+      "source": "typescript/closure_contract.ts",
+      "line": 111,
+      "column": 3
+    },
+    {
+      "generatedLine": 543,
+      "source": "typescript/closure_contract.ts",
+      "line": 112,
+      "column": 3
+    },
+    {
+      "generatedLine": 544,
+      "source": "typescript/closure_contract.ts",
+      "line": 113,
+      "column": 3
+    },
+    {
+      "generatedLine": 545,
+      "source": "typescript/closure_contract.ts",
+      "line": 114,
+      "column": 3
+    },
+    {
+      "generatedLine": 546,
+      "source": "typescript/closure_contract.ts",
+      "line": 115,
+      "column": 3
+    },
+    {
+      "generatedLine": 547,
+      "source": "typescript/closure_contract.ts",
+      "line": 116,
+      "column": 3
+    },
+    {
+      "generatedLine": 548,
+      "source": "typescript/closure_contract.ts",
+      "line": 117,
+      "column": 3
+    },
+    {
+      "generatedLine": 549,
+      "source": "typescript/closure_contract.ts",
+      "line": 118,
+      "column": 3
+    },
+    {
+      "generatedLine": 610,
+      "source": "typescript/closure_contract.ts",
+      "line": 119,
+      "column": 3
+    },
+    {
+      "generatedLine": 611,
+      "source": "typescript/closure_contract.ts",
+      "line": 120,
+      "column": 3
+    },
+    {
+      "generatedLine": 612,
+      "source": "typescript/closure_contract.ts",
+      "line": 122,
+      "column": 3
+    },
+    {
+      "generatedLine": 613,
+      "source": "typescript/closure_contract.ts",
+      "line": 123,
+      "column": 3
+    },
+    {
+      "generatedLine": 614,
+      "source": "typescript/closure_contract.ts",
+      "line": 124,
+      "column": 3
+    },
+    {
+      "generatedLine": 615,
+      "source": "typescript/closure_contract.ts",
+      "line": 125,
+      "column": 3
+    },
+    {
+      "generatedLine": 616,
+      "source": "typescript/closure_contract.ts",
+      "line": 126,
+      "column": 3
+    },
+    {
+      "generatedLine": 617,
+      "source": "typescript/closure_contract.ts",
+      "line": 127,
+      "column": 3
+    },
+    {
+      "generatedLine": 618,
+      "source": "typescript/closure_contract.ts",
+      "line": 128,
+      "column": 3
+    },
+    {
+      "generatedLine": 619,
+      "source": "typescript/closure_contract.ts",
+      "line": 129,
+      "column": 3
+    },
+    {
+      "generatedLine": 620,
+      "source": "typescript/closure_contract.ts",
+      "line": 130,
+      "column": 3
+    },
+    {
+      "generatedLine": 621,
+      "source": "typescript/closure_contract.ts",
+      "line": 131,
+      "column": 3
+    },
+    {
+      "generatedLine": 622,
+      "source": "typescript/closure_contract.ts",
+      "line": 132,
+      "column": 3
+    },
+    {
+      "generatedLine": 623,
+      "source": "typescript/closure_contract.ts",
+      "line": 133,
+      "column": 3
+    },
+    {
+      "generatedLine": 624,
+      "source": "typescript/closure_contract.ts",
+      "line": 134,
+      "column": 3
+    },
+    {
+      "generatedLine": 625,
+      "source": "typescript/closure_contract.ts",
+      "line": 135,
+      "column": 3
+    },
+    {
+      "generatedLine": 631,
+      "source": "typescript/closure_contract.ts",
+      "line": 136,
+      "column": 3
+    },
+    {
+      "generatedLine": 632,
+      "source": "typescript/closure_contract.ts",
+      "line": 137,
+      "column": 3
+    },
+    {
+      "generatedLine": 639,
+      "source": "typescript/closure_contract.ts",
+      "line": 138,
+      "column": 3
+    },
+    {
+      "generatedLine": 640,
+      "source": "typescript/closure_contract.ts",
+      "line": 139,
+      "column": 3
+    },
+    {
+      "generatedLine": 647,
+      "source": "typescript/closure_contract.ts",
+      "line": 140,
+      "column": 3
+    },
+    {
+      "generatedLine": 648,
+      "source": "typescript/closure_contract.ts",
+      "line": 141,
+      "column": 3
+    },
+    {
+      "generatedLine": 654,
+      "source": "typescript/closure_contract.ts",
+      "line": 142,
+      "column": 3
+    },
+    {
+      "generatedLine": 655,
+      "source": "typescript/closure_contract.ts",
+      "line": 143,
+      "column": 3
+    },
+    {
+      "generatedLine": 662,
+      "source": "typescript/closure_contract.ts",
+      "line": 144,
+      "column": 3
+    },
+    {
+      "generatedLine": 663,
+      "source": "typescript/closure_contract.ts",
+      "line": 145,
+      "column": 3
+    },
+    {
+      "generatedLine": 664,
+      "source": "typescript/closure_contract.ts",
+      "line": 146,
+      "column": 3
+    },
+    {
+      "generatedLine": 665,
+      "source": "typescript/closure_contract.ts",
+      "line": 147,
+      "column": 3
+    },
+    {
+      "generatedLine": 666,
+      "source": "typescript/closure_contract.ts",
+      "line": 148,
+      "column": 3
+    },
+    {
+      "generatedLine": 667,
+      "source": "typescript/closure_contract.ts",
+      "line": 149,
+      "column": 3
+    },
+    {
+      "generatedLine": 668,
+      "source": "typescript/closure_contract.ts",
+      "line": 150,
+      "column": 3
+    },
+    {
+      "generatedLine": 669,
+      "source": "typescript/closure_contract.ts",
+      "line": 151,
+      "column": 3
+    },
+    {
+      "generatedLine": 670,
+      "source": "typescript/closure_contract.ts",
+      "line": 152,
+      "column": 3
+    },
+    {
+      "generatedLine": 671,
+      "source": "typescript/closure_contract.ts",
+      "line": 153,
+      "column": 3
+    },
+    {
+      "generatedLine": 672,
+      "source": "typescript/closure_contract.ts",
+      "line": 154,
+      "column": 3
+    },
+    {
+      "generatedLine": 673,
+      "source": "typescript/closure_contract.ts",
+      "line": 155,
+      "column": 3
+    },
+    {
+      "generatedLine": 674,
+      "source": "typescript/closure_contract.ts",
+      "line": 156,
+      "column": 3
+    },
+    {
+      "generatedLine": 675,
+      "source": "typescript/closure_contract.ts",
+      "line": 157,
+      "column": 3
+    },
+    {
+      "generatedLine": 676,
+      "source": "typescript/closure_contract.ts",
+      "line": 158,
+      "column": 3
+    },
+    {
+      "generatedLine": 677,
+      "source": "typescript/closure_contract.ts",
+      "line": 159,
+      "column": 3
+    },
+    {
+      "generatedLine": 678,
+      "source": "typescript/closure_contract.ts",
+      "line": 160,
+      "column": 3
+    },
+    {
+      "generatedLine": 679,
+      "source": "typescript/closure_contract.ts",
+      "line": 161,
+      "column": 3
+    },
+    {
+      "generatedLine": 680,
+      "source": "typescript/closure_contract.ts",
+      "line": 162,
+      "column": 3
+    },
+    {
+      "generatedLine": 681,
+      "source": "typescript/closure_contract.ts",
+      "line": 163,
+      "column": 3
+    },
+    {
+      "generatedLine": 682,
+      "source": "typescript/closure_contract.ts",
+      "line": 164,
+      "column": 3
+    },
+    {
+      "generatedLine": 683,
+      "source": "typescript/closure_contract.ts",
+      "line": 165,
+      "column": 3
+    },
+    {
+      "generatedLine": 684,
+      "source": "typescript/closure_contract.ts",
+      "line": 166,
+      "column": 3
+    },
+    {
+      "generatedLine": 685,
+      "source": "typescript/closure_contract.ts",
+      "line": 167,
+      "column": 3
+    },
+    {
+      "generatedLine": 686,
+      "source": "typescript/closure_contract.ts",
+      "line": 168,
+      "column": 3
+    },
+    {
+      "generatedLine": 687,
+      "source": "typescript/closure_contract.ts",
+      "line": 170,
+      "column": 3
+    },
+    {
+      "generatedLine": 688,
+      "source": "typescript/closure_contract.ts",
+      "line": 171,
+      "column": 3
+    },
+    {
+      "generatedLine": 689,
+      "source": "typescript/closure_contract.ts",
+      "line": 172,
+      "column": 3
+    },
+    {
+      "generatedLine": 690,
+      "source": "typescript/closure_contract.ts",
+      "line": 173,
+      "column": 3
+    },
+    {
+      "generatedLine": 691,
+      "source": "typescript/closure_contract.ts",
+      "line": 174,
+      "column": 3
+    },
+    {
+      "generatedLine": 692,
+      "source": "typescript/closure_contract.ts",
+      "line": 175,
+      "column": 3
+    },
+    {
+      "generatedLine": 693,
+      "source": "typescript/closure_contract.ts",
+      "line": 176,
+      "column": 3
+    },
+    {
+      "generatedLine": 694,
+      "source": "typescript/closure_contract.ts",
+      "line": 177,
+      "column": 3
+    },
+    {
+      "generatedLine": 695,
+      "source": "typescript/closure_contract.ts",
+      "line": 178,
+      "column": 3
+    },
+    {
+      "generatedLine": 700,
+      "source": "typescript/closure_contract.ts",
+      "line": 181,
+      "column": 3
+    },
+    {
+      "generatedLine": 704,
+      "source": "typescript/closure_contract.ts",
+      "line": 182,
+      "column": 3
+    },
+    {
+      "generatedLine": 705,
+      "source": "typescript/closure_contract.ts",
+      "line": 183,
+      "column": 3
+    },
+    {
+      "generatedLine": 706,
+      "source": "typescript/closure_contract.ts",
+      "line": 184,
+      "column": 3
+    },
+    {
+      "generatedLine": 707,
+      "source": "typescript/closure_contract.ts",
+      "line": 185,
+      "column": 3
+    },
+    {
+      "generatedLine": 711,
+      "source": "typescript/closure_contract.ts",
+      "line": 186,
+      "column": 3
+    },
+    {
+      "generatedLine": 712,
+      "source": "typescript/closure_contract.ts",
+      "line": 187,
+      "column": 3
+    },
+    {
+      "generatedLine": 713,
+      "source": "typescript/closure_contract.ts",
+      "line": 188,
+      "column": 3
+    },
+    {
+      "generatedLine": 717,
+      "source": "typescript/closure_contract.ts",
+      "line": 189,
+      "column": 3
+    },
+    {
+      "generatedLine": 718,
+      "source": "typescript/closure_contract.ts",
+      "line": 190,
+      "column": 3
+    },
+    {
+      "generatedLine": 719,
+      "source": "typescript/closure_contract.ts",
+      "line": 191,
+      "column": 3
+    },
+    {
+      "generatedLine": 720,
+      "source": "typescript/closure_contract.ts",
+      "line": 192,
+      "column": 3
+    },
+    {
+      "generatedLine": 724,
+      "source": "typescript/closure_contract.ts",
+      "line": 193,
+      "column": 3
+    },
+    {
+      "generatedLine": 725,
+      "source": "typescript/closure_contract.ts",
+      "line": 194,
+      "column": 3
+    },
+    {
+      "generatedLine": 726,
+      "source": "typescript/closure_contract.ts",
+      "line": 196,
+      "column": 3
+    },
+    {
+      "generatedLine": 727,
+      "source": "typescript/closure_contract.ts",
+      "line": 197,
+      "column": 3
+    },
+    {
+      "generatedLine": 731,
+      "source": "typescript/closure_contract.ts",
+      "line": 198,
+      "column": 3
+    },
+    {
+      "generatedLine": 735,
+      "source": "typescript/closure_contract.ts",
+      "line": 199,
+      "column": 3
+    },
+    {
+      "generatedLine": 736,
+      "source": "typescript/closure_contract.ts",
+      "line": 200,
+      "column": 3
+    },
+    {
+      "generatedLine": 737,
+      "source": "typescript/closure_contract.ts",
+      "line": 202,
+      "column": 3
+    },
+    {
+      "generatedLine": 738,
+      "source": "typescript/closure_contract.ts",
+      "line": 203,
+      "column": 3
+    },
+    {
+      "generatedLine": 740,
+      "source": "typescript/closure_contract.ts",
+      "line": 203,
+      "column": 24
+    },
+    {
+      "generatedLine": 741,
+      "source": "typescript/closure_contract.ts",
+      "line": 203,
+      "column": 37
+    },
+    {
+      "generatedLine": 743,
+      "source": "typescript/closure_contract.ts",
+      "line": 204,
+      "column": 3
+    },
+    {
+      "generatedLine": 751,
+      "source": "typescript/closure_contract.ts",
+      "line": 205,
+      "column": 3
+    },
+    {
+      "generatedLine": 752,
+      "source": "typescript/closure_contract.ts",
+      "line": 206,
+      "column": 3
+    },
+    {
+      "generatedLine": 753,
+      "source": "typescript/closure_contract.ts",
+      "line": 207,
+      "column": 3
+    },
+    {
+      "generatedLine": 754,
+      "source": "typescript/closure_contract.ts",
+      "line": 208,
+      "column": 3
+    },
+    {
+      "generatedLine": 755,
+      "source": "typescript/closure_contract.ts",
+      "line": 209,
+      "column": 3
+    },
+    {
+      "generatedLine": 756,
+      "source": "typescript/closure_contract.ts",
+      "line": 210,
+      "column": 3
+    },
+    {
+      "generatedLine": 757,
+      "source": "typescript/closure_contract.ts",
+      "line": 211,
+      "column": 3
+    },
+    {
+      "generatedLine": 759,
+      "source": "typescript/closure_contract.ts",
+      "line": 211,
+      "column": 25
+    },
+    {
+      "generatedLine": 760,
+      "source": "typescript/closure_contract.ts",
+      "line": 211,
+      "column": 42
+    },
+    {
+      "generatedLine": 762,
+      "source": "typescript/closure_contract.ts",
+      "line": 212,
+      "column": 3
+    },
+    {
+      "generatedLine": 764,
+      "source": "typescript/closure_contract.ts",
+      "line": 212,
+      "column": 26
+    },
+    {
+      "generatedLine": 767,
+      "source": "typescript/closure_contract.ts",
+      "line": 212,
+      "column": 53
+    },
+    {
+      "generatedLine": 769,
+      "source": "typescript/closure_contract.ts",
+      "line": 213,
+      "column": 3
+    },
+    {
+      "generatedLine": 770,
+      "source": "typescript/closure_contract.ts",
+      "line": 214,
+      "column": 3
+    },
+    {
+      "generatedLine": 771,
+      "source": "typescript/closure_contract.ts",
+      "line": 215,
+      "column": 3
+    },
+    {
+      "generatedLine": 772,
+      "source": "typescript/closure_contract.ts",
+      "line": 216,
+      "column": 3
+    },
+    {
+      "generatedLine": 774,
+      "source": "typescript/closure_contract.ts",
+      "line": 216,
+      "column": 41
+    },
+    {
+      "generatedLine": 775,
+      "source": "typescript/closure_contract.ts",
+      "line": 216,
+      "column": 61
+    },
+    {
+      "generatedLine": 785,
+      "source": "typescript/closure_contract.ts",
+      "line": 218,
+      "column": 3
+    },
+    {
+      "generatedLine": 786,
+      "source": "typescript/closure_contract.ts",
+      "line": 219,
+      "column": 3
+    },
+    {
+      "generatedLine": 801,
+      "source": "typescript/closure_contract.ts",
+      "line": 221,
+      "column": 3
+    },
+    {
+      "generatedLine": 802,
+      "source": "typescript/closure_contract.ts",
+      "line": 222,
+      "column": 3
+    },
+    {
+      "generatedLine": 803,
+      "source": "typescript/closure_contract.ts",
+      "line": 223,
+      "column": 3
+    },
+    {
+      "generatedLine": 814,
+      "source": "typescript/closure_contract.ts",
+      "line": 225,
+      "column": 3
+    },
+    {
+      "generatedLine": 815,
+      "source": "typescript/closure_contract.ts",
+      "line": 226,
+      "column": 3
+    },
+    {
+      "generatedLine": 819,
+      "source": "typescript/closure_contract.ts",
+      "line": 227,
+      "column": 3
+    },
+    {
+      "generatedLine": 821,
+      "source": "typescript/closure_contract.ts",
+      "line": 227,
+      "column": 30
+    },
+    {
+      "generatedLine": 822,
+      "source": "typescript/closure_contract.ts",
+      "line": 227,
+      "column": 75
+    },
+    {
+      "generatedLine": 824,
+      "source": "typescript/closure_contract.ts",
+      "line": 228,
+      "column": 3
+    },
+    {
+      "generatedLine": 830,
+      "source": "typescript/closure_contract.ts",
+      "line": 229,
+      "column": 3
+    },
+    {
+      "generatedLine": 831,
+      "source": "typescript/closure_contract.ts",
+      "line": 230,
+      "column": 3
+    },
+    {
+      "generatedLine": 832,
+      "source": "typescript/closure_contract.ts",
+      "line": 231,
+      "column": 3
+    },
+    {
+      "generatedLine": 837,
+      "source": "typescript/closure_contract.ts",
+      "line": 233,
+      "column": 3
+    },
+    {
+      "generatedLine": 838,
+      "source": "typescript/closure_contract.ts",
+      "line": 234,
+      "column": 3
+    },
+    {
+      "generatedLine": 840,
+      "source": "typescript/closure_contract.ts",
+      "line": 235,
+      "column": 5
+    },
+    {
+      "generatedLine": 841,
+      "source": "typescript/closure_contract.ts",
+      "line": 236,
+      "column": 7
+    },
+    {
+      "generatedLine": 842,
+      "source": "typescript/closure_contract.ts",
+      "line": 237,
+      "column": 7
+    },
+    {
+      "generatedLine": 843,
+      "source": "typescript/closure_contract.ts",
+      "line": 237,
+      "column": 17
+    },
+    {
+      "generatedLine": 844,
+      "source": "typescript/closure_contract.ts",
+      "line": 238,
+      "column": 7
+    },
+    {
+      "generatedLine": 847,
+      "source": "typescript/closure_contract.ts",
+      "line": 240,
+      "column": 7
+    },
+    {
+      "generatedLine": 850,
+      "source": "typescript/closure_contract.ts",
+      "line": 243,
+      "column": 3
+    },
+    {
+      "generatedLine": 851,
+      "source": "typescript/closure_contract.ts",
+      "line": 244,
+      "column": 3
+    },
+    {
+      "generatedLine": 852,
+      "source": "typescript/closure_contract.ts",
+      "line": 245,
+      "column": 3
+    },
+    {
+      "generatedLine": 853,
+      "source": "typescript/closure_contract.ts",
+      "line": 245,
+      "column": 9
+    },
+    {
+      "generatedLine": 856,
+      "source": "typescript/closure_contract.ts",
+      "line": 245,
+      "column": 33
+    },
+    {
+      "generatedLine": 858,
+      "source": "typescript/closure_contract.ts",
+      "line": 246,
+      "column": 3
+    },
+    {
+      "generatedLine": 859,
+      "source": "typescript/closure_contract.ts",
+      "line": 247,
+      "column": 3
+    },
+    {
+      "generatedLine": 863,
+      "source": "typescript/closure_contract.ts",
+      "line": 248,
+      "column": 3
+    },
+    {
+      "generatedLine": 864,
+      "source": "typescript/closure_contract.ts",
+      "line": 250,
+      "column": 3
+    },
+    {
+      "generatedLine": 865,
+      "source": "typescript/closure_contract.ts",
+      "line": 251,
+      "column": 3
+    },
+    {
+      "generatedLine": 866,
+      "source": "typescript/closure_contract.ts",
+      "line": 252,
+      "column": 3
+    },
+    {
+      "generatedLine": 867,
+      "source": "typescript/closure_contract.ts",
+      "line": 253,
+      "column": 5
+    },
+    {
+      "generatedLine": 868,
+      "source": "typescript/closure_contract.ts",
+      "line": 254,
+      "column": 5
+    },
+    {
+      "generatedLine": 873,
+      "source": "typescript/closure_contract.ts",
+      "line": 256,
+      "column": 3
+    },
+    {
+      "generatedLine": 880,
+      "source": "typescript/closure_contract.ts",
+      "line": 257,
+      "column": 3
+    },
+    {
+      "generatedLine": 881,
+      "source": "typescript/closure_contract.ts",
+      "line": 258,
+      "column": 3
+    },
+    {
+      "generatedLine": 888,
+      "source": "typescript/closure_contract.ts",
+      "line": 259,
+      "column": 3
+    },
+    {
+      "generatedLine": 889,
+      "source": "typescript/closure_contract.ts",
+      "line": 260,
+      "column": 3
+    },
+    {
+      "generatedLine": 890,
+      "source": "typescript/closure_contract.ts",
+      "line": 261,
+      "column": 5
+    },
+    {
+      "generatedLine": 892,
+      "source": "typescript/closure_contract.ts",
+      "line": 263,
+      "column": 3
+    },
+    {
+      "generatedLine": 899,
+      "source": "typescript/closure_contract.ts",
+      "line": 264,
+      "column": 3
+    },
+    {
+      "generatedLine": 906,
+      "source": "typescript/closure_contract.ts",
+      "line": 265,
+      "column": 3
+    }
+  ]
+}

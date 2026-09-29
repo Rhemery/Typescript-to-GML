@@ -27,6 +27,7 @@ function __ts2gml_remove(_target, _key) {
     if (variable_struct_exists(_target, "__ts2gml_collection_kind")) {
         return _target.remove(_key);
     }
+    _key = __ts2gml_value_key(_key);
     var _exists = variable_struct_exists(_target, _key);
     if (_exists) variable_struct_remove(_target, _key);
     return true;

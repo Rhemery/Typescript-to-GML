@@ -3,7 +3,7 @@
 TypeScript to GML provides typed declarations for the GameMaker API and compiles a deliberately supported TypeScript/JavaScript subset into GML. Ordinary classes become GML constructors. Classes derived from `GMObject` become GameMaker object assets and event files. Classes derived from `GMRoom` provide creation code for existing rooms.
 
 > [!WARNING]
-> Version `0.2.0-beta.6` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
+> Version `0.2.0-beta.7` is a public beta. It is suitable for guarded use in a source-controlled project, but it is not a complete JavaScript runtime and has only been exercised end-to-end on the Windows VM target with GameMaker runtime `2026.0.0.23`. Read [Known issues and beta warnings](docs/Known-Issues.md) before adopting it.
 
 The compiler is intentionally conservative: unsupported syntax produces a source-located `TS2GML` diagnostic instead of known-invalid GML. Generated assets are deterministic, and a manifest records which assets ts2gml owns. Generated content follows TypeScript; unmanaged GameMaker assets are protected from takeover.
 
@@ -31,11 +31,11 @@ The VS Code extension displays compiler diagnostics in the editor and in **Probl
 class obj_player extends GMObject {
   health = 100;
 
-  protected onCreate() {
+  onCreate() {
     this.x = 64;
   }
 
-  protected onStep() {
+  onStep() {
     this.x += 2;
   }
 }
@@ -86,6 +86,8 @@ For day-to-day work, run watch mode in the Visual Studio Code terminal from the 
 Keep this terminal visible while editing. When a structural change needs GameMaker to be saved, the prompt appears here and waits for Enter. Double-clicking `ts2gml.bat` remains supported and starts the same watch command, but the integrated terminal makes prompts and diagnostics easier to notice.
 
 Use `check` in continuous integration. During `watch`, body-only changes update immediately. For a resource, event, field, room-link, or source-folder change, save GameMaker and press Enter at the watcher prompt. Use `build --project-saved` as the explicit non-interactive equivalent. Compiler-owned output is automatically refreshed from TypeScript, including after GameMaker edits it.
+
+You can also save GameMaker and use Run or Build: the generated pre-project hook applies pending structural changes automatically before the asset compiler loads the project, even when the watcher is waiting for confirmation.
 
 If an unmanaged GameMaker asset has the same name or path as a TypeScript asset, the compiler rejects it and reports both paths. Delete the asset in GameMaker and save the project if you want ts2gml to manage it, or rename the TypeScript asset.
 

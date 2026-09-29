@@ -186,9 +186,9 @@ export class StructuralGameMakerChangesError extends Error {
   constructor(changes: readonly string[]) {
     const sortedChanges = [...changes].sort();
     super(
-      `Cannot apply structural GameMaker changes until the project is saved in the IDE:\n${
+      `Cannot apply structural GameMaker changes during a live update:\n${
         sortedChanges.map((fileName) => `  - ${fileName}`).join("\n")
-      }\nNo generated GameMaker assets were changed. Save the project, then confirm the pending update in watch mode or run build --project-saved.`,
+      }\nNo generated GameMaker assets were changed. Save the project, then use Run/Build in GameMaker to apply the update automatically, confirm it in watch mode, or run build --project-saved.`,
     );
     this.name = "StructuralGameMakerChangesError";
     this.changes = sortedChanges;
@@ -251,8 +251,9 @@ export async function applyRuntimeGuardProfile(
 
   if (
     requestedProfile === "build" &&
-    options.preserveRunProfile !== false &&
-    await consumeRuntimeGuardRunMarker(projectPath)
+    await consumeRuntimeGuardRunMarker(projectPath) &&
+    !options.beforeProjectLoad &&
+    options.preserveRunProfile !== false
   ) {
     return {
       profile: "run",
@@ -266,7 +267,10 @@ export async function applyRuntimeGuardProfile(
   const summary = await buildGameMakerProject([], projectPath, {
     ...(activeConfiguration ? { guardConfiguration: activeConfiguration } : {}),
     guardProfile: requestedProfile,
-    hotReloadOnly: true,
+    // pre_project_step runs against the saved project before the asset compiler
+    // loads it. Later hooks and the watcher can only update existing code bodies.
+    hotReloadOnly: !options.beforeProjectLoad,
+    ideProjectSaved: options.beforeProjectLoad === true,
   });
   if (requestedProfile === "run") await writeRuntimeGuardRunMarker(projectPath);
   return {
@@ -382,7 +386,8 @@ async function compileGameMakerProject(
       : undefined;
     if (programSource) validateRuntimeAccesses(programSource, guardChecker);
     const nativeAccess = programSource ? collectNativeAccessPlan(programSource, guardChecker) : undefined;
-    const javascript = toJavaScript(unit.source, unit.fileName, runtimeTypeGuards, staticReceivers, nativeAccess);
+    const javascript = toJavaScript(unit.source, unit.fileName, runtimeTypeGuards, staticReceivers, nativeAccess,
+      programSource ? { sourceFile: programSource, checker: guardChecker } : undefined);
     const sourceFile = parseJavaScript(javascript, unit.fileName);
     validateJavaScript(sourceFile);
     return {
@@ -392,12 +397,12 @@ async function compileGameMakerProject(
     };
   });
 
-  const projectGlobalBindings = new Set(
+  const projectLocalBindings = new Set(
     units.flatMap((unit) => [...collectTopLevelVariableBindings(unit.typeScriptSourceFile)]),
   );
   for (const unit of units) {
     try {
-      validateTopLevelVariableReferences(unit.typeScriptSourceFile, projectGlobalBindings);
+      validateTopLevelVariableReferences(unit.typeScriptSourceFile, projectLocalBindings);
     } catch (error) {
       if (error instanceof Ts2GmlError) diagnostics.push(...error.diagnostics);
       else throw error;
@@ -448,8 +453,8 @@ async function compileGameMakerProject(
 
       if (scriptChunks.length > 0) {
         const sourceName = path.basename(unit.fileName, path.extname(unit.fileName));
-        const scriptName = objectNames.has(sourceName) && staticClasses.has(sourceName)
-          ? `${sourceName.slice(0, 56)}_statics`
+        const scriptName = objectNames.has(sourceName) || rooms.some((room) => room.name === sourceName)
+          ? `${sourceName.slice(0, 56)}_${staticClasses.has(sourceName) ? "statics" : "init"}`
           : sourceName;
         assertIdentifier(scriptName, "script", unit.fileName);
         if (scripts.has(scriptName)) {
@@ -544,24 +549,7 @@ async function compileGameMakerProject(
   }
   const generatedRuntimeBindings = new Set([
     ...generatedAssetNames,
-    ...units.flatMap((unit) =>
-      unit.sourceFile.statements.flatMap((statement) => {
-        if (
-          (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) &&
-          statement.name
-        ) return [statement.name.text];
-        if (!ts.isVariableStatement(statement)) return [];
-        return statement.declarationList.declarations.flatMap((declaration) =>
-          declaration.initializer &&
-            ts.isCallExpression(declaration.initializer) &&
-            ts.isIdentifier(declaration.initializer.expression) &&
-            declaration.initializer.expression.text === "gm_macro" &&
-            ts.isIdentifier(declaration.name)
-            ? [declaration.name.text]
-            : []
-        );
-      })
-    ),
+    ...units.flatMap((unit) => unit.sourceFile.statements.flatMap(topLevelGeneratedNames)),
   ]);
   const previousManifest = await readManifest(
     path.join(projectDirectory, ".ts2gml", "manifest.json"),
@@ -622,18 +610,13 @@ function topLevelGeneratedNames(statement: ts.Statement): string[] {
     return [statement.name.text];
   }
   if (!ts.isVariableStatement(statement)) return [];
-  const names: string[] = [];
-  const collect = (name: ts.BindingName): void => {
-    if (ts.isIdentifier(name)) {
-      names.push(name.text);
-      return;
-    }
-    for (const element of name.elements) {
-      if (!ts.isOmittedExpression(element)) collect(element.name);
-    }
-  };
-  for (const declaration of statement.declarationList.declarations) collect(declaration.name);
-  return names;
+  return statement.declarationList.declarations.flatMap((declaration) =>
+    declaration.initializer && ts.isCallExpression(declaration.initializer) &&
+      ts.isIdentifier(declaration.initializer.expression) && declaration.initializer.expression.text === "gm_macro" &&
+      ts.isIdentifier(declaration.name)
+      ? [declaration.name.text]
+      : []
+  );
 }
 
 function assertUniqueGeneratedSymbols(

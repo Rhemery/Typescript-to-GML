@@ -5,20 +5,74 @@
     {
       "generatedLine": 2,
       "source": "typescript/gameplay/obj_test_player.ts",
-      "line": 14,
+      "line": 58,
       "column": 5
     },
     {
       "generatedLine": 4,
       "source": "typescript/gameplay/obj_test_player.ts",
-      "line": 5,
+      "line": 6,
       "column": 5
     },
     {
-      "generatedLine": 5,
+      "generatedLine": 16,
       "source": "typescript/gameplay/obj_test_player.ts",
-      "line": 6,
+      "line": 21,
+      "column": 13
+    },
+    {
+      "generatedLine": 19,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 22,
+      "column": 15
+    },
+    {
+      "generatedLine": 20,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 23,
+      "column": 15
+    },
+    {
+      "generatedLine": 26,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 30,
       "column": 5
+    },
+    {
+      "generatedLine": 35,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 37,
+      "column": 9
+    },
+    {
+      "generatedLine": 36,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 43,
+      "column": 9
+    },
+    {
+      "generatedLine": 37,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 44,
+      "column": 9
+    },
+    {
+      "generatedLine": 38,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 45,
+      "column": 9
+    },
+    {
+      "generatedLine": 41,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 46,
+      "column": 11
+    },
+    {
+      "generatedLine": 42,
+      "source": "typescript/gameplay/obj_test_player.ts",
+      "line": 47,
+      "column": 11
     }
   ]
 }

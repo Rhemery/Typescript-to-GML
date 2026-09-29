@@ -1,33 +1,95 @@
 /// <reference path="../types/index.d.ts" />
 
+class GlobalWeapon {
+  damage = 10;
+}
+interface GlobalSettings {
+  title: string;
+  weapons: GlobalWeapon[];
+}
+declare global {
+  interface GMGlobal {
+    weapon: GlobalWeapon;
+    settings: GlobalSettings;
+  }
+}
+gm_global.weapon = new GlobalWeapon();
+gm_global.settings = { title: "Game", weapons: [gm_global.weapon] };
+const globalDamage: number = gm_global.weapon.damage;
+// @ts-expect-error Declared global members retain their types.
+gm_global.weapon = "wrong";
+// @ts-expect-error Declared interface members retain their types.
+gm_global.settings.title = 1;
+gm_global.dynamicWeapon = new GlobalWeapon();
+// @ts-expect-error Undeclared globals need a GMGlobal member or narrowing before use.
+const unknownWeapon: GlobalWeapon = gm_global.undeclaredWeapon;
+
+const emptyEvents: GMObjectEvents = {};
+const objectEvents: GMObjectEvents = {
+  onCreate() {},
+  onAlarm11() {},
+  onUserEvent15() {},
+  onKeyDown_A() {},
+  onKeyPressed_Space() {},
+  onKeyUp_F12() {},
+  onMouseLeftPressed() {},
+  onGlobalMouseLeftPressed() {},
+  onGestureTap() {},
+  onGlobalGestureTap() {},
+  onRoomStart() {},
+  onOutsideView7() {},
+  onBoundaryView7() {},
+  onAsyncNetworking() {},
+  onDrawGUIEnd() {},
+  onCleanUp() {},
+};
+class ObjectEventsTypeSmoke implements GMObjectEvents {
+  onStep(): void {}
+}
+const baseObjectEvents: GMObjectEvents = gm_self();
+// @ts-expect-error Object instance fields are not events.
+const eventPosition: keyof GMObjectEvents = "x";
+// @ts-expect-error Runtime fields starting with on are not events.
+const eventLayer: keyof GMObjectEvents = "on_ui_layer";
+// @ts-expect-error Instance helpers are not events.
+const eventHelper: keyof GMObjectEvents = "gm_with";
+// @ts-expect-error Unknown named events are not accepted.
+const unknownEvent: keyof GMObjectEvents = "onUnknown";
+// @ts-expect-error Alarms stop at 11.
+const invalidAlarm: keyof GMObjectEvents = "onAlarm12";
+// @ts-expect-error User events stop at 15.
+const invalidUserEvent: keyof GMObjectEvents = "onUserEvent16";
+// @ts-expect-error Event handlers cannot require arguments.
+const invalidEvents: GMObjectEvents = { onStep(value: number) {} };
+
 class obj_type_smoke extends GMObject {
   lives = 3;
 
-  protected onCreate(): void {
+  onCreate(): void {
     this.x = 10;
     this.y = 20;
     draw_set_alpha(1);
     show_debug_message(`position=${this.x},${this.y}`);
   }
 
-  protected onAlarm0(): void {
+  onAlarm0(): void {
     this.alarm[0] = 30;
   }
 
-  protected onKeyPress_32(): void {
+  onKeyPress_32(): void {
     const current = gm_self<obj_type_smoke>();
     show_debug_message(gm_typeof(current));
   }
 
-  protected onKeyDown_A(): void {
+  onKeyDown_A(): void {
     show_debug_message("A is down");
   }
 
-  protected onAsyncNetworking(): void {
+  onAsyncNetworking(): void {
     show_debug_message(async_load);
   }
 
-  protected onCollision_obj_type_target(target: GMInstance<obj_type_target>): void {
+  onCollision_obj_type_target(target: GMInstance<obj_type_target>): void {
     target.health -= 1;
   }
 
@@ -44,13 +106,13 @@ class obj_type_target extends GMObject {
 }
 
 class obj_type_child extends obj_type_smoke {
-  protected override onCreate(): void {
+  override onCreate(): void {
     this.lives = 5;
   }
 
-  protected override onKeyPress_32(): void {}
+  override onKeyPress_32(): void {}
 
-  protected override onCollision_obj_type_target(target: GMInstance<obj_type_target>): void {
+  override onCollision_obj_type_target(target: GMInstance<obj_type_target>): void {
     target.health -= 2;
   }
 }
@@ -58,29 +120,21 @@ class obj_type_child extends obj_type_smoke {
 const eventInstance = instance_create_layer(0, 0, "Instances", obj_type_child);
 eventInstance.damageTargets();
 eventInstance.lives -= 1;
-// @ts-expect-error Implemented events are protected.
+// Event members remain public for authoring and overrides. Project checks reject these accesses.
 eventInstance.onCreate();
-// @ts-expect-error Inherited events are protected.
 eventInstance.onAlarm0();
-// @ts-expect-error Unimplemented events are protected as well.
 eventInstance.onDraw?.();
-// @ts-expect-error Named keyboard events are protected.
 eventInstance.onKeyDown_A();
-// @ts-expect-error Numeric keyboard events are protected.
 eventInstance.onKeyPress_32();
-// @ts-expect-error Collision events are protected.
 eventInstance.onCollision_obj_type_target(gm_self<obj_type_target>());
-// @ts-expect-error Async events cannot be used as callbacks.
 const eventCallback = eventInstance.onAsyncNetworking;
-// @ts-expect-error Base object references do not expose callable events.
 gm_self().onStep?.();
-// @ts-expect-error Numeric event fallbacks do not expose callable events.
+// @ts-expect-error Numeric events must be declared on the concrete object.
 gm_self().onGesture_0?.();
-// @ts-expect-error Collision event fallbacks do not expose callable events.
+// @ts-expect-error Collision declarations require a GameMaker project.
 gm_self().onCollision_obj_type_target?.(gm_self<obj_type_target>());
 gm_with(obj_type_child, (target) => {
   target.damageTargets();
-  // @ts-expect-error Typed with-block instances do not expose events.
   target.onCreate();
 });
 

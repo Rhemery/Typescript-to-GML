@@ -50,7 +50,8 @@ Before erasure, the project type checker records the reifiable types needed by r
 | Class extending another authored object | Child Object resource with `parentObjectId` and inherited Create call |
 | Class extending `GMRoom` | Direct creation-code `.gml` linked to an existing room |
 | Top-level `gm_macro` declaration | GML `#macro` definitions |
-| Top-level runtime variable | Initialization on GameMaker's `global` struct |
+| Top-level runtime variable | GML local shared by initialization statements in the same script |
+| Explicit `gm_global.name` assignment | Assignment on GameMaker's `global` struct |
 
 Source subdirectories are mirrored as virtual Asset Browser folders. Moving a source moves the generated resource. Compiler-created empty folders are removed, while folders containing unmanaged resources are retained.
 
@@ -61,6 +62,8 @@ Before writing, the project compiler checks for source-name collisions, invalid 
 On the next build, compiler-owned output is refreshed from TypeScript even when it was edited or deleted externally. Hashes record the generated content but do not restrict updates. Object `.yy` resources are merged: documented IDE-owned settings and manual Object Variables are preserved while compiler-owned identity, inheritance, fields, and events are refreshed. Unchanged resource formatting and existing project entry order are preserved to avoid unnecessary IDE reloads.
 
 Watch mode adds another boundary: it may update existing generated `.gml` files, but it preflights every resource-structure change before writing. The user must save GameMaker and confirm the pending update because no external process can inspect unsaved IDE memory. The confirmed build recompiles against the newly saved resources and applies the structure as one update.
+
+IDE Run and Build provide another route: after saving GameMaker, the `pre_project_step` hook applies the complete pending update before the asset compiler loads the project. It uses the same ownership checks and object-setting merge as a confirmed build. Later hooks retain the live-update restriction. A watcher waiting for confirmation does not prevent this pre-project update.
 
 Only stale files recorded by the tool's manifest are candidates for deletion. Removing a TypeScript source never authorizes deletion of an unrelated IDE-created asset.
 

@@ -183,22 +183,6 @@ export function validateObjectEvents(
   const instanceTypes = new Set(["GMObject", ...objectNames]);
   const visit = (node: ts.Node): void => {
     if (ts.isTypeNode(node)) return;
-    if (
-      ts.isMethodDeclaration(node) &&
-      ts.isClassDeclaration(node.parent) &&
-      isObjectClass(node.parent, objectNames) &&
-      !hasStaticModifier(node) &&
-      ts.isIdentifier(node.name) &&
-      eventForMethod(node.name.text, sourceFile, node) &&
-      !node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ProtectedKeyword)
-    ) {
-      throw objectError(
-        node.name,
-        sourceFile,
-        `Object event '${node.name.text}' must be protected. Declare it as 'protected ${node.name.text}(...)' so TypeScript rejects external calls.`,
-      );
-    }
-
     let receiver: ts.Node | undefined;
     let memberNames: string[] = [];
     if (ts.isPropertyAccessExpression(node)) {

@@ -1,4 +1,4 @@
-import { extractFunctionJsDocs } from "./jsdoc.js";
+import { extractFunctionJsDocs, mapGmlJsDocType } from "./jsdoc.js";
 
 export interface GmlFunctionDeclaration {
   name: string;
@@ -7,12 +7,14 @@ export interface GmlFunctionDeclaration {
   description?: string;
   returnType?: string;
   returnDescription?: string;
+  members?: Record<string, string>;
 }
 
 export interface GmlParameterDeclaration {
   name: string;
   optional: boolean;
   type?: string;
+  inferredType?: string;
   description?: string;
 }
 
@@ -22,6 +24,7 @@ export interface GmlSourceDeclarations {
   enumerations: GmlEnumerationDeclaration[];
   globals: string[];
   globalVariables: string[];
+  globalTypes: Map<string, string>;
 }
 
 export interface GmlMacroDeclaration {
@@ -36,7 +39,7 @@ export interface GmlEnumerationDeclaration {
 
 const identifierPattern = /^[$A-Z_a-z][$\w]*$/;
 
-export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
+export function extractGmlDeclarations(source: string, scriptScope = true): GmlSourceDeclarations {
   const functionJsDocs = extractFunctionJsDocs(source);
   const tokens: string[] = [];
   const macroTypes = new Map<string, Set<GmlMacroDeclaration["type"]>>();
@@ -75,6 +78,7 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
       continue;
     }
     if (character === '"' || character === "'" || character === "`") {
+      const start = index;
       const quote = character;
       index += 1;
       while (index < source.length) {
@@ -88,6 +92,13 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
         }
         index += 1;
       }
+      tokens.push(source.slice(start, index));
+      continue;
+    }
+    const number = /^(?:0x[\da-f]+|\$[\da-f]+|(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/i.exec(source.slice(index));
+    if (number) {
+      tokens.push(number[0]);
+      index += number[0].length;
       continue;
     }
     if (/[$A-Z_a-z]/.test(character)) {
@@ -97,25 +108,33 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
       tokens.push(source.slice(start, index));
       continue;
     }
-    tokens.push(character);
-    index += 1;
+    const operator = /^(?:\?\?=|<<=|>>=|==|!=|<=|>=|<>|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|\?\?|&&|\|\||\+\+|--|<<|>>)/.exec(source.slice(index));
+    tokens.push(operator?.[0] ?? character);
+    index += operator?.[0].length ?? 1;
   }
 
   const functions: GmlFunctionDeclaration[] = [];
   const enumerations: GmlEnumerationDeclaration[] = [];
   const globals = new Set<string>();
   const globalVariables = new Set<string>();
+  const globalTypes = new Map<string, string>();
   let braceDepth = 0;
   let parenthesisDepth = 0;
   let bracketDepth = 0;
 
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index]!;
-    const atScriptScope = braceDepth === 0 && parenthesisDepth === 0 && bracketDepth === 0;
+    const atScriptScope = scriptScope && braceDepth === 0 && parenthesisDepth === 0 && bracketDepth === 0;
 
-    if (token === "global" && tokens[index + 1] === ".") {
+    if (token === "global" && tokens[index - 1] !== "." && tokens[index + 1] === ".") {
       const name = tokens[index + 2];
-      if (name && identifierPattern.test(name)) globals.add(name);
+      if (name && identifierPattern.test(name)) {
+        globals.add(name);
+        if (tokens[index + 3] === "=") {
+          const type = inferGmlExpressionType(readGmlExpression(tokens, index + 4));
+          mergeInferredType(globalTypes, name, type);
+        }
+      }
     }
 
     if (token === "globalvar") {
@@ -143,8 +162,9 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
           else if (tokens[cursor] === ")") parameterDepth -= 1;
           cursor += 1;
         }
+        const parameterTokens = tokens.slice(parameterStart, cursor - 1);
         let parameters = parameterDepth === 0
-          ? readFunctionParameters(tokens.slice(parameterStart, cursor - 1))
+          ? readFunctionParameters(parameterTokens)
           : undefined;
         const jsDoc = functionJsDocs.get(name);
         if (parameters && jsDoc) {
@@ -166,9 +186,54 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
           if (tokens[cursor] === "constructor") constructor = true;
           cursor += 1;
         }
+        const members = new Map<string, string>();
+        if (constructor && tokens[cursor] === "{") {
+          const bindings = new Map(parameters?.map((parameter) => [
+            parameter.name, mapGmlJsDocType(parameter.type),
+          ]));
+          const parameterSegments = splitGmlTokens(parameterTokens);
+          for (const segment of parameterSegments ?? []) {
+            const parameter = parameters?.find((parameter) => parameter.name === segment[0]);
+            if (segment[1] === "=" && parameter && !parameter.type) {
+              const type = inferGmlExpressionType(segment.slice(2), bindings);
+              if (type !== "any") parameter.inferredType = type;
+              bindings.set(parameter.name, type);
+            }
+          }
+          const locals = new Set(bindings.keys());
+          let depth = 1;
+          let inControlStatement = false;
+          for (let memberIndex = cursor + 1; memberIndex < tokens.length && depth > 0; memberIndex += 1) {
+            const current = tokens[memberIndex]!;
+            if (depth === 1 && ["if", "else", "with", "for", "while", "do", "until", "repeat", "switch"].includes(current)) {
+              inControlStatement = true;
+            }
+            if (depth === 1 && current === "var") {
+              const segments = splitGmlTokens(readGmlExpression(tokens, memberIndex + 1, false));
+              for (const segment of segments ?? []) {
+                if (identifierPattern.test(segment[0] ?? "")) locals.add(segment[0]!);
+              }
+            }
+            const explicitSelf = tokens[memberIndex - 1] === "." && tokens[memberIndex - 2] === "self" &&
+              tokens[memberIndex - 3] !== ".";
+            if (
+              depth === 1 && !inControlStatement && identifierPattern.test(current) && tokens[memberIndex + 1] === "=" &&
+              tokens[memberIndex - 1] !== "=" &&
+              (explicitSelf || (tokens[memberIndex - 1] !== "." && !locals.has(current)))
+            ) {
+              mergeInferredType(members, current, inferGmlExpressionType(
+                readGmlExpression(tokens, memberIndex + 2), bindings,
+              ));
+            }
+            if (current === "{" || current === "(" || current === "[") depth += 1;
+            else if (current === "}" || current === ")" || current === "]") depth -= 1;
+            if (depth === 1 && (current === ";" || current === "}")) inControlStatement = false;
+          }
+        }
         functions.push({
           name,
           constructor,
+          ...(constructor ? { members: Object.fromEntries(members) } : {}),
           ...(parameters ? { parameters } : {}),
           ...(jsDoc?.description ? { description: jsDoc.description } : {}),
           ...(jsDoc?.returnType ? { returnType: jsDoc.returnType } : {}),
@@ -239,7 +304,7 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
     }
 
     if (
-      atScriptScope &&
+      (atScriptScope || (globalVariables.has(token) && braceDepth === 0 && parenthesisDepth === 0 && bracketDepth === 0)) &&
       identifierPattern.test(token) &&
       token !== "var" &&
       token !== "globalvar" &&
@@ -247,6 +312,8 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
       tokens[index + 1] === "="
     ) {
       globals.add(token);
+      const type = inferGmlExpressionType(readGmlExpression(tokens, index + 2));
+      mergeInferredType(globalTypes, token, type);
     }
 
     if (token === "{") braceDepth += 1;
@@ -268,6 +335,7 @@ export function extractGmlDeclarations(source: string): GmlSourceDeclarations {
     enumerations: enumerations.sort((left, right) => left.name.localeCompare(right.name)),
     globals: [...globals].sort(),
     globalVariables: [...globalVariables].sort(),
+    globalTypes,
   };
 }
 
@@ -283,6 +351,20 @@ function inferMacroType(value: string): GmlMacroDeclaration["type"] {
 
 function readFunctionParameters(tokens: readonly string[]): GmlParameterDeclaration[] | undefined {
   if (tokens.length === 0) return [];
+  const segments = splitGmlTokens(tokens);
+  if (!segments) return undefined;
+
+  const parameters: GmlParameterDeclaration[] = [];
+  for (const segment of segments) {
+    const name = segment[0];
+    if (!name || !identifierPattern.test(name)) return undefined;
+    if (segment.length > 1 && segment[1] !== "=") return undefined;
+    parameters.push({ name, optional: segment[1] === "=" });
+  }
+  return parameters;
+}
+
+function splitGmlTokens(tokens: readonly string[]): string[][] | undefined {
   const segments: string[][] = [[]];
   let nested = 0;
   for (const token of tokens) {
@@ -297,12 +379,65 @@ function readFunctionParameters(tokens: readonly string[]): GmlParameterDeclarat
   }
   if (nested !== 0) return undefined;
 
-  const parameters: GmlParameterDeclaration[] = [];
-  for (const segment of segments) {
-    const name = segment[0];
-    if (!name || !identifierPattern.test(name)) return undefined;
-    if (segment.length > 1 && segment[1] !== "=") return undefined;
-    parameters.push({ name, optional: segment[1] === "=" });
+  return segments;
+}
+
+function readGmlExpression(tokens: readonly string[], start: number, stopAtComma = true): string[] {
+  let nested = 0;
+  let end = start;
+  for (; end < tokens.length; end += 1) {
+    const token = tokens[end]!;
+    if (nested === 0) {
+      if (token === ";" || (stopAtComma && token === ",") || ["}", ")", "]"].includes(token)) break;
+      // Semicolons are optional in GML. A following statement starts a new value.
+      if (end > start && (
+        ["var", "static", "return", "if", "with", "function"].includes(token) ||
+        (identifierPattern.test(token) && tokens[end + 1] === "=" && tokens[end - 1] !== ",") ||
+        (["self", "global"].includes(token) && tokens[end + 1] === "." && tokens[end + 3] === "=")
+      )) break;
+    }
+    if (token === "(" || token === "[" || token === "{") nested += 1;
+    else if (token === ")" || token === "]" || token === "}") nested -= 1;
   }
-  return parameters;
+  return tokens.slice(start, end);
+}
+
+export function mergeInferredType(types: Map<string, string>, name: string, type: string): void {
+  const previous = types.get(name);
+  types.set(name, previous === undefined || previous === type ? type : "any");
+}
+
+function inferGmlExpressionType(tokens: readonly string[], bindings: ReadonlyMap<string, string> = new Map()): string {
+  if (tokens[0] === "(" && tokens.at(-1) === ")" && splitGmlTokens(tokens.slice(1, -1))) {
+    return inferGmlExpressionType(tokens.slice(1, -1), bindings);
+  }
+  if (tokens.length === 1) {
+    if (tokens[0] === "undefined") return "undefined";
+    const literal = inferMacroType(tokens[0]!);
+    return literal === "any" ? bindings.get(tokens[0]!) ?? "any" : literal;
+  }
+  if (tokens.length === 2 && ["+", "-", "@", "$"].includes(tokens[0]!)) {
+    return inferMacroType(tokens.join(""));
+  }
+  if (tokens[0] === "function" && tokens.at(-1) === "}") return "GMFunction";
+  if (tokens[0] === "[" && tokens.at(-1) === "]") {
+    const elements = splitGmlTokens(tokens.slice(1, -1));
+    if (!elements) return "any";
+    const types = new Set(elements
+      .filter((element) => element.length)
+      .map((element) => inferGmlExpressionType(element, bindings)));
+    return `Array<${types.size === 0 || types.has("any") ? "any" : [...types].sort().join(" | ")}>`;
+  }
+  if (tokens[0] === "{" && tokens.at(-1) === "}") {
+    const fields = splitGmlTokens(tokens.slice(1, -1));
+    if (!fields) return "any";
+    const members = new Map<string, string>();
+    for (const field of fields) {
+      if (field.length === 0) continue;
+      if (!identifierPattern.test(field[0] ?? "") || field[1] !== ":") return "GMStruct";
+      mergeInferredType(members, field[0]!, inferGmlExpressionType(field.slice(2), bindings));
+    }
+    return `GMStruct & { ${[...members].map(([name, type]) => `${name}: ${type};`).join(" ")} }`;
+  }
+  return "any";
 }

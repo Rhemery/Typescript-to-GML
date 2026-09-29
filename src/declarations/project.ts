@@ -6,6 +6,7 @@ import { readManifest } from "../compiler/manifest.js";
 import { getProjectTypesDirectory } from "../project-layout.js";
 import {
   extractGmlDeclarations,
+  mergeInferredType,
   type GmlEnumerationDeclaration,
   type GmlFunctionDeclaration,
   type GmlMacroDeclaration,
@@ -92,12 +93,14 @@ export async function generateProjectDeclarations(
 
   const manifest = await readManifest(path.join(projectDirectory, ".ts2gml", "manifest.json"));
   const managedResources = new Set(manifest.resources.map(normalizeResourcePath));
+  const managedFiles = new Set(manifest.files.map(normalizeResourcePath));
   const declarations = new Map<string, ProjectAssetDeclaration>();
   const functions = new Map<string, ProjectFunctionDeclaration>();
   const macros = new Map<string, ProjectMacroDeclaration>();
   const enumerations = new Map<string, ProjectEnumerationDeclaration>();
   const globals = new Set<string>();
   const globalVariables = new Set<string>();
+  const globalTypes = new Map<string, string>();
   const objectNames = new Set(options.additionalObjectNames);
 
   for (const resource of project.resources) {
@@ -109,68 +112,88 @@ export async function generateProjectDeclarations(
     ) {
       objectNames.add(resource.id.name);
     }
-    if (options.excludedAssetNames?.has(resource.id.name)) continue;
     if (managedResources.has(resourcePath)) continue;
     const type = assetTypes.get(resourcePath.split("/", 1)[0]!.toLowerCase());
     if (!type) continue;
+    const excluded = options.excludedAssetNames?.has(resource.id.name);
+    // A TypeScript room class replaces the asset declaration, but its room can
+    // still contain unmanaged instance creation code with native globals.
+    if (excluded && type !== "GMRoom") continue;
     if (!/^[$A-Z_a-z][$\w]*$/.test(resource.id.name)) {
       throw new Error(
         `Cannot declare GameMaker asset '${resource.id.name}': its name is not a TypeScript identifier.`,
       );
     }
-    if (declarations.has(resource.id.name)) {
-      throw new Error(`Cannot declare duplicate GameMaker asset '${resource.id.name}'.`);
-    }
-    declarations.set(resource.id.name, {
-      name: resource.id.name,
-      resourcePath,
-      type,
-    });
-
-    if (type === "GMScript") {
-      const relativeGmlPath = resourcePath.replace(/\.yy$/i, ".gml");
-      const gmlPath = path.resolve(projectDirectory, relativeGmlPath);
-      const relativePath = path.relative(projectDirectory, gmlPath);
-      if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
-        throw new Error(`Script resource '${resourcePath}' is outside the GameMaker project.`);
+    if (!excluded) {
+      if (declarations.has(resource.id.name)) {
+        throw new Error(`Cannot declare duplicate GameMaker asset '${resource.id.name}'.`);
       }
-      let source: string;
+      declarations.set(resource.id.name, {
+        name: resource.id.name,
+        resourcePath,
+        type,
+      });
+    }
+
+    if (["GMScript", "GMObject", "GMRoom", "GMTimeline"].includes(type)) {
+      const resourceDirectory = path.resolve(projectDirectory, path.dirname(resourcePath));
+      const relativePath = path.relative(projectDirectory, resourceDirectory);
+      if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+        throw new Error(`Resource '${resourcePath}' is outside the GameMaker project.`);
+      }
+      let gmlPaths: string[];
       try {
-        source = await fs.readFile(gmlPath, "utf8");
+        gmlPaths = type === "GMScript"
+          ? [resourcePath.replace(/\.yy$/i, ".gml")]
+          : (await fs.readdir(resourceDirectory, { withFileTypes: true }))
+              .filter((entry) => entry.isFile() && /\.gml$/i.test(entry.name))
+              .map((entry) => `${path.posix.dirname(resourcePath)}/${entry.name}`)
+              .sort();
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
         throw error;
       }
-      const extracted = extractGmlDeclarations(source);
-      for (const fn of extracted.functions) {
-        const previous = functions.get(fn.name);
-        if (previous) {
-          throw new Error(
-            `Duplicate global GML function '${fn.name}' in '${previous.resourcePath}' and '${resourcePath}'.`,
-          );
+      for (const relativeGmlPath of gmlPaths) {
+        if (managedFiles.has(relativeGmlPath)) continue;
+        let source: string;
+        try {
+          source = await fs.readFile(path.resolve(projectDirectory, relativeGmlPath), "utf8");
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+          throw error;
         }
-        functions.set(fn.name, { ...fn, resourcePath });
-      }
-      for (const macro of extracted.macros) {
-        const previous = macros.get(macro.name);
-        if (previous) {
-          throw new Error(
-            `Duplicate global GML macro '${macro.name}' in '${previous.resourcePath}' and '${resourcePath}'.`,
-          );
+        const extracted = extractGmlDeclarations(source, type === "GMScript");
+        for (const fn of extracted.functions) {
+          const previous = functions.get(fn.name);
+          if (previous) {
+            throw new Error(
+              `Duplicate global GML function '${fn.name}' in '${previous.resourcePath}' and '${resourcePath}'.`,
+            );
+          }
+          functions.set(fn.name, { ...fn, resourcePath });
         }
-        macros.set(macro.name, { ...macro, resourcePath });
-      }
-      for (const enumeration of extracted.enumerations) {
-        const previous = enumerations.get(enumeration.name);
-        if (previous) {
-          throw new Error(
-            `Duplicate global GML enum '${enumeration.name}' in '${previous.resourcePath}' and '${resourcePath}'.`,
-          );
+        for (const macro of extracted.macros) {
+          const previous = macros.get(macro.name);
+          if (previous) {
+            throw new Error(
+              `Duplicate global GML macro '${macro.name}' in '${previous.resourcePath}' and '${resourcePath}'.`,
+            );
+          }
+          macros.set(macro.name, { ...macro, resourcePath });
         }
-        enumerations.set(enumeration.name, { ...enumeration, resourcePath });
+        for (const enumeration of extracted.enumerations) {
+          const previous = enumerations.get(enumeration.name);
+          if (previous) {
+            throw new Error(
+              `Duplicate global GML enum '${enumeration.name}' in '${previous.resourcePath}' and '${resourcePath}'.`,
+            );
+          }
+          enumerations.set(enumeration.name, { ...enumeration, resourcePath });
+        }
+        for (const name of extracted.globals) globals.add(name);
+        for (const name of extracted.globalVariables) globalVariables.add(name);
+        for (const [name, type] of extracted.globalTypes) mergeInferredType(globalTypes, name, type);
       }
-      for (const name of extracted.globals) globals.add(name);
-      for (const name of extracted.globalVariables) globalVariables.add(name);
     }
   }
 
@@ -217,7 +240,7 @@ export async function generateProjectDeclarations(
     .sort((left, right) => left.localeCompare(right));
   const lines = [
     "// Generated by typescript-to-gml from the GameMaker project.",
-    "// Unmanaged IDE assets and GML script globals are declared here; do not edit manually.",
+    "// Unmanaged IDE assets and GML globals are declared here; do not edit manually.",
     "",
     ...assets
       .filter((asset) => !globalSymbols.has(asset.name))
@@ -225,9 +248,12 @@ export async function generateProjectDeclarations(
     ...scriptFunctions.flatMap((fn) => {
       const parameters = renderFunctionParameters(fn.parameters);
       const documentation = renderFunctionDocumentation(fn);
-      const returnType = fn.constructor ? "GMStruct" : mapGmlJsDocType(fn.returnType);
+      const returnType = fn.constructor ? fn.name : mapGmlJsDocType(fn.returnType);
       return fn.constructor
         ? [
+            `interface ${fn.name} extends GMStruct {`,
+            ...Object.entries(fn.members ?? {}).map(([name, type]) => `  ${name}: ${type};`),
+            "}",
             ...documentation,
             `declare const ${fn.name}: {`,
             `  (${parameters}): ${returnType};`,
@@ -251,25 +277,24 @@ export async function generateProjectDeclarations(
       ? [
           "",
           "interface GMGlobal {",
-          ...globalNames.map((name) => `  ${name}: any;`),
+          ...globalNames.map((name) => `  ${name}: ${globalTypes.get(name) ?? "any"};`),
           "}",
         ]
       : []),
     ...[...globalVariables]
       .sort()
-      .map((name) => `declare let ${name}: any;`),
+      .map((name) => `declare let ${name}: ${globalTypes.get(name) ?? "any"};`),
     ...(collisionObjectNames.length > 0
       ? [
           "",
-          "declare abstract class GMObjectCollisionEvents {",
+          "interface GMObjectEvents {",
           ...collisionObjectNames.map((name) => {
             const otherType = authoredObjectNames.has(name)
               ? `GMInstance<${name}>`
               : "GMInstance";
-            return `  protected onCollision_${name}?(other: ${otherType}): void;`;
+            return `  onCollision_${name}?(other: ${otherType}): void;`;
           }),
           "}",
-          "interface GMObject extends GMObjectCollisionEvents {}",
         ]
       : []),
     "",
@@ -309,7 +334,7 @@ function renderFunctionParameters(parameters?: readonly GmlParameterDeclaration[
     if (!parameters[index]!.optional) lastRequired = index;
   }
   return parameters.map((parameter, index) => {
-    const type = mapGmlJsDocType(parameter.type);
+    const type = parameter.inferredType ?? mapGmlJsDocType(parameter.type);
     if (!parameter.optional) return `${parameter.name}: ${type}`;
     return index > lastRequired
       ? `${parameter.name}?: ${type}`

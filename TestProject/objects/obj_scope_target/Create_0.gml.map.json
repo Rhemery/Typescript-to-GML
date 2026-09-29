@@ -5,25 +5,25 @@
     {
       "generatedLine": 2,
       "source": "typescript/scope_context.ts",
-      "line": 50,
+      "line": 69,
       "column": 5
     },
     {
       "generatedLine": 5,
       "source": "typescript/scope_context.ts",
-      "line": 54,
+      "line": 73,
       "column": 5
     },
     {
       "generatedLine": 8,
       "source": "typescript/scope_context.ts",
-      "line": 58,
+      "line": 77,
       "column": 5
     },
     {
       "generatedLine": 9,
       "source": "typescript/scope_context.ts",
-      "line": 59,
+      "line": 78,
       "column": 5
     },
     {
@@ -35,7 +35,7 @@
     {
       "generatedLine": 13,
       "source": "typescript/scope_context.ts",
-      "line": 63,
+      "line": 82,
       "column": 5
     },
     {
@@ -47,8 +47,158 @@
     {
       "generatedLine": 17,
       "source": "typescript/scope_context.ts",
-      "line": 67,
+      "line": 86,
       "column": 5
+    },
+    {
+      "generatedLine": 21,
+      "source": "typescript/scope_context.ts",
+      "line": 89,
+      "column": 49
+    },
+    {
+      "generatedLine": 29,
+      "source": "typescript/scope_context.ts",
+      "line": 92,
+      "column": 5
+    },
+    {
+      "generatedLine": 81,
+      "source": "typescript/scope_context.ts",
+      "line": 96,
+      "column": 5
+    },
+    {
+      "generatedLine": 84,
+      "source": "typescript/scope_context.ts",
+      "line": 96,
+      "column": 20
+    },
+    {
+      "generatedLine": 85,
+      "source": "typescript/scope_context.ts",
+      "line": 96,
+      "column": 33
+    },
+    {
+      "generatedLine": 93,
+      "source": "typescript/scope_context.ts",
+      "line": 100,
+      "column": 5
+    },
+    {
+      "generatedLine": 97,
+      "source": "typescript/scope_context.ts",
+      "line": 100,
+      "column": 20
+    },
+    {
+      "generatedLine": 98,
+      "source": "typescript/scope_context.ts",
+      "line": 100,
+      "column": 56
+    },
+    {
+      "generatedLine": 105,
+      "source": "typescript/scope_context.ts",
+      "line": 104,
+      "column": 5
+    },
+    {
+      "generatedLine": 108,
+      "source": "typescript/scope_context.ts",
+      "line": 105,
+      "column": 7
+    },
+    {
+      "generatedLine": 109,
+      "source": "typescript/scope_context.ts",
+      "line": 106,
+      "column": 7
+    },
+    {
+      "generatedLine": 110,
+      "source": "typescript/scope_context.ts",
+      "line": 107,
+      "column": 9
+    },
+    {
+      "generatedLine": 116,
+      "source": "typescript/scope_context.ts",
+      "line": 113,
+      "column": 5
+    },
+    {
+      "generatedLine": 117,
+      "source": "typescript/scope_context.ts",
+      "line": 114,
+      "column": 7
+    },
+    {
+      "generatedLine": 121,
+      "source": "typescript/scope_context.ts",
+      "line": 119,
+      "column": 5
+    },
+    {
+      "generatedLine": 122,
+      "source": "typescript/scope_context.ts",
+      "line": 120,
+      "column": 5
+    },
+    {
+      "generatedLine": 127,
+      "source": "typescript/scope_context.ts",
+      "line": 122,
+      "column": 5
+    },
+    {
+      "generatedLine": 128,
+      "source": "typescript/scope_context.ts",
+      "line": 123,
+      "column": 5
+    },
+    {
+      "generatedLine": 135,
+      "source": "typescript/scope_context.ts",
+      "line": 125,
+      "column": 5
+    },
+    {
+      "generatedLine": 144,
+      "source": "typescript/scope_context.ts",
+      "line": 130,
+      "column": 5
+    },
+    {
+      "generatedLine": 145,
+      "source": "typescript/scope_context.ts",
+      "line": 131,
+      "column": 5
+    },
+    {
+      "generatedLine": 146,
+      "source": "typescript/scope_context.ts",
+      "line": 132,
+      "column": 5
+    },
+    {
+      "generatedLine": 147,
+      "source": "typescript/scope_context.ts",
+      "line": 132,
+      "column": 11
+    },
+    {
+      "generatedLine": 150,
+      "source": "typescript/scope_context.ts",
+      "line": 134,
+      "column": 7
+    },
+    {
+      "generatedLine": 151,
+      "source": "typescript/scope_context.ts",
+      "line": 135,
+      "column": 7
     }
   ]
 }

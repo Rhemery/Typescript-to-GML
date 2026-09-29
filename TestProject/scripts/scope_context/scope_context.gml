@@ -1,3 +1,28 @@
+global.closureGlobalFactory = function (__ts2gml_capture_1_parameter) {
+    var __ts2gml_env_1 = { __ts2gml_capture_1: __ts2gml_capture_1_parameter };
+    return method({ __ts2gml_env_1: __ts2gml_env_1, __ts2gml_closure: true }, function () {
+        var __ts2gml_env_1 = self.__ts2gml_env_1;
+        return __ts2gml_env_1.__ts2gml_capture_1;
+    });
+};
+
+global.closureGlobalRead = global.closureGlobalFactory(17);
+
+// These locals share the script's initialization scope and are not globals.
+var startupValue = 10;
+
+var __ts2gml_destructure_223_1 = [startupValue, 4], startupFirst = 0 < array_length(__ts2gml_destructure_223_1) ? __ts2gml_destructure_223_1[0] : undefined, startupSecond = 1 < array_length(__ts2gml_destructure_223_1) ? __ts2gml_destructure_223_1[1] : undefined;
+
+startupValue += startupSecond;
+
+var startupSnapshot = { value: startupValue };
+
+scopeContextExpect("top-level local initializer", startupFirst, 10);
+
+scopeContextExpect("top-level local mutation", startupSnapshot.value, 14);
+
+scopeContextExpect("top-level local stays private", __ts2gml_value_truthy(variable_global_exists("startupValue")), false);
+
 function scopeContextExpect(label, actual, expected) {
     if (__ts2gml_value_truthy(!__ts2gml_value_equal(actual, expected))) {
         throw string_concat("scope context '", label, "' expected ", expected, ", received ", actual);

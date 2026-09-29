@@ -3,27 +3,45 @@
   "generatedFile": "objects/obj_scope_runner/Collision_obj_scope_target.gml",
   "mappings": [
     {
-      "generatedLine": 1,
-      "source": "typescript/scope_context.ts",
-      "line": 164,
-      "column": 5
-    },
-    {
-      "generatedLine": 2,
-      "source": "typescript/scope_context.ts",
-      "line": 165,
-      "column": 5
-    },
-    {
       "generatedLine": 3,
       "source": "typescript/scope_context.ts",
-      "line": 166,
+      "line": 271,
       "column": 5
     },
     {
-      "generatedLine": 4,
+      "generatedLine": 5,
       "source": "typescript/scope_context.ts",
-      "line": 167,
+      "line": 272,
+      "column": 5
+    },
+    {
+      "generatedLine": 6,
+      "source": "typescript/scope_context.ts",
+      "line": 273,
+      "column": 5
+    },
+    {
+      "generatedLine": 10,
+      "source": "typescript/scope_context.ts",
+      "line": 274,
+      "column": 5
+    },
+    {
+      "generatedLine": 11,
+      "source": "typescript/scope_context.ts",
+      "line": 275,
+      "column": 5
+    },
+    {
+      "generatedLine": 12,
+      "source": "typescript/scope_context.ts",
+      "line": 276,
+      "column": 5
+    },
+    {
+      "generatedLine": 13,
+      "source": "typescript/scope_context.ts",
+      "line": 277,
       "column": 5
     }
   ]

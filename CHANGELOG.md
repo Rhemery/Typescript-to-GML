@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.0-beta.7 - Unreleased
+
+- Support numeric, string, mixed, and const enums, including reverse mappings, computed members, same-file merging, local captures, and access across scripts and object events. Add compiler, project-generation, and GameMaker runtime coverage.
+- Preserve closure environments across authored `method(receiver, callback)` calls, including repeated binding, aliases, spread arguments, and unbound callbacks. Keep shared capture cells and arrow lexical `this`, give closure-factory parameters private names, and test the rebound projectile callback in a real GameMaker Step event.
+- Support closures over plain parameters and function-body locals, preserving shared mutation, nested captures, and lexical `this`. Add compiler and GameMaker VM coverage for returned callbacks, event lifetimes, receiver binding, and unsupported capture diagnostics.
+- Extend closure regression coverage to deep mixed scopes, nested native context changes, call forms, constructor/static receivers, and instance lifetimes. Preserve lexical `this` through lowered descendants, protect generated context names from parameter renaming, and preserve callable bindings and evaluation order in indirect calls. Require closure-suite completion markers in VM verification.
+- Support stored callbacks capturing enclosing bindings and `gm_with` parameters/locals, with fresh block environments per selected instance. Preserve native instance context separately from arrow lexical `this`, and give captured parameters private names to avoid script-asset collisions. Add projectile, nested-with, delayed-event, and asset-collision regressions.
+- Initialize `gm_with` aliases from native `self` and `other` even when callback parameters use those names, including nested blocks.
+- Make `GMObject` events public and reject direct event calls and references through compiler diagnostics instead of requiring `protected` declarations.
+- Apply pending structural changes in the IDE pre-project hook before GameMaker loads assets, so saved field/event/resource changes no longer block Run or Build. Preserve IDE-owned settings, retain live-update restrictions on later hooks, and discard stale run markers for package builds. Add regression coverage for both profiles, stale IDE metadata, additions/removals, and repeated builds.
+- Infer named TypeScript interfaces for constructors in unmanaged GML scripts, including members initialized from primitive literals, arrays, nested structs, and documented or defaulted parameters.
+- Infer members of native global struct literals for `gm_global` access. Keep unresolved expressions permissive and preserve dynamic `GMStruct` member access.
+- Add regression coverage for field type checking, constructor defaults, scope exclusions, semicolonless GML, and declaration refresh/idempotence. Include the native constructor and global struct integration fixture.
+- Advance the companion VSIX to `0.2.7` with matching compiler metadata.
+
 ## 0.2.0-beta.6 - Unreleased
 
 - Stop shipping TypeScript standard-library declarations in the distribution and YYMPS. Resolve a compatible project or global TypeScript installation, support `TS2GML_TYPESCRIPT_LIB`, and report setup errors and the selected libraries through the CLI.

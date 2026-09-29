@@ -65,6 +65,7 @@ async function main(args: string[]): Promise<void> {
       {
         ...(configuration ? { configuration } : {}),
         preserveRunProfile: !automatic,
+        beforeProjectLoad: automatic,
       },
     );
     console.log(

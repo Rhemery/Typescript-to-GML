@@ -1,0 +1,48 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/weapon/weapon.gml",
+  "mappings": [
+    {
+      "generatedLine": 9,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 20,
+      "column": 5
+    },
+    {
+      "generatedLine": 10,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 21,
+      "column": 5
+    },
+    {
+      "generatedLine": 11,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 22,
+      "column": 5
+    },
+    {
+      "generatedLine": 12,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 23,
+      "column": 5
+    },
+    {
+      "generatedLine": 13,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 24,
+      "column": 5
+    },
+    {
+      "generatedLine": 14,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 25,
+      "column": 5
+    },
+    {
+      "generatedLine": 15,
+      "source": "typescript/gameplay/weapon.ts",
+      "line": 26,
+      "column": 5
+    }
+  ]
+}

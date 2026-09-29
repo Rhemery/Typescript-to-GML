@@ -1,4 +1,6 @@
 {
   "FolderOrderSettings":[],
-  "ResourceOrderSettings":[],
+  "ResourceOrderSettings":[
+    {"name":"infer_class","order":1,"path":"scripts/infer_class/infer_class.yy",},
+  ],
 }

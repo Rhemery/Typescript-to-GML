@@ -19,23 +19,6 @@
   "spriteId": null,
   "spriteMaskId": null,
   "visible": true,
-  "properties": [
-    {
-      "$GMObjectProperty": "v2",
-      "%Name": "health",
-      "filters": [],
-      "listItems": [],
-      "multiselect": false,
-      "name": "health",
-      "rangeEnabled": false,
-      "rangeMax": 10,
-      "rangeMin": 0,
-      "resourceType": "GMObjectProperty",
-      "resourceVersion": "2.0",
-      "value": "100",
-      "varType": 4
-    }
-  ],
   "%Name": "obj_test_player",
   "eventList": [
     {
@@ -68,5 +51,37 @@
     "path": "folders/gameplay.yy"
   },
   "parentObjectId": null,
+  "properties": [
+    {
+      "$GMObjectProperty": "v2",
+      "%Name": "health",
+      "filters": [],
+      "listItems": [],
+      "multiselect": false,
+      "name": "health",
+      "rangeEnabled": false,
+      "rangeMax": 10,
+      "rangeMin": 0,
+      "resourceType": "GMObjectProperty",
+      "resourceVersion": "2.0",
+      "value": "100",
+      "varType": 4
+    },
+    {
+      "$GMObjectProperty": "v2",
+      "%Name": "weapon",
+      "filters": [],
+      "listItems": [],
+      "multiselect": false,
+      "name": "weapon",
+      "rangeEnabled": false,
+      "rangeMax": 10,
+      "rangeMin": 0,
+      "resourceType": "GMObjectProperty",
+      "resourceVersion": "2.0",
+      "value": "undefined",
+      "varType": 4
+    }
+  ],
   "resourceType": "GMObject"
 }

@@ -25,6 +25,8 @@ export interface RuntimeGuardProfileResult {
 export interface RuntimeGuardProfileApplyOptions {
   configuration?: string;
   preserveRunProfile?: boolean;
+  /** Only the pre-project hook may change structure before GameMaker loads it. */
+  beforeProjectLoad?: boolean;
 }
 
 export const runtimeGuardConfigFileName = "ts2gml.config.json";

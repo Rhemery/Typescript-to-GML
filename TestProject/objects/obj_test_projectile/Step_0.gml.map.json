@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "objects/obj_test_projectile/Step_0.gml",
+  "mappings": [
+    {
+      "generatedLine": 1,
+      "source": "typescript/gameplay/obj_test_projectile.ts",
+      "line": 6,
+      "column": 5
+    },
+    {
+      "generatedLine": 2,
+      "source": "typescript/gameplay/obj_test_projectile.ts",
+      "line": 6,
+      "column": 24
+    },
+    {
+      "generatedLine": 3,
+      "source": "typescript/gameplay/obj_test_projectile.ts",
+      "line": 7,
+      "column": 5
+    }
+  ]
+}

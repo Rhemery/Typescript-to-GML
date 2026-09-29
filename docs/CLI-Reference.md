@@ -60,6 +60,8 @@ When GameMaker has the project open, save it before a build that adds, removes, 
 
 Code-only changes to existing generated `.gml` files remain safe while the IDE is open and do not require the flag.
 
+For IDE builds, save GameMaker and use Run or Build. The generated `pre_project_step` hook applies pending structural changes automatically before the asset compiler loads project files. The standalone `build` and live watcher retain the explicit save-confirmation requirement.
+
 Builds compare generated content before writing. Unchanged `.gml`, `.yy`, `.yyp`, and manifest files retain their timestamps, reducing GameMaker file-watcher reloads on every operating system.
 
 Compiler-owned output is automatically refreshed from TypeScript after external edits or deletion. `--overwrite-generated` remains accepted for compatibility but has no additional effect and cannot take over unmanaged assets.

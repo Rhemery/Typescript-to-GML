@@ -18,8 +18,8 @@
 - The documented array/string collection subset is translated. Other standard-library members require explicit GameMaker functions; declared authored methods remain callable.
 - Runtime validation is limited to the explicit boundaries described in [runtime type guards](Runtime-Guards.md). Other generics, casts, non-null assertions, structural interfaces, `any`, and `unknown` still erase without a runtime check.
 - Spread, destructuring, `for...of`, `for...in`, `in`, and `instanceof` require operands with the expected GameMaker runtime representation. The compiler cannot prove every dynamic value.
-- Property optional chaining is supported, but optional calls and optional element access are not.
-- Closures are deliberately restricted because GML capture and `this` behavior differ. The special `gm_with` inline block is handled separately.
+- Property optional chaining and standalone calls such as `weapon?.onEndStep()` are supported. Optional calls used as values, optional callable invocation (`callback?.()`), and optional element access remain unsupported.
+- Closures support plain parameters, function-body locals, and direct `gm_with` bindings with shared mutation and lexical `this`. Ordinary nested block/loop captures and native `other` inside capturing callbacks remain restricted; see [closure support and limits](Supported-Language.md#closures).
 - GML's function-scoped locals mean some legal TypeScript shadowing is rejected.
 - A script reference can be represented numerically by GameMaker. Code that depends on JavaScript's `typeof` distinctions around callable values may not have identical semantics; prefer direct calls or explicit GameMaker predicates.
 - Runtime imports are unsupported. GameMaker functions and assets are globals supplied by declarations, while reusable TypeScript-only types may use type-only imports.
@@ -36,6 +36,6 @@
 
 ## Adoption recommendation
 
-For a serious project, use it first in a bounded feature or branch. Pin `0.2.0-beta.6`, keep the generated GML reviewable, run `check` in CI, build the game normally in GameMaker, and exercise every shipping target. Avoid converting irreplaceable or deadline-critical systems until the project has accumulated successful production use.
+For a serious project, use it first in a bounded feature or branch. Pin `0.2.0-beta.7`, keep the generated GML reviewable, run `check` in CI, build the game normally in GameMaker, and exercise every shipping target. Avoid converting irreplaceable or deadline-critical systems until the project has accumulated successful production use.
 
 Report a minimal source example whenever accepted TypeScript emits invalid GML, GameMaker compilation fails, runtime behavior differs, or the compiler crashes. Those are release-blocking classes of defect.

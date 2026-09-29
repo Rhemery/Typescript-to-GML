@@ -40,6 +40,168 @@
     },
     {
       "$GMIncludedFile": "",
+      "%Name": "_Sidebar.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "_Sidebar.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Authoring-Guide.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Authoring-Guide.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "CLI-Reference.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "CLI-Reference.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Compatibility.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Compatibility.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Datafiles-README.txt",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Datafiles-README.txt",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Development-and-Releasing.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Development-and-Releasing.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Diagnostics.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Diagnostics.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Generated-Files-and-Ownership.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Generated-Files-and-Ownership.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Getting-Started.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Getting-Started.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Home.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Home.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "How-It-Works.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "How-It-Works.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Implementation-Status.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Implementation-Status.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Known-Issues.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Known-Issues.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Runtime-Guards.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Runtime-Guards.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Supported-Language.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Supported-Language.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Tool-Evaluation.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Tool-Evaluation.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "Troubleshooting.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "Troubleshooting.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
+      "%Name": "VS-Code-Extension.md",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/docs",
+      "name": "VS-Code-Extension.md",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
       "%Name": "LICENSE",
       "CopyToMask": 0,
       "filePath": "datafiles/ts2gml",
@@ -94,6 +256,15 @@
     },
     {
       "$GMIncludedFile": "",
+      "%Name": "README.txt",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml",
+      "name": "README.txt",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
       "%Name": "ts2gml.bat",
       "CopyToMask": 0,
       "filePath": "datafiles/ts2gml",
@@ -112,8 +283,17 @@
     },
     {
       "$GMIncludedFile": "",
+      "%Name": "gamemaker.generated.d.ts",
+      "CopyToMask": -1,
+      "filePath": "datafiles/ts2gml/types",
+      "name": "gamemaker.generated.d.ts",
+      "resourceType": "GMIncludedFile",
+      "resourceVersion": "2.0"
+    },
+    {
+      "$GMIncludedFile": "",
       "%Name": "gamemaker.project.generated.d.ts",
-      "CopyToMask": 0,
+      "CopyToMask": -1,
       "filePath": "datafiles/ts2gml/types",
       "name": "gamemaker.project.generated.d.ts",
       "resourceType": "GMIncludedFile",
@@ -162,6 +342,12 @@
     },
     {
       "id": {
+        "name": "__ts2gml_class_statics",
+        "path": "scripts/__ts2gml_class_statics/__ts2gml_class_statics.yy"
+      }
+    },
+    {
+      "id": {
         "name": "__ts2gml_collections",
         "path": "scripts/__ts2gml_collections/__ts2gml_collections.yy"
       }
@@ -170,6 +356,18 @@
       "id": {
         "name": "__ts2gml_runtime_guards",
         "path": "scripts/__ts2gml_runtime_guards/__ts2gml_runtime_guards.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "__ts2gml_values",
+        "path": "scripts/__ts2gml_values/__ts2gml_values.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "infer_class",
+        "path": "scripts/infer_class/infer_class.yy"
       }
     },
     {
@@ -192,20 +390,38 @@
     },
     {
       "id": {
-        "name": "__ts2gml_class_statics",
-        "path": "scripts/__ts2gml_class_statics/__ts2gml_class_statics.yy"
-      }
-    },
-    {
-      "id": {
-        "name": "__ts2gml_values",
-        "path": "scripts/__ts2gml_values/__ts2gml_values.yy"
-      }
-    },
-    {
-      "id": {
         "name": "semantic_contract",
         "path": "scripts/semantic_contract/semantic_contract.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "infer",
+        "path": "scripts/infer/infer.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "closure_contract",
+        "path": "scripts/closure_contract/closure_contract.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "obj_test_projectile",
+        "path": "objects/obj_test_projectile/obj_test_projectile.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "weapon",
+        "path": "scripts/weapon/weapon.yy"
+      }
+    },
+    {
+      "id": {
+        "name": "enum_contract",
+        "path": "scripts/enum_contract/enum_contract.yy"
       }
     }
   ],

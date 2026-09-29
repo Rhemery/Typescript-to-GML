@@ -80,6 +80,8 @@ Existing event-body changes are emitted directly into the event's `.gml` file. I
 
 ## Watch reports a structural GameMaker change
 
+Save GameMaker and use Run or Build to apply the pending update automatically before the asset compiler loads the project. Saving alone does not apply TypeScript structure changes; the pre-project hook performs that step. This also repairs compiler-owned metadata restored by a later IDE save while preserving IDE-owned settings.
+
 No generated GameMaker assets were changed before this prompt. Save the project in GameMaker, wait for the save to finish, and press Enter in the watcher terminal. If the watcher has no interactive input, run:
 
 ```bat

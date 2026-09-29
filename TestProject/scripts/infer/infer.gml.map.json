@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/infer/infer.gml",
+  "mappings": [
+    {
+      "generatedLine": 1,
+      "source": "typescript/infer.ts",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "generatedLine": 3,
+      "source": "typescript/infer.ts",
+      "line": 2,
+      "column": 1
+    }
+  ]
+}

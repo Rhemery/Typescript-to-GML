@@ -1,3 +1,18 @@
+scopeContextExpect("method-bound projectile ran in a real Step event", self.reboundProjectile.x > 700, true);
+scopeContextExpect("method-bound projectile keeps native direction", self.reboundProjectile.y, 700);
+scopeContextExpect("with capture survives until a later event", self.capturedWithReader(), self.value + 5);
+scopeContextExpect("closure collision context copied to a local", self.capturedCollisionReader(), 28);
+scopeContextExpect("closure event lifetime", self.capturedEventReader(), self.value + 5);
 scopeContextExpect("collision event ran", self.collisionContextPassed, true);
+var projectile = self.projectile;
+var step = projectile.on_step;
+scopeContextExpect("with callback binding", method_get_self(step), projectile.id);
+step();
+scopeContextExpect("with callback movement x", projectile.x, 105);
+scopeContextExpect("with callback movement y", projectile.y, 100);
+scopeContextExpect("with callback lexical this", projectile.lexicalReader(), self.value);
+scopeContextExpect("with callback function self", projectile.contextReader(), projectile.value);
+var reader = projectile.readerFactory();
+scopeContextExpect("with callback nested arrow", reader(), self.value);
 show_debug_message("TS2GML_SCOPE_CONTEXT_OK");
 game_end(0);

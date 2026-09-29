@@ -296,7 +296,7 @@ export function compileTypeScript(source: string, fileName = "input.ts"): Compil
   const checker = program.getTypeChecker();
   validateRuntimeAccesses(input, checker);
   const staticReceivers = collectStaticReceivers(input, checker, staticClasses);
-  const javascript = toJavaScript(source, fileName, undefined, staticReceivers, collectNativeAccessPlan(input, checker));
+  const javascript = toJavaScript(source, fileName, undefined, staticReceivers, collectNativeAccessPlan(input, checker), { sourceFile: input, checker });
   const sourceFile = parseJavaScript(javascript, fileName);
   validateJavaScript(sourceFile);
 
@@ -332,65 +332,24 @@ export function emitTopLevelGml(
   }
 
   if (ts.isVariableStatement(statement)) {
-    const macroDeclarations: Array<{
-      declaration: ts.VariableDeclaration;
-      call: ts.CallExpression;
-    }> = [];
+    const chunks: string[] = [];
     const runtimeDeclarations: ts.VariableDeclaration[] = [];
-    const emitRuntimeDeclarations = (declarations: readonly ts.VariableDeclaration[]) => {
-      const bindingNames = new Set<string>();
-      for (const declaration of declarations) collectBindingNames(declaration.name, bindingNames);
-      const declarationStatement = ts.factory.createVariableStatement(
-        undefined,
-        ts.factory.updateVariableDeclarationList(statement.declarationList, declarations),
-      );
-      const globalAssignments = [...bindingNames].map((name) =>
-        ts.factory.createExpressionStatement(
-          ts.factory.createAssignment(
-            ts.factory.createPropertyAccessExpression(
-              ts.factory.createIdentifier("global"),
-              name,
-            ),
-            ts.factory.createIdentifier(name),
-          ),
-        )
-      );
-      const initializer = ts.factory.createCallExpression(
-        ts.factory.createParenthesizedExpression(
-          ts.factory.createFunctionExpression(
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            [],
-            undefined,
-            ts.factory.createBlock([declarationStatement, ...globalAssignments], true),
-          ),
-        ),
-        undefined,
-        [],
-      );
-      return stripExport(emitGml(ts.factory.createExpressionStatement(initializer), sourceFile));
-    };
-
     for (const declaration of statement.declarationList.declarations) {
       const call = declaration.initializer && isGmMacroCall(declaration.initializer)
         ? declaration.initializer
         : undefined;
-      if (call) macroDeclarations.push({ declaration, call });
+      if (call) chunks.push(...emitGmMacro(declaration, call, sourceFile));
       else runtimeDeclarations.push(declaration);
     }
-
-    if (macroDeclarations.length > 0) {
-      const chunks = macroDeclarations.flatMap(({ declaration, call }) =>
-        emitGmMacro(declaration, call, sourceFile)
+    if (runtimeDeclarations.length > 0) {
+      const locals = ts.factory.updateVariableStatement(
+        statement,
+        statement.modifiers,
+        ts.factory.updateVariableDeclarationList(statement.declarationList, runtimeDeclarations),
       );
-      if (runtimeDeclarations.length > 0) {
-        chunks.push(emitRuntimeDeclarations(runtimeDeclarations));
-      }
-      return chunks.join("\n");
+      chunks.push(stripExport(emitGml(locals, sourceFile)));
     }
-    return emitRuntimeDeclarations(runtimeDeclarations);
+    return chunks.join("\n");
   }
 
   return stripExport(emitGml(statement, sourceFile));
@@ -402,7 +361,35 @@ export function toJavaScript(
   runtimeTypeGuards?: RuntimeTypeGuardPlan,
   staticReceivers?: ReadonlySet<string>,
   nativeAccess?: RuntimeAccessPlan,
+  typeScript?: { sourceFile: ts.SourceFile; checker: ts.TypeChecker },
 ): string {
+  const enumSource = typeScript?.sourceFile ?? ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
+  const enumConstants = new Map<number, string | number>();
+  const enumReferences = new Map<number, { name: string; member: string }>();
+  let enumChecker = typeScript?.checker;
+  const collectEnums = (node: ts.Node): void => {
+    if (ts.isTypeNode(node)) return;
+    if (ts.isEnumDeclaration(node)) {
+      enumChecker ??= createSourceChecker(enumSource);
+      for (const member of node.members) {
+        const value = enumChecker.getConstantValue(member);
+        if (typeof value === "number" && !Number.isFinite(value)) {
+          throw nodeError(member, enumSource, "TS2GML1070", "An enum value must be finite.");
+        }
+        if (value !== undefined) enumConstants.set(member.pos, value);
+      }
+    }
+    if (enumChecker && ts.isIdentifier(node) && isIdentifierReference(node)) {
+      const declaration = enumChecker.getSymbolAtLocation(node)?.valueDeclaration;
+      if (declaration && ts.isEnumMember(declaration)) {
+        if (ts.isIdentifier(declaration.name) || ts.isStringLiteralLike(declaration.name)) {
+          enumReferences.set(node.pos, { name: declaration.parent.name.text, member: declaration.name.text });
+        }
+      }
+    }
+    ts.forEachChild(node, collectEnums);
+  };
+  collectEnums(enumSource);
   const result = ts.transpileModule(source, {
     fileName,
     reportDiagnostics: true,
@@ -415,11 +402,68 @@ export function toJavaScript(
       inlineSources: true,
     },
     transformers: {
-      before: [runtimeTypeGuardTransformer(runtimeTypeGuards)],
+      before: [runtimeTypeGuardTransformer(runtimeTypeGuards), (context) => (sourceFile) => {
+        const visit: ts.Visitor = (node) => {
+          if (ts.isTypeNode(node)) return node;
+          const constant = enumConstants.get(node.pos);
+          if (ts.isEnumMember(node) && constant !== undefined) {
+            const value = typeof constant === "string" ? ts.factory.createStringLiteral(constant)
+              : numericExpression(constant);
+            return ts.factory.updateEnumMember(node, node.name, value);
+          }
+          const reference = ts.isIdentifier(node) && enumReferences.get(node.pos);
+          if (reference) {
+            return ts.setTextRange(ts.factory.createElementAccessExpression(
+              ts.factory.createIdentifier(reference.name), ts.factory.createStringLiteral(reference.member)), node);
+          }
+          return ts.visitEachChild(node, visit, context);
+        };
+        return ts.visitNode(sourceFile, visit) as ts.SourceFile;
+      }],
       after: [(context) => (sourceFile) => {
         const visit: ts.Visitor = (node) => {
           const original = ts.getOriginalNode(node);
+          // Let TypeScript compute enum values and reverse mappings, then lower
+          // its generated wrapper and assignment expressions to our JS subset.
+          if (ts.isEnumDeclaration(original)) {
+            const name = original.name.text;
+            if (ts.isIdentifier(node)) return ts.factory.createIdentifier(name);
+            if (ts.isVariableStatement(node)) {
+              if (ts.isSourceFile(original.parent)) {
+                const key = `__ts2gml_enum_${name}`;
+                return [
+                  ts.setTextRange(ts.factory.createVariableStatement(node.modifiers,
+                    ts.factory.createVariableDeclarationList([
+                      ts.factory.createVariableDeclaration(name, undefined, undefined,
+                        runtimeCall("gm_macro", [ts.factory.createStringLiteral(`variable_global_get(${JSON.stringify(key)})`)])),
+                    ], ts.NodeFlags.Const)), original),
+                  ts.setTextRange(ts.factory.createExpressionStatement(runtimeCall("variable_global_set", [
+                    ts.factory.createStringLiteral(key), ts.factory.createObjectLiteralExpression(),
+                  ])), original),
+                ];
+              }
+              return ts.factory.updateVariableStatement(node, node.modifiers,
+                ts.factory.updateVariableDeclarationList(node.declarationList,
+                  node.declarationList.declarations.map((declaration) => ts.factory.updateVariableDeclaration(
+                    declaration, declaration.name, undefined, undefined, ts.factory.createObjectLiteralExpression()))));
+            }
+            if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression) &&
+              ts.isParenthesizedExpression(node.expression.expression) && ts.isFunctionExpression(node.expression.expression.expression)) {
+              return node.expression.expression.expression.body.statements.map((statement) => ts.visitNode(statement, visit) as ts.Statement);
+            }
+          }
+          const enumAssignment = ts.isBinaryExpression(node) && ts.isElementAccessExpression(node.left) &&
+            ts.isEnumDeclaration(ts.getOriginalNode(node.left.expression));
           const result = ts.visitEachChild(node, visit, context);
+          if (ts.isBinaryExpression(result) && result.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+            ts.isElementAccessExpression(result.left) && enumAssignment) {
+            // The isolated emitter cannot resolve a string enum member from
+            // another file and may still wrap its value in a reverse mapping.
+            if (typeof enumConstants.get(node.pos) === "string" && ts.isCallExpression(result.left.argumentExpression)) {
+              return ts.setTextRange(result.left.argumentExpression, node);
+            }
+            return ts.setTextRange(runtimeCall("__ts2gml_value_set", [result.left.expression, result.left.argumentExpression, result.right]), node);
+          }
           if (nativeAccess?.nativeArrays.has(`${original.pos}:${original.end}:${original.kind}`)) {
             return runtimeCall("__ts2gml_native_array", [result as ts.Expression]);
           }
@@ -813,6 +857,12 @@ function createContextGuardStatement(
   );
 }
 
+function numericExpression(value: number): ts.Expression {
+  return value < 0
+    ? ts.factory.createPrefixUnaryExpression(ts.SyntaxKind.MinusToken, ts.factory.createNumericLiteral(-value))
+    : ts.factory.createNumericLiteral(value);
+}
+
 function runtimeTypeDescriptorExpression(descriptor: RuntimeTypeDescriptor): ts.Expression {
   const values: ts.Expression[] = [ts.factory.createStringLiteral(descriptor.kind)];
   if (descriptor.kind === "literal") {
@@ -820,7 +870,7 @@ function runtimeTypeDescriptorExpression(descriptor: RuntimeTypeDescriptor): ts.
       typeof descriptor.value === "string"
         ? ts.factory.createStringLiteral(descriptor.value)
         : typeof descriptor.value === "number"
-          ? ts.factory.createNumericLiteral(descriptor.value)
+          ? numericExpression(descriptor.value)
           : descriptor.value
             ? ts.factory.createTrue()
             : ts.factory.createFalse(),
@@ -941,7 +991,7 @@ function runtimeTypeDescriptor(
     return { kind: "literal", label, value: label === "true" };
   }
   if (type.flags & ts.TypeFlags.StringLike) return { kind: "string", label };
-  if (type.flags & (ts.TypeFlags.NumberLike | ts.TypeFlags.EnumLike)) {
+  if (type.flags & ts.TypeFlags.NumberLike) {
     return { kind: "number", label };
   }
   if (type.flags & ts.TypeFlags.BooleanLike) return { kind: "boolean", label };
@@ -1061,12 +1111,15 @@ export function validateTypeScriptSource(source: string, fileName: string): void
     ts.ScriptKind.TS,
   );
   const diagnostics: CompilerDiagnostic[] = [];
+  const enumNames = new Set(sourceFile.statements.flatMap((statement) =>
+    ts.isEnumDeclaration(statement) && !hasModifier(statement, ts.SyntaxKind.DeclareKeyword) ? [statement.name.text] : []));
   for (const validate of [
     validateJavaScript,
     validateBlockScopedShadowing,
     validateTopLevelVariableReferences,
     validateFunctionCaptures,
     validateJavaScriptRuntime,
+    (file: ts.SourceFile) => validateGmlBindingConflicts(file, new Set(), enumNames),
   ]) {
     try {
       validate(sourceFile);
@@ -1155,7 +1208,8 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
       (ts.isFunctionDeclaration(node) ||
         ts.isFunctionExpression(node) ||
         ts.isClassDeclaration(node) ||
-        ts.isClassExpression(node)) &&
+        ts.isClassExpression(node) ||
+        ts.isEnumDeclaration(node)) &&
       node.name
     ) {
       validateBinding(node.name);
@@ -1289,12 +1343,12 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
     ) {
       report(node.name, "TS2GML1006", "Destructuring is not supported in this position.");
     }
-    if (ts.isCallExpression(node) && ts.isOptionalChain(node)) {
+    if (ts.isCallExpression(node) && ts.isOptionalChain(node) && !getOptionalCallStatement(node)) {
       report(
         node,
         "TS2GML1007",
-        "Optional calls cannot preserve deferred argument evaluation in GML.",
-        "Check the callable explicitly before invoking it.",
+        "Optional calls are only supported as standalone method-call statements with optional property access.",
+        "Use receiver?.method() as a statement, or check the callable explicitly before invoking it.",
       );
       return;
     }
@@ -1579,11 +1633,11 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
         "Pass each parent constructor argument explicitly.",
       );
     }
-    if (ts.isEnumDeclaration(node) || ts.isModuleDeclaration(node)) {
+    if (ts.isModuleDeclaration(node)) {
       report(
         node,
         "TS2GML1030",
-        "TypeScript enums and namespaces do not have a safe JavaScript-to-GML lowering.",
+        "TypeScript namespaces do not have a safe JavaScript-to-GML lowering.",
         "Use a const struct or GameMaker declarations instead.",
       );
       return;
@@ -1624,6 +1678,24 @@ function isStandaloneAssignment(node: ts.BinaryExpression): boolean {
   return (ts.isExpressionStatement(parent) && parent.expression === expression) ||
     (ts.isForStatement(parent) &&
       (parent.initializer === expression || parent.incrementor === expression));
+}
+
+function getOptionalCallStatement(node: ts.Node, standalone = false) {
+  while (ts.isParenthesizedExpression(node)) node = node.expression;
+  if (!ts.isOptionalChain(node)) return undefined;
+  let expression: ts.Expression = node;
+  while (expression.parent && ts.isOptionalChain(expression.parent) &&
+    expression.parent.expression === expression) {
+    expression = expression.parent;
+  }
+  while (expression.parent && ts.isParenthesizedExpression(expression.parent)) expression = expression.parent;
+  if (!standalone && (!expression.parent || !ts.isExpressionStatement(expression.parent))) return undefined;
+  while (ts.isParenthesizedExpression(expression)) expression = expression.expression;
+  if (!ts.isCallExpression(expression) || !ts.isOptionalChain(expression)) return undefined;
+  const chain = decomposeOptionalChain(expression);
+  if (!chain.segments.every((segment) => segment.kind !== "element")) return undefined;
+  if (chain.segments.some((segment) => segment.kind === "call" && segment.optional)) return undefined;
+  return { base: chain.base, segments: chain.segments };
 }
 
 function isSupportedSuperCall(node: ts.Node): boolean {
@@ -1678,6 +1750,7 @@ function validateBlockScopedShadowing(sourceFile: ts.SourceFile): void {
   ): void => {
     const bindings = new Map<string, ts.Node>();
     for (const statement of statements) {
+      if (ts.isEnumDeclaration(statement)) bindings.set(statement.name.text, statement.name);
       if (
         !ts.isVariableStatement(statement) ||
         (statement.declarationList.flags & ts.NodeFlags.BlockScoped) === 0
@@ -1849,11 +1922,9 @@ function validateGmWithCall(
   }
 
   let invalidControlFlow: ts.Node | undefined;
-  let nestedFunction: ts.Node | undefined;
   const inspect = (node: ts.Node): void => {
     if (node !== action && isFunctionWithBody(node)) {
       if (isGmWithAction(node)) ts.forEachChild(node.body, inspect);
-      else nestedFunction ??= node;
       return;
     }
     if (ts.isReturnStatement(node)) invalidControlFlow ??= node;
@@ -1866,14 +1937,6 @@ function validateGmWithCall(
       "TS2GML1044",
       "A return inside gm_with would return from the enclosing GML function or event.",
       "Use ordinary conditional control flow inside the gm_with block.",
-    );
-  }
-  if (nestedFunction) {
-    report(
-      nestedFunction,
-      "TS2GML1044",
-      "Nested functions inside gm_with are not supported.",
-      "Move the function outside the inline block.",
     );
   }
 }
@@ -2074,18 +2137,369 @@ function stripExport(gml: string): string {
 
 type FunctionWithBody = ts.SignatureDeclaration & { body: ts.ConciseBody };
 
+interface ClosureBinding {
+  name: ts.Identifier;
+  declaration: ts.VariableDeclaration | ts.ParameterDeclaration | ts.EnumDeclaration;
+  owner: FunctionWithBody;
+  field: string;
+  parameter?: ts.Identifier;
+}
+
+interface ClosureFunction {
+  environment: ts.Identifier;
+  locals: ClosureBinding[];
+  captures: Set<FunctionWithBody>;
+  context: boolean;
+  needsReceiver: boolean;
+  lexicalThis: boolean;
+  needsLexicalThis: boolean;
+}
+
+interface ClosurePlan {
+  functions: Map<FunctionWithBody, ClosureFunction>;
+  references: Map<ts.Identifier, ClosureBinding>;
+  parameterNames: Map<ts.Identifier, ts.Identifier>;
+  diagnostics: CompilerDiagnostic[];
+  lowered: Map<ts.Node, ts.Node>;
+}
+
+const closurePlans = new WeakMap<ts.SourceFile, ClosurePlan>();
+
+function enclosingFunction(node: ts.Node): FunctionWithBody | undefined {
+  let parent = node.parent;
+  while (parent && !isFunctionWithBody(parent)) parent = parent.parent;
+  return parent as FunctionWithBody | undefined;
+}
+
+function needsClosureContext(node: ts.Node, checker: ts.TypeChecker): boolean {
+  if (node.kind === ts.SyntaxKind.ThisKeyword) return true;
+  if (!ts.isIdentifier(node) || !isIdentifierReference(node) ||
+    ["undefined", "Math", "console", "gm_global"].includes(node.text) || node.text.startsWith(compilerInternalPrefix)) return false;
+  const symbol = ts.isShorthandPropertyAssignment(node.parent)
+    ? checker.getShorthandAssignmentValueSymbol(node.parent) : checker.getSymbolAtLocation(node);
+  return !symbol?.valueDeclaration || !enclosingFunction(symbol.valueDeclaration);
+}
+
+function createSourceChecker(sourceFile: ts.SourceFile): ts.TypeChecker {
+  const options: ts.CompilerOptions = { noLib: true, noResolve: true, allowJs: true, target: ts.ScriptTarget.ESNext };
+  const host = ts.createCompilerHost(options);
+  host.getSourceFile = (name) => name === sourceFile.fileName ? sourceFile : undefined;
+  return ts.createProgram([sourceFile.fileName], options, host).getTypeChecker();
+}
+
+function collectClosurePlan(sourceFile: ts.SourceFile): ClosurePlan {
+  const cached = closurePlans.get(sourceFile);
+  if (cached) return cached;
+  const plan: ClosurePlan = { functions: new Map(), references: new Map(), parameterNames: new Map(), diagnostics: [], lowered: new Map() };
+  closurePlans.set(sourceFile, plan);
+  // The checker resolves bindings (including shorthand fields and shadowing),
+  // without loading libraries or changing the TypeScript -> JavaScript pipeline.
+  const checker = createSourceChecker(sourceFile);
+  const bindings = new Map<ts.Symbol, ClosureBinding>();
+  const references: Array<[ts.Identifier, ts.Symbol]> = [];
+  const reported = new Set<string>();
+  const report = (node: ts.Node, message: string) => {
+    const key = `${node.pos}:${message}`;
+    if (reported.has(key)) return;
+    reported.add(key);
+    plan.diagnostics.push(createNodeDiagnostic(node, sourceFile, "TS2GML1014", `Unsupported closure capture: ${message}`,
+      "Use a function-body local or parameter, or pass the value explicitly."));
+  };
+  const visit = (node: ts.Node): void => {
+    if (ts.isTypeNode(node)) return;
+    if (isFunctionWithBody(node)) {
+      plan.functions.set(node, {
+        environment: ts.factory.createIdentifier(`__ts2gml_env_${plan.functions.size + 1}`),
+        locals: [], captures: new Set(), context: false, needsReceiver: false, lexicalThis: false, needsLexicalThis: false,
+      });
+    }
+    if (ts.isIdentifier(node) && isIdentifierReference(node)) {
+      const symbol = ts.isShorthandPropertyAssignment(node.parent)
+        ? checker.getShorthandAssignmentValueSymbol(node.parent) : checker.getSymbolAtLocation(node);
+      if (symbol) references.push([node, symbol]);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  for (const [reference, symbol] of references) {
+    const declaration = symbol.valueDeclaration;
+    if (!declaration) continue;
+    const owner = enclosingFunction(declaration);
+    if (!owner) continue;
+    const crossed: FunctionWithBody[] = [];
+    let current = enclosingFunction(reference);
+    while (current && current !== owner) {
+      crossed.push(current);
+      current = enclosingFunction(current);
+    }
+    if (current !== owner || !crossed.some((fn) => !isGmWithAction(fn))) continue;
+    // A with action is inline, but its parameters and direct locals can own
+    // an environment allocated afresh for each selected instance.
+    const supported = (ts.isParameter(declaration) && ts.isIdentifier(declaration.name)) ||
+      (ts.isEnumDeclaration(declaration) && declaration.parent === owner.body) ||
+      (ts.isVariableDeclaration(declaration) && ts.isIdentifier(declaration.name) &&
+        ts.isVariableDeclarationList(declaration.parent) && ts.isVariableStatement(declaration.parent.parent) &&
+        declaration.parent.parent.parent === owner.body);
+    const collisionParameter = ts.isParameter(declaration) && ts.isMethodDeclaration(owner) &&
+      ts.isIdentifier(owner.name) && owner.name.text.startsWith("onCollision_");
+    if (!supported || collisionParameter || (symbol.declarations?.length ?? 0) > 1) {
+      report(reference, `Capturing '${reference.text}' requires a single plain parameter or local declared directly in a function or gm_with body; nested block, loop, destructuring, local function, and collision context bindings are not supported.`);
+      continue;
+    }
+    // Parameter initializers and parent-constructor arguments execute before
+    // the function body can allocate its environment.
+    let ancestor: ts.Node = reference;
+    let beforeBody = false;
+    while (ancestor !== owner) {
+      if (ts.isParameter(ancestor) ||
+        (ts.isCallExpression(ancestor) && ancestor.expression.kind === ts.SyntaxKind.SuperKeyword)) beforeBody = true;
+      ancestor = ancestor.parent;
+    }
+    if (beforeBody) {
+      report(reference, `Capturing '${reference.text}' in a parameter initializer or super(...) argument is not supported.`);
+      continue;
+    }
+    let binding = bindings.get(symbol);
+    if (!binding) {
+      binding = { name: declaration.name as ts.Identifier,
+        declaration: declaration as ClosureBinding["declaration"], owner,
+        field: `__ts2gml_capture_${bindings.size + 1}` };
+      if (ts.isParameter(declaration)) binding.parameter = ts.factory.createIdentifier(`${binding.field}_parameter`);
+      bindings.set(symbol, binding);
+      plan.functions.get(owner)!.locals.push(binding);
+    }
+    // With actions must stay inline arrows, never environment-bound methods.
+    for (const fn of crossed) {
+      if (!isGmWithAction(fn)) plan.functions.get(fn)!.captures.add(owner);
+    }
+  }
+  const privateParameters = new Map<ts.Symbol, ts.Identifier>();
+  for (const [fn, data] of plan.functions) {
+    if (data.locals.length === 0 || isGmWithAction(fn) ||
+      !(ts.isArrowFunction(fn) || ts.isFunctionExpression(fn) || ts.isFunctionDeclaration(fn))) continue;
+    // All parameters of a closure factory need private names, including those
+    // used only while creating the callback (for example weapon -> projectile).
+    fn.parameters.forEach((parameter, index) => {
+      if (!ts.isIdentifier(parameter.name)) return;
+      const symbol = checker.getSymbolAtLocation(parameter.name);
+      if (!symbol) return;
+      const name = bindings.get(symbol)?.parameter ?? ts.factory.createIdentifier(`${data.environment.text}_parameter_${index + 1}`);
+      privateParameters.set(symbol, name);
+      plan.parameterNames.set(parameter.name, name);
+    });
+  }
+  for (const [reference, symbol] of references) {
+    const binding = bindings.get(symbol);
+    if (binding) plan.references.set(reference, binding);
+    const parameter = privateParameters.get(symbol);
+    if (parameter) plan.parameterNames.set(reference, parameter);
+    const declaration = symbol.valueDeclaration;
+    if (declaration && ts.isFunctionDeclaration(declaration) && isFunctionWithBody(declaration) &&
+      plan.functions.get(declaration)?.captures.size && reference.pos < declaration.pos) {
+      report(reference, "A nested function with captured locals must be declared before it is referenced.");
+    }
+  }
+  for (const [fn, data] of plan.functions) {
+    if (data.captures.size === 0) continue;
+    const inspectContext = (node: ts.Node): void => {
+      if (ts.isTypeNode(node)) return;
+      if (needsClosureContext(node, checker)) data.context = true;
+      ts.forEachChild(node, inspectContext);
+    };
+    inspectContext(fn);
+    if (data.context) plan.functions.get(enclosingFunction(fn)!)!.needsReceiver = true;
+    const inspect = (node: ts.Node): void => {
+      if (node !== fn && isFunctionWithBody(node)) return;
+      if (getGmlContextAssertion(node) === "other" ||
+        (ts.isIdentifier(node) && node.text === "other" && isIdentifierReference(node) &&
+          !checker.getSymbolAtLocation(node)?.valueDeclaration)) {
+        report(node, "A closure with captured locals cannot use the native other context; capture the gm_with caller parameter instead.");
+      }
+      ts.forEachChild(node, inspect);
+    };
+    inspect(fn);
+    for (const parameter of fn.parameters) {
+      if (parameter.initializer) {
+        const inspectDefault = (node: ts.Node): void => {
+          if (needsClosureContext(node, checker)) {
+            report(node, "A closure with captured locals cannot read its context in a parameter initializer.");
+          }
+          ts.forEachChild(node, inspectDefault);
+        };
+        inspectDefault(parameter.initializer);
+      }
+    }
+  }
+  return plan;
+}
+
+function lowerClosures(node: ts.Node, sourceFile: ts.SourceFile): ts.Node {
+  const plan = collectClosurePlan(sourceFile);
+  if (plan.diagnostics.length) throw new Ts2GmlError(plan.diagnostics);
+  if (![...plan.functions.values()].some((fn) => fn.locals.length > 0)) return node;
+  if (plan.lowered.size === 0) {
+    const result = ts.transform(sourceFile, [(context) => {
+      const access = (binding: ClosureBinding) => ts.factory.createPropertyAccessExpression(
+        plan.functions.get(binding.owner)!.environment, binding.field);
+      const lexicalThis = (node: ts.Node, snapshot = false): ts.Expression => {
+        let owner = enclosingFunction(node);
+        while (owner && ts.isArrowFunction(owner)) {
+          const data = plan.functions.get(owner)!;
+          if (data.captures.size > 0) {
+            data.lexicalThis = true;
+            return ts.factory.createIdentifier(`${data.environment.text}_this`);
+          }
+          owner = enclosingFunction(owner);
+        }
+        if (snapshot) {
+          const parent = plan.functions.get(enclosingFunction(node)!)!;
+          parent.needsLexicalThis = true;
+          return ts.factory.createIdentifier(`${parent.environment.text}_lexical`);
+        }
+        return node as ts.Expression;
+      };
+      const visit: ts.Visitor = (original) => {
+        let changed: ts.Node;
+        if (original.kind === ts.SyntaxKind.ThisKeyword) {
+          changed = lexicalThis(original);
+        } else if (ts.isIdentifier(original) && plan.references.has(original)) {
+          const binding = plan.references.get(original)!;
+          // Defaults and super arguments execute before the body environment.
+          let ancestor: ts.Node = original;
+          while (ancestor.parent && ancestor.parent !== binding.owner &&
+            !ts.isParameter(ancestor) && !(ts.isCallExpression(ancestor) && ancestor.expression.kind === ts.SyntaxKind.SuperKeyword)) {
+            ancestor = ancestor.parent;
+          }
+          changed = ts.isParameter(ancestor) || (ts.isCallExpression(ancestor) && ancestor.expression.kind === ts.SyntaxKind.SuperKeyword)
+            ? binding.parameter ?? original : access(binding);
+        } else if (ts.isIdentifier(original) && plan.parameterNames.has(original)) {
+          changed = plan.parameterNames.get(original)!;
+        } else if (ts.isIdentifier(original) && ts.isParameter(original.parent) && original.parent.name === original) {
+          const owner = enclosingFunction(original)!;
+          changed = plan.functions.get(owner)?.locals.find((binding) => binding.declaration === original.parent)?.parameter ?? original;
+        } else if (ts.isShorthandPropertyAssignment(original)) {
+          changed = ts.factory.createPropertyAssignment(ts.factory.createIdentifier(original.name.text),
+            ts.visitNode(original.name, visit) as ts.Expression);
+        } else if (ts.isVariableStatement(original)) {
+          const statements: ts.Statement[] = [];
+          let hasCapturedBinding = false;
+          for (const declaration of original.declarationList.declarations) {
+            const owner = enclosingFunction(declaration);
+            const binding = owner && plan.functions.get(owner)?.locals.find((item) => item.declaration === declaration);
+            if (binding) {
+              hasCapturedBinding = true;
+              statements.push(ts.factory.createExpressionStatement(ts.factory.createAssignment(access(binding),
+                declaration.initializer ? ts.visitNode(declaration.initializer, visit) as ts.Expression
+                  : ts.factory.createIdentifier("undefined"))));
+            } else {
+              statements.push(ts.factory.updateVariableStatement(original, original.modifiers,
+                ts.factory.updateVariableDeclarationList(original.declarationList,
+                  [ts.visitEachChild(declaration, visit, context)])));
+            }
+          }
+          changed = hasCapturedBinding
+            ? statements.length === 1 ? statements[0]! : ts.factory.createBlock(statements, true)
+            : ts.factory.updateVariableStatement(original, original.modifiers,
+              ts.factory.updateVariableDeclarationList(original.declarationList,
+                statements.flatMap((statement) => (statement as ts.VariableStatement).declarationList.declarations)));
+        } else {
+          changed = ts.visitEachChild(original, visit, context);
+        }
+        if (isFunctionWithBody(original) && (plan.functions.get(original)!.locals.length > 0 ||
+          plan.functions.get(original)!.captures.size > 0 || plan.functions.get(original)!.needsReceiver ||
+          plan.functions.get(original)!.needsLexicalThis)) {
+          const data = plan.functions.get(original)!;
+          const fn = changed as FunctionWithBody;
+          let body = ts.isBlock(fn.body) ? fn.body : ts.factory.createBlock([ts.factory.createReturnStatement(fn.body)], true);
+          if (data.locals.length > 0 || data.needsReceiver || data.needsLexicalThis) {
+            const prefix: ts.Statement[] = [];
+            if (data.needsReceiver) prefix.push(variableStatement(
+              ts.factory.createIdentifier(`${data.environment.text}_self`), runtimeCall("method_get_self", [
+                ts.factory.createFunctionExpression(undefined, undefined, undefined, undefined, [], undefined,
+                  ts.factory.createBlock([])),
+              ])));
+            if (data.needsLexicalThis) prefix.push(variableStatement(
+              ts.factory.createIdentifier(`${data.environment.text}_lexical`), ts.factory.createThis()));
+            const environment = variableStatement(data.environment, ts.factory.createObjectLiteralExpression(
+              data.locals.map((binding) => ts.factory.createPropertyAssignment(binding.field,
+                ts.isParameter(binding.declaration) ? binding.parameter! : ts.factory.createIdentifier("undefined"))), false));
+            if (data.locals.length > 0) prefix.push(environment);
+            const statements = [...body.statements];
+            const first = statements.findIndex((statement) => !(ts.isExpressionStatement(statement) &&
+              ts.isCallExpression(statement.expression) && statement.expression.expression.kind === ts.SyntaxKind.SuperKeyword));
+            if (first >= 0) {
+              const wrapped = ts.factory.createBlock([...prefix, statements[first]!], true);
+              // Events and constructors emit individual statements; attach the
+              // prefix to the first one so every emission path initializes it.
+              if (ts.isBlock(original.body)) plan.lowered.set(original.body.statements[first]!, wrapped);
+              statements.splice(first, 0, ...prefix);
+            } else statements.push(...prefix);
+            body = ts.factory.updateBlock(body, statements);
+          }
+          if (data.captures.size > 0) {
+            const properties = [...data.captures].map((owner) => {
+              const environment = plan.functions.get(owner)!.environment;
+              return ts.factory.createPropertyAssignment(environment, environment);
+            });
+            if (data.context) properties.push(ts.factory.createPropertyAssignment("__ts2gml_receiver",
+              ts.factory.createIdentifier(`${plan.functions.get(enclosingFunction(original)!)!.environment.text}_self`)));
+            const aliases = [...data.captures].map((owner) => {
+              const environment = plan.functions.get(owner)!.environment;
+              return variableStatement(environment, ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier("self"), environment));
+            });
+            // Lexical this and native self can differ inside gm_with. Keep
+            // this separately while the receiver restores native variables.
+            if (data.lexicalThis) {
+              properties.push(ts.factory.createPropertyAssignment("__ts2gml_this", lexicalThis(original, true)));
+              aliases.push(variableStatement(ts.factory.createIdentifier(`${data.environment.text}_this`),
+                ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier("self"), "__ts2gml_this")));
+            }
+            properties.push(ts.factory.createPropertyAssignment("__ts2gml_closure", ts.factory.createTrue()));
+            // Restore the original native self for built-ins, instance variables,
+            // keeping method(undefined, callback) relative to its caller.
+            const receiver = ts.factory.createPropertyAccessExpression(ts.factory.createIdentifier("self"), "__ts2gml_receiver");
+            body = ts.factory.createBlock([...aliases, ...(data.context ? [ts.factory.createWithStatement(
+              ts.factory.createConditionalExpression(runtimeCall("is_undefined", [receiver]), undefined,
+                ts.factory.createIdentifier("other"), undefined, receiver), body)] : body.statements)], true);
+            const expression = ts.factory.createFunctionExpression(undefined, undefined, undefined, undefined,
+              fn.parameters, undefined, body);
+            const bound = runtimeCall("method", [ts.factory.createObjectLiteralExpression(properties), expression]);
+            changed = ts.isFunctionDeclaration(original) && original.name
+              ? variableStatement(original.name, bound) : bound;
+          } else {
+            changed = ts.visitEachChild(fn, (child) => child === fn.body ? body : child, context);
+          }
+          plan.lowered.set(original.body, body);
+        }
+        if (changed !== original) ts.setOriginalNode(changed, original);
+        plan.lowered.set(original, changed);
+        return changed;
+      };
+      return (file) => ts.visitNode(file, visit) as ts.SourceFile;
+    }]);
+    result.dispose();
+  }
+  const lowered = plan.lowered.get(node);
+  if (lowered) return lowered;
+  // Top-level initializers and class-static setup use synthetic wrappers around
+  // original nodes. Replace their descendants through the same cached plan.
+  const result = ts.transform(node, [(context) => {
+    const visit: ts.Visitor = (child) => plan.lowered.get(child) ?? ts.visitEachChild(child, visit, context);
+    return (root) => ts.visitNode(root, visit)!;
+  }]);
+  try { return result.transformed[0]!; }
+  finally { result.dispose(); }
+}
+
 function validateFunctionCaptures(sourceFile: ts.SourceFile): void {
-  const diagnostics: CompilerDiagnostic[] = [];
-  const rootBindings = new Set<string>();
+  const diagnostics: CompilerDiagnostic[] = [...collectClosurePlan(sourceFile).diagnostics];
 
   const validateFunction = (
     functionNode: FunctionWithBody,
-    outerBindings: ReadonlySet<string>,
     lexicalThisAvailable: boolean,
   ): void => {
     const localBindings = collectFunctionBindings(functionNode);
     const nestedFunctions: FunctionWithBody[] = [];
-    const reportedCaptures = new Set<string>();
     const isArrow = ts.isArrowFunction(functionNode);
     const hasKnownOwnThis =
       ts.isMethodDeclaration(functionNode) ||
@@ -2100,10 +2514,6 @@ function validateFunctionCaptures(sourceFile: ts.SourceFile): void {
 
     const visit = (node: ts.Node): void => {
       if (node !== functionNode && isFunctionWithBody(node)) {
-        if (isGmWithAction(node)) {
-          visit(node.body);
-          return;
-        }
         nestedFunctions.push(node);
         return;
       }
@@ -2192,41 +2602,24 @@ function validateFunctionCaptures(sourceFile: ts.SourceFile): void {
           return;
         }
 
-        if (
-          !localBindings.has(node.text) &&
-          outerBindings.has(node.text) &&
-          !reportedCaptures.has(node.text)
-        ) {
-          const kind = isArrow ? "Arrow" : "Nested";
-          diagnostics.push(createNodeDiagnostic(
-            node,
-            sourceFile,
-            "TS2GML1014",
-            `${kind} function captures local variable '${node.text}', but GML functions do not capture surrounding locals.`,
-            `Pass '${node.text}' as an argument or store it on the current instance or struct.`,
-          ));
-          reportedCaptures.add(node.text);
-        }
       }
 
       ts.forEachChild(node, visit);
     };
 
+    for (const parameter of functionNode.parameters) {
+      if (parameter.initializer) visit(parameter.initializer);
+    }
     visit(functionNode.body);
-    const nestedOuterBindings = new Set([...outerBindings, ...localBindings]);
     const nestedLexicalThis = isArrow ? lexicalThisAvailable : hasKnownOwnThis;
     for (const nestedFunction of nestedFunctions) {
-      validateFunction(nestedFunction, nestedOuterBindings, nestedLexicalThis);
+      validateFunction(nestedFunction, nestedLexicalThis);
     }
   };
 
   const visitRoot = (node: ts.Node, lexicalThisAvailable = false): void => {
-    if (isGmWithAction(node)) {
-      visitRoot(node.body, lexicalThisAvailable);
-      return;
-    }
     if (isFunctionWithBody(node)) {
-      validateFunction(node, rootBindings, lexicalThisAvailable);
+      validateFunction(node, lexicalThisAvailable);
       return;
     }
     if (ts.isTypeNode(node)) return;
@@ -2267,11 +2660,13 @@ function validateFunctionCaptures(sourceFile: ts.SourceFile): void {
 
 export function validateTopLevelVariableReferences(
   sourceFile: ts.SourceFile,
-  globalBindings = collectTopLevelVariableBindings(sourceFile),
+  projectBindings = collectTopLevelVariableBindings(sourceFile),
 ): void {
   const diagnostics: CompilerDiagnostic[] = [];
+  const localBindings = collectTopLevelVariableBindings(sourceFile);
   const scopes: ReadonlySet<string>[] = [];
-  const visit = (node: ts.Node): void => {
+  const visit = (node: ts.Node, scriptScope = true): void => {
+    if ((isFunctionWithBody(node) && !isGmWithAction(node)) || ts.isClassLike(node)) scriptScope = false;
     const bindings = collectRuntimeScopeBindings(node);
     if (bindings) scopes.push(bindings);
     if (ts.isTypeNode(node)) {
@@ -2281,18 +2676,19 @@ export function validateTopLevelVariableReferences(
     if (
       ts.isIdentifier(node) &&
       isIdentifierReference(node) &&
-      globalBindings.has(node.text) &&
+      projectBindings.has(node.text) &&
+      !(scriptScope && localBindings.has(node.text)) &&
       !scopes.slice(1).some((scope) => scope.has(node.text))
     ) {
       diagnostics.push(createNodeDiagnostic(
         node,
         sourceFile,
         "TS2GML1067",
-        `Top-level variable '${node.text}' must be accessed through explicit GameMaker global scope.`,
-        `Declare '${node.text}' on GMGlobal and use gm_global.${node.text}.`,
+        `Top-level local '${node.text}' is only available during initialization of its own script.`,
+        `Pass '${node.text}' as an argument, or declare it on GMGlobal and initialize and access gm_global.${node.text} explicitly.`,
       ));
     }
-    ts.forEachChild(node, visit);
+    ts.forEachChild(node, (child) => visit(child, scriptScope));
     if (bindings) scopes.pop();
   };
   visit(sourceFile);
@@ -2306,6 +2702,12 @@ export function validateGmlBindingConflicts(
 ): void {
   const diagnostics: CompilerDiagnostic[] = [];
   const reportBinding = (name: ts.Identifier, definesGeneratedBinding: boolean): void => {
+    const owner = enclosingFunction(name);
+    // Captured locals become fields; captured parameters have private emitted
+    // names. Neither keeps its authored name in GML's local variable namespace.
+    const plan = collectClosurePlan(sourceFile);
+    if (plan.parameterNames.has(name) ||
+      (owner && plan.functions.get(owner)?.locals.some((binding) => binding.name === name))) return;
     if (
       !externalBindings.has(name.text) &&
       (definesGeneratedBinding || !generatedBindings.has(name.text))
@@ -2345,7 +2747,7 @@ export function validateGmlBindingConflicts(
         Boolean(node.initializer && isGmMacroCall(node.initializer));
       visitBinding(node.name, definesGeneratedBinding);
     } else if (
-      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isEnumDeclaration(node)) &&
       node.name
     ) {
       visitBinding(node.name, ts.isSourceFile(node.parent));
@@ -2465,8 +2867,6 @@ export function collectTopLevelVariableBindings(sourceFile: ts.SourceFile): Set<
         if (declaration.initializer && isGmMacroCall(declaration.initializer)) continue;
         collectBindingNames(declaration.name, bindings);
       }
-    } else if (ts.isEnumDeclaration(statement)) {
-      bindings.add(statement.name.text);
     }
   }
   return bindings;
@@ -2492,6 +2892,9 @@ function collectRootRuntimeBindings(sourceFile: ts.SourceFile): Set<string> {
 
 function collectRuntimeScopeBindings(node: ts.Node): Set<string> | undefined {
   if (ts.isSourceFile(node)) return collectRootRuntimeBindings(node);
+  if (ts.isEnumDeclaration(node)) {
+    return new Set(node.members.flatMap((member) => ts.isIdentifier(member.name) ? [member.name.text] : []));
+  }
 
   const bindings = new Set<string>();
   if (isFunctionWithBody(node)) {
@@ -2607,6 +3010,7 @@ function collectBindingNames(name: ts.BindingName, bindings: Set<string>): void 
 
 function isIdentifierReference(node: ts.Identifier): boolean {
   const parent = node.parent;
+  if (!parent) return true;
   if (
     ((ts.isVariableDeclaration(parent) ||
       ts.isParameter(parent) ||
@@ -2642,7 +3046,7 @@ export function emitGml(
   identifierRenames: ReadonlyMap<string, string> = new Map(),
   staticThis = false,
 ): string {
-  const result = ts.transform(node, [gmlTransformer(identifierRenames, sourceFile, staticThis)]);
+  const result = ts.transform(lowerClosures(node, sourceFile), [gmlTransformer(identifierRenames, sourceFile, staticThis)]);
   try {
     const preserveUnicode = (child: ts.Node): void => {
       if (ts.isStringLiteral(child)) ts.setEmitFlags(child, ts.EmitFlags.NoAsciiEscaping);
@@ -2796,6 +3200,7 @@ function gmlTransformer(
 ): ts.TransformerFactory<ts.Node> {
   return (context: ts.TransformationContext): ts.Transformer<ts.Node> => {
   const usedIdentifiers = collectIdentifierTexts(sourceFile);
+  const generatedLocals = new Set<string>();
   let rootPosition = 0;
   let generatedIdentifier = 0;
   const transformState: TransformState = {
@@ -2810,27 +3215,60 @@ function gmlTransformer(
       text = `__ts2gml_${purpose}_${rootPosition}_${generatedIdentifier}`;
     } while (usedIdentifiers.has(text));
     usedIdentifiers.add(text);
+    generatedLocals.add(text);
     return ts.factory.createIdentifier(text);
   };
 
-  const inlineResult = (origin: ts.Node, parameter: ts.Identifier, result: ts.Expression,
+  const inlineResult: InlineResult = (origin: ts.Node, parameter: ts.Identifier, result: ts.Expression | ts.Block,
     argument: ts.Expression): ts.CallExpression => {
-    const visible = new Set<string>();
-    let owner: ts.Node | undefined = origin;
+    const visible = new Set(generatedLocals);
+    const closurePlan = collectClosurePlan(sourceFile);
+    // Closure conversion introduces locals after the source AST was parsed.
+    // Expression helpers must receive these just like authored locals.
+    for (const fn of closurePlan.functions.values()) {
+      visible.add(fn.environment.text);
+      if (fn.needsReceiver) visible.add(`${fn.environment.text}_self`);
+      if (fn.lexicalThis) visible.add(`${fn.environment.text}_this`);
+      if (fn.needsLexicalThis) visible.add(`${fn.environment.text}_lexical`);
+    }
+    for (const name of closurePlan.parameterNames.values()) visible.add(name.text);
+    let owner: ts.Node | undefined = ts.getOriginalNode(origin);
     while (owner && !isFunctionWithBody(owner)) owner = owner.parent;
     if (owner && isFunctionWithBody(owner)) {
-      for (const name of collectFunctionBindings(owner)) visible.add(identifierRenames.get(name) ?? name);
+      const boxed = closurePlan.functions.get(owner)?.locals ?? [];
+      for (const name of collectFunctionBindings(owner)) {
+        if (!boxed.some((binding) => binding.name.text === name)) visible.add(identifierRenames.get(name) ?? name);
+      }
     }
     for (const bindings of transformState.withActionBindings) {
       for (const binding of bindings) visible.add(binding.alias.text);
     }
     if (transformState.withLexicalThis) visible.add(transformState.withLexicalThis.text);
     const captured = new Set<string>();
-    const collect = (node: ts.Node): void => {
-      if (ts.isIdentifier(node) && visible.has(node.text) && isIdentifierReference(node)) captured.add(node.text);
-      ts.forEachChild(node, collect);
+    const collect = (node: ts.Node, locals: ReadonlySet<string>): void => {
+      if (isFunctionWithBody(node)) {
+        const bindings = new Set([...locals, ...collectFunctionBindings(node)]);
+        ts.forEachChild(node, (child) => collect(child, bindings));
+        return;
+      }
+      // Synthetic names have no parent pointers. Visit values explicitly so
+      // property names and declarations cannot become accidental captures.
+      if (ts.isPropertyAccessExpression(node)) return collect(node.expression, locals);
+      if (ts.isPropertyAssignment(node)) {
+        if (ts.isComputedPropertyName(node.name)) collect(node.name.expression, locals);
+        collect(node.initializer, locals);
+        return;
+      }
+      if (ts.isVariableDeclaration(node) || ts.isParameter(node)) {
+        if (node.initializer) collect(node.initializer, locals);
+        return;
+      }
+      if (ts.isIdentifier(node) && visible.has(node.text) && !locals.has(node.text) && isIdentifierReference(node)) {
+        captured.add(node.text);
+      }
+      ts.forEachChild(node, (child) => collect(child, locals));
     };
-    collect(result);
+    collect(result, new Set([parameter.text]));
     return callInlineFunction(parameter, result, argument,
       [...captured].map((name) => ts.factory.createIdentifier(name)));
   };
@@ -2839,7 +3277,7 @@ function gmlTransformer(
     if (ts.isCallExpression(node) && ts.isParenthesizedExpression(node.expression)) {
       let expression = node.expression.expression;
       while (ts.isParenthesizedExpression(expression)) expression = expression.expression;
-      if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+      if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression) || ts.isCallExpression(expression)) {
         return visit(ts.factory.updateCallExpression(node, expression, node.typeArguments, node.arguments));
       }
     }
@@ -2926,11 +3364,43 @@ function gmlTransformer(
         node.argumentExpression.text,
       );
     }
+    const optionalChain = ts.isExpressionStatement(node) ? getOptionalCallStatement(node.expression, true) : undefined;
+    if (optionalChain) {
+      const build = (index: number, value: ts.Expression): ts.Statement => {
+        const segment = optionalChain.segments[index];
+        if (!segment) return ts.factory.createExpressionStatement(ts.visitNode(value, visit) as ts.Expression);
+
+        // Field reads are repeatable; cache receivers containing calls or computed access.
+        let base = value;
+        while (ts.isPropertyAccessExpression(base) || ts.isParenthesizedExpression(base)) base = base.expression;
+        const temporary = segment.optional && !ts.isIdentifier(base) && base.kind !== ts.SyntaxKind.ThisKeyword
+          ? freshIdentifier("optional") : undefined;
+        const receiver = temporary ?? value;
+        const next = ts.setOriginalNode(segment.kind === "property"
+          ? ts.factory.createPropertyAccessExpression(receiver, segment.name)
+          : ts.factory.createCallExpression(receiver, undefined, segment.arguments), node);
+        const continuation = build(index + 1, next);
+        if (!segment.optional) return continuation;
+
+        const guard = ts.factory.createIfStatement(
+          runtimeCall("__ts2gml_value_truthy", [ts.visitNode(receiver, visit) as ts.Expression]),
+          ts.factory.createBlock([continuation], true),
+        );
+        return temporary ? ts.factory.createBlock([
+          variableStatement(temporary, ts.visitNode(value, visit) as ts.Expression), guard,
+        ], true) : guard;
+      };
+      const statement = build(0, optionalChain.base);
+      // A generated guard must not capture an enclosing unbraced if's else branch.
+      return node.parent && !ts.isBlock(node.parent) && !ts.isSourceFile(node.parent) &&
+        !ts.isCaseOrDefaultClause(node.parent)
+        ? ts.factory.createBlock([statement], true) : statement;
+    }
     if (
       ts.isOptionalChain(node) &&
       !(node.parent && ts.isOptionalChain(node.parent))
     ) {
-      return lowerOptionalChain(node, visit, freshIdentifier);
+      return lowerOptionalChain(node, visit, freshIdentifier, inlineResult);
     }
     if (ts.isElementAccessExpression(node)) {
       if (isCallTo(node.expression, "__ts2gml_native_array")) {
@@ -3001,7 +3471,7 @@ function gmlTransformer(
       const helper = ts.factory.createIdentifier(loweredJavaScriptInstanceMembers.get(member)!);
       const receiver = ts.visitNode(node.expression.expression, visit) as ts.Expression;
       if (member === "delete" && node.arguments.some(ts.isSpreadElement)) {
-        return createSpreadCall(helper, [receiver, ...node.arguments], visit);
+        return createIndirectCall(helper, [receiver, ...node.arguments], visit, inlineResult, node);
       }
       if (member === "delete") {
         return ts.factory.createCallExpression(helper, undefined, [
@@ -3083,11 +3553,19 @@ function gmlTransformer(
       );
     }
     if (ts.isIdentifier(node)) {
+      // Only authored references use the closure-aware adapter. The compiler's
+      // generated method calls must still bind directly to their environments.
+      if (node.text === "method" && node.pos >= 0 && isIdentifierReference(node)) {
+        return ts.factory.createIdentifier("__ts2gml_value_method");
+      }
       const withBinding = findWithActionBinding(node.text, transformState.withActionBindings);
       if (withBinding) return withBinding.alias;
       const keywordFunction = gmlKeywordFunctions.get(node.text);
       if (keywordFunction) return ts.factory.createIdentifier(keywordFunction);
-      const renamed = identifierRenames.get(node.text);
+      // Generated context reads belong to GML, even when an authored method
+      // parameter named self/other is renamed to _self/_other.
+      const nativeContext = node.pos < 0 && (node.text === "self" || node.text === "other");
+      const renamed = nativeContext ? undefined : identifierRenames.get(node.text);
       if (renamed) return ts.factory.createIdentifier(renamed);
     }
     if (ts.isVariableDeclarationList(node)) {
@@ -3104,12 +3582,21 @@ function gmlTransformer(
     if (ts.isObjectLiteralExpression(node) && node.properties.some(ts.isSpreadAssignment)) {
       return lowerObjectSpread(node, visit);
     }
-    if (ts.isCallExpression(node) && node.arguments.some(ts.isSpreadElement)) {
-      return createSpreadCall(
+    if (ts.isCallExpression(node) && (node.arguments.some(ts.isSpreadElement) || ts.isElementAccessExpression(node.expression))) {
+      return createIndirectCall(
         node.expression,
         node.arguments,
         visit,
+        inlineResult,
+        node,
       );
+    }
+    if (ts.isCallExpression(node) && ts.isCallExpression(node.expression)) {
+      // GML cannot reliably chain calls to returned/indexed functions. Evaluate
+      // the callable once and preserve its method binding through the shared helper.
+      return createDynamicCall(ts.visitNode(node.expression, visit) as ts.Expression,
+        ts.factory.createArrayLiteralExpression(node.arguments.map((argument) => ts.visitNode(argument, visit) as ts.Expression)),
+        inlineResult, node);
     }
     if (ts.isOmittedExpression(node)) {
       return ts.factory.createIdentifier("undefined");
@@ -3220,7 +3707,8 @@ function gmlTransformer(
           undefined,
           [
             ts.visitNode(node.right, visit) as ts.Expression,
-            ts.visitNode(node.left, visit) as ts.Expression,
+            ts.isStringLiteralLike(node.left) ? ts.visitNode(node.left, visit) as ts.Expression
+              : runtimeCall("__ts2gml_value_key", [ts.visitNode(node.left, visit) as ts.Expression]),
           ],
         );
       }
@@ -3276,40 +3764,54 @@ function gmlTransformer(
     if (ts.isStringLiteral(node)) {
       return ts.setEmitFlags(ts.factory.createStringLiteral(node.text), ts.EmitFlags.NoAsciiEscaping);
     }
-    if (ts.isArrowFunction(node)) {
-      let usesLexicalThis = false;
-      const inspect = (child: ts.Node): void => {
-        if (child.kind === ts.SyntaxKind.ThisKeyword) {
-          usesLexicalThis = true;
-          return;
-        }
-        if (child !== node && isFunctionWithBody(child) && !ts.isArrowFunction(child)) return;
-        ts.forEachChild(child, inspect);
-      };
-      inspect(node.body);
-      const body = ts.isBlock(node.body)
-        ? (ts.visitNode(node.body, visit) as ts.Block)
-        : ts.factory.createBlock([
-            ts.factory.createReturnStatement(ts.visitNode(node.body, visit) as ts.Expression),
-          ]);
-      const fn = ts.factory.createFunctionExpression(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        node.parameters.map(
-          (parameter) => ts.visitNode(parameter, visit) as ts.ParameterDeclaration,
-        ),
-        undefined,
-        body,
-      );
-      return usesLexicalThis
-        ? ts.factory.createCallExpression(
-            ts.factory.createIdentifier("method"),
-            undefined,
-            [ts.factory.createIdentifier("self"), fn],
-          )
-        : fn;
+    if (isFunctionWithBody(node)) {
+      // A stored callback has its own locals and runtime self. Only an arrow's
+      // lexical this crosses the inline with boundary, through method binding.
+      const lexicalThis = transformState.withLexicalThis ?? ts.factory.createIdentifier("self");
+      const previousState = { ...transformState };
+      transformState.withActionDepth = 0;
+      transformState.withActionBindings = [];
+      transformState.withLexicalThis = undefined;
+      try {
+        if (!ts.isArrowFunction(node)) return ts.visitEachChild(node, visit, context);
+        let usesLexicalThis = false;
+        const inspect = (child: ts.Node): void => {
+          if (child.kind === ts.SyntaxKind.ThisKeyword) {
+            usesLexicalThis = true;
+            return;
+          }
+          if (child !== node && isFunctionWithBody(child) && !ts.isArrowFunction(child)) return;
+          ts.forEachChild(child, inspect);
+        };
+        // Closure conversion replaces nested arrows with bound function
+        // expressions. Their original arrows still determine lexical this.
+        ts.forEachChild(ts.getOriginalNode(node), inspect);
+        const body = ts.isBlock(node.body)
+          ? (ts.visitNode(node.body, visit) as ts.Block)
+          : ts.factory.createBlock([
+              ts.factory.createReturnStatement(ts.visitNode(node.body, visit) as ts.Expression),
+            ]);
+        const fn = ts.factory.createFunctionExpression(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          node.parameters.map(
+            (parameter) => ts.visitNode(parameter, visit) as ts.ParameterDeclaration,
+          ),
+          undefined,
+          body,
+        );
+        return usesLexicalThis
+          ? ts.factory.createCallExpression(
+              ts.factory.createIdentifier("method"),
+              undefined,
+              [lexicalThis, fn],
+            )
+          : fn;
+      } finally {
+        Object.assign(transformState, previousState);
+      }
     }
     if (ts.isShorthandPropertyAssignment(node)) {
       return ts.factory.createPropertyAssignment(
@@ -3327,6 +3829,8 @@ function gmlTransformer(
 }
 
 type FreshIdentifier = (purpose: string) => ts.Identifier;
+type InlineResult = (origin: ts.Node, parameter: ts.Identifier, result: ts.Expression | ts.Block,
+  argument: ts.Expression) => ts.CallExpression;
 
 interface WithActionBinding {
   name: string;
@@ -3374,15 +3878,16 @@ function lowerGmWithStatement(
   }
   state.withActionBindings.push(bindings);
   try {
-    const actionBody = action.body as ts.Block;
-    const body = ts.factory.updateBlock(actionBody, [
-      variableStatement(selfAlias, ts.factory.createIdentifier("self")),
-      variableStatement(otherAlias, ts.factory.createIdentifier("other")),
-      ...actionBody.statements,
-    ]);
+    const body = ts.visitNode(action.body, visit) as ts.Block;
     return ts.factory.createWithStatement(
       target,
-      ts.visitNode(body, visit) as ts.Block,
+      // Add native context reads after rewriting the authored callback so its
+      // parameters (including self/other) cannot rewrite these initializers.
+      ts.factory.updateBlock(body, [
+        variableStatement(selfAlias, ts.factory.createIdentifier("self")),
+        variableStatement(otherAlias, ts.factory.createIdentifier("other")),
+        ...body.statements,
+      ]),
     );
   } finally {
     state.withActionBindings.pop();
@@ -3400,15 +3905,16 @@ function lowerOptionalChain(
   node: ts.OptionalChain,
   visit: ts.Visitor,
   freshIdentifier: FreshIdentifier,
+  inlineResult: InlineResult,
 ): ts.Expression {
   const chain = decomposeOptionalChain(node);
   const build = (index: number, value: ts.Expression): ts.Expression => {
     const segment = chain.segments[index];
     if (!segment) return value;
-    if (!segment.optional) return build(index + 1, applyChainSegment(value, segment, visit));
+    if (!segment.optional) return build(index + 1, applyChainSegment(value, segment, visit, inlineResult, node));
 
     const parameter = freshIdentifier("optional");
-    const continuation = build(index + 1, applyChainSegment(parameter, segment, visit));
+    const continuation = build(index + 1, applyChainSegment(parameter, segment, visit, inlineResult, node));
     const result = ts.factory.createConditionalExpression(
       isNullish(parameter),
       undefined,
@@ -3416,7 +3922,7 @@ function lowerOptionalChain(
       undefined,
       continuation,
     );
-    return callInlineFunction(parameter, result, value);
+    return inlineResult(node, parameter, result, value);
   };
 
   return build(0, ts.visitNode(chain.base, visit) as ts.Expression);
@@ -3465,6 +3971,8 @@ function applyChainSegment(
   value: ts.Expression,
   segment: OptionalChainSegment,
   visit: ts.Visitor,
+  inlineResult: InlineResult,
+  origin: ts.Node,
 ): ts.Expression {
   if (segment.kind === "property") {
     return ts.factory.createPropertyAccessExpression(value, segment.name);
@@ -3476,19 +3984,21 @@ function applyChainSegment(
     );
   }
   if (segment.arguments.some(ts.isSpreadElement)) {
-    return createSpreadCall(value, segment.arguments, visit);
+    return createIndirectCall(value, segment.arguments, visit, inlineResult, origin);
   }
   return createDynamicCall(
     value,
     ts.factory.createArrayLiteralExpression(
       segment.arguments.map((argument) => ts.visitNode(argument, visit) as ts.Expression),
     ),
+    inlineResult,
+    origin,
   );
 }
 
 function callInlineFunction(
   parameter: ts.Identifier,
-  result: ts.Expression,
+  result: ts.Expression | ts.Block,
   argument: ts.Expression,
   captures: readonly ts.Identifier[] = [],
 ): ts.CallExpression {
@@ -3499,7 +4009,7 @@ function callInlineFunction(
     undefined,
     [parameter, ...captures].map((name) => ts.factory.createParameterDeclaration(undefined, undefined, name)),
     undefined,
-    ts.factory.createBlock([ts.factory.createReturnStatement(result)], true),
+    ts.isBlock(result) ? result : ts.factory.createBlock([ts.factory.createReturnStatement(result)], true),
   );
   return ts.factory.createCallExpression(
     ts.factory.createParenthesizedExpression(functionExpression),
@@ -3573,66 +4083,61 @@ function lowerObjectSpread(node: ts.ObjectLiteralExpression, visit: ts.Visitor):
   return createObjectCopy(parts, [], true);
 }
 
-function createSpreadCall(
+function createIndirectCall(
   expression: ts.Expression,
   argumentsList: readonly ts.Expression[],
   visit: ts.Visitor,
+  inlineResult: InlineResult,
+  origin: ts.Node,
 ): ts.CallExpression {
-  const callable = ts.visitNode(expression, visit) as ts.Expression;
-  const argumentsArray = runtimeCall("array_concat", [
-    ts.factory.createArrayLiteralExpression(),
-    ...spreadParts(argumentsList, visit),
-  ]);
+  // Keep an indexed receiver visible until its method is bound. Ordinary
+  // element lowering would otherwise turn it into a bare value_get(...) call.
+  const callable = ts.isElementAccessExpression(expression)
+    ? ts.factory.updateElementAccessExpression(expression,
+      ts.visitNode(expression.expression, visit) as ts.Expression,
+      ts.visitNode(expression.argumentExpression, visit) as ts.Expression)
+    : ts.visitNode(expression, visit) as ts.Expression;
+  const argumentsArray = argumentsList.some(ts.isSpreadElement)
+    ? runtimeCall("array_concat", [ts.factory.createArrayLiteralExpression(), ...spreadParts(argumentsList, visit)])
+    : ts.factory.createArrayLiteralExpression(argumentsList.map((argument) => ts.visitNode(argument, visit) as ts.Expression));
   if (
     !ts.isPropertyAccessExpression(callable) &&
     !ts.isElementAccessExpression(callable)
   ) {
-    return createDynamicCall(callable, argumentsArray);
+    return createDynamicCall(callable, argumentsArray, inlineResult, origin);
   }
 
   const receiver = ts.factory.createIdentifier("__ts2gml_receiver");
-  const argumentsParameter = ts.factory.createIdentifier("__ts2gml_arguments");
-  const parameters = [
-    ts.factory.createParameterDeclaration(undefined, undefined, receiver),
-  ];
-  const callArguments: ts.Expression[] = [callable.expression];
+  const method = ts.factory.createIdentifier("__ts2gml_method");
+  const statements: ts.Statement[] = [variableStatement(receiver, callable.expression)];
   let property: ts.Expression;
   if (ts.isPropertyAccessExpression(callable)) {
     property = ts.factory.createPropertyAccessExpression(receiver, callable.name);
   } else {
     const key = ts.factory.createIdentifier("__ts2gml_key");
-    parameters.push(ts.factory.createParameterDeclaration(undefined, undefined, key));
-    callArguments.push(callable.argumentExpression);
-    property = ts.factory.createElementAccessExpression(receiver, key);
+    statements.push(variableStatement(key, callable.argumentExpression));
+    property = runtimeCall("__ts2gml_value_get", [receiver, key]);
   }
-  parameters.push(
-    ts.factory.createParameterDeclaration(undefined, undefined, argumentsParameter),
-  );
-  callArguments.push(argumentsArray);
-  const reboundMethod = runtimeCall("method", [receiver, property]);
-  const functionExpression = ts.factory.createFunctionExpression(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    parameters,
-    undefined,
-    ts.factory.createBlock([
-      ts.factory.createReturnStatement(
-        runtimeCall("method_call", [reboundMethod, argumentsParameter]),
-      ),
-    ], true),
-  );
-  return ts.factory.createCallExpression(
-    ts.factory.createParenthesizedExpression(functionExpression),
-    undefined,
-    callArguments,
-  );
+  const boundMethod = ts.factory.createLogicalAnd(runtimeCall("is_method", [method]),
+    ts.factory.createLogicalNot(runtimeCall("is_undefined", [runtimeCall("method_get_self", [method])])));
+  const methodReceiver = ts.factory.createConditionalExpression(runtimeCall("is_array", [receiver]),
+    undefined, ts.factory.createIdentifier("undefined"), undefined, receiver);
+  const reboundMethod = ts.factory.createConditionalExpression(boundMethod,
+    undefined, method, undefined, runtimeCall("method", [methodReceiver, method]));
+  statements.push(variableStatement(method, property),
+    ts.factory.createExpressionStatement(ts.factory.createAssignment(method, reboundMethod)),
+    ts.factory.createReturnStatement(runtimeCall("method_call", [method, argumentsArray])));
+  // GML evaluates native call arguments in a different order. Resolve the
+  // receiver/key/method in statements before evaluating authored arguments.
+  return inlineResult(origin, ts.factory.createIdentifier("__ts2gml_unused"),
+    ts.factory.createBlock(statements, true), ts.factory.createIdentifier("undefined"));
 }
 
 function createDynamicCall(
   callable: ts.Expression,
   argumentsArray: ts.Expression,
+  inlineResult: InlineResult,
+  origin: ts.Node,
 ): ts.CallExpression {
   const callableParameter = ts.factory.createIdentifier("__ts2gml_callable");
   const argumentsParameter = ts.factory.createIdentifier("__ts2gml_arguments");
@@ -3643,23 +4148,11 @@ function createDynamicCall(
     undefined,
     runtimeCall("script_execute_ext", [callableParameter, argumentsParameter]),
   );
-  const functionExpression = ts.factory.createFunctionExpression(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    [
-      ts.factory.createParameterDeclaration(undefined, undefined, callableParameter),
-      ts.factory.createParameterDeclaration(undefined, undefined, argumentsParameter),
-    ],
-    undefined,
-    ts.factory.createBlock([ts.factory.createReturnStatement(result)], true),
-  );
-  return ts.factory.createCallExpression(
-    ts.factory.createParenthesizedExpression(functionExpression),
-    undefined,
-    [callable, argumentsArray],
-  );
+  return inlineResult(origin, ts.factory.createIdentifier("__ts2gml_unused"), ts.factory.createBlock([
+    variableStatement(callableParameter, callable),
+    variableStatement(argumentsParameter, argumentsArray),
+    ts.factory.createReturnStatement(result),
+  ], true), ts.factory.createIdentifier("undefined"));
 }
 
 function spreadParts(
