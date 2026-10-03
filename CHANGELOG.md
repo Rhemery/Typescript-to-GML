@@ -2,7 +2,16 @@
 
 All notable changes to this project are documented here.
 
-## 0.2.0-beta.7 - Unreleased
+## 0.2.0-beta.8 - 2026-10-03
+
+- Add `gm_static(() => expression)` for native GML static storage on ordinary instance fields. Initialize once on first construction, preserve instance shadowing and shared struct references, and reject unsupported factories and GameMaker asset usage with source-located diagnostics.
+- Preserve TypeScript static field creation order, including inherited reads before child initialization, missing-field reads, and uninitialized declarations that overwrite earlier initializer writes. Keep TypeScript class storage separate from native instance statics.
+- Add JavaScript comparison, compiler, project-generation, type, and GameMaker VM regression coverage for both static models. Require both static runtime completion markers during verification.
+- Explicitly group nested conditional expressions for valid GML, preserving JavaScript truthiness, lazy branch evaluation, and side-effect order. Cover nested conditions and both branches in compiler, JavaScript comparison, and GameMaker VM tests.
+- Accept authored classes and interfaces in native array inputs, preserve element types and callback signatures across more array functions, and accept readonly arrays for non-mutating operations. Automatically refresh cached runtime declarations for the updated signatures.
+- Advance the companion VSIX to `0.2.8` with matching compiler metadata.
+
+## 0.2.0-beta.7 - 2026-09-29
 
 - Support numeric, string, mixed, and const enums, including reverse mappings, computed members, same-file merging, local captures, and access across scripts and object events. Add compiler, project-generation, and GameMaker runtime coverage.
 - Preserve closure environments across authored `method(receiver, callback)` calls, including repeated binding, aliases, spread arguments, and unbound callbacks. Keep shared capture cells and arrow lexical `this`, give closure-factory parameters private names, and test the rebound projectile callback in a real GameMaker Step event.
@@ -17,14 +26,14 @@ All notable changes to this project are documented here.
 - Add regression coverage for field type checking, constructor defaults, scope exclusions, semicolonless GML, and declaration refresh/idempotence. Include the native constructor and global struct integration fixture.
 - Advance the companion VSIX to `0.2.7` with matching compiler metadata.
 
-## 0.2.0-beta.6 - Unreleased
+## 0.2.0-beta.6 - 2026-09-25
 
 - Stop shipping TypeScript standard-library declarations in the distribution and YYMPS. Resolve a compatible project or global TypeScript installation, support `TS2GML_TYPESCRIPT_LIB`, and report setup errors and the selected libraries through the CLI.
 - Resolve watch directories to their full paths to prevent native Node crashes on Windows 8.3 aliases, including hosted CI temporary directories.
 - Resolve target-selected default libraries from the same external TypeScript installation when a game's tsconfig omits `lib`.
 - Advance the companion VSIX to `0.2.6` with matching compiler metadata and document the external TypeScript installation and upgrade requirements.
 
-## 0.2.0-beta.5 - Unreleased
+## 0.2.0-beta.5 - 2026-09-07
 
 - Protect standalone source files from output collisions, including links and Windows path casing.
 - Correct logical values and truthiness, strict equality, null/default handling, Unicode literals, indexed access and writes, omitted collection arguments, and Math rounding/random aliases. Require explicit array sort comparators with stable ordering.
@@ -50,7 +59,7 @@ All notable changes to this project are documented here.
 - Keep manifest-owned generated content authoritative: automatically refresh externally edited or deleted output without requiring `--overwrite-generated`, while preserving IDE-owned Object settings. Reject unmanaged asset collisions with both paths and instructions to delete the GameMaker asset and save before allowing ts2gml to manage it.
 - Preserve GameMaker's existing resource/folder order and equivalent resource formatting across repeated saves to avoid unnecessary project rewrites.
 
-## 0.2.0-beta.3 - 2026-08-31
+## 0.2.0-beta.3 - 2026-09-01
 
 - Expose GameMaker constants as their GML-named global values, including time-source constants; strongly distinguish constant, asset, ID, and pointer categories during type checking; and repair stale or incomplete runtime declaration caches automatically.
 - Check for newer compatible GitHub releases in the background, cache the result for 24 hours, and notify CLI users without interrupting compiler commands when the network is unavailable.

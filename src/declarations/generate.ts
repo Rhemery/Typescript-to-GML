@@ -130,7 +130,7 @@ export class GmlSpecSelectionError extends Error {
 }
 
 const runtimeSelectionFileName = "runtime-selection.json";
-const runtimeDeclarationFormatVersion = 4;
+const runtimeDeclarationFormatVersion = 5;
 const runtimeDeclarationCompletionMarker = "// Runtime declaration generation complete.";
 
 const invalidGlobalNames = new Set([
@@ -367,7 +367,7 @@ export function renderDeclarations(input: {
         const optional = parameter.Optional === "true" ? "?" : "";
         return {
           declaration: `${parameterName}${optional}: ${
-            specialization?.parameterTypes.get(index) ?? mapType(parameter.Type)
+            specialization?.parameterTypes.get(index) ?? mapType(parameter.Type, "unknown[]")
           }`,
           name: parameterName,
           description: parameter.text,
@@ -788,15 +788,33 @@ function specializeDataStructureFunction(fn: FunctionSpec): FunctionTypeSpeciali
   const name = fn.Name;
   const parameters = fn.Parameter ?? [];
   const parameterTypes = new Map<number, string>();
-  const typedArrayFunctions = new Set([
+  const arrayFunctions = new Set([
     "array_create", "array_create_ext", "array_get", "array_set", "array_first", "array_last",
     "array_push", "array_pop", "array_shift", "array_insert", "array_copy", "array_concat",
     "array_filter", "array_filter_ext", "array_map", "array_map_ext", "array_sort",
     "array_reverse", "array_shuffle", "array_unique", "array_get_index", "array_contains",
+    "array_all", "array_any", "array_contains_ext", "array_copy_while", "array_delete",
+    "array_equals", "array_find_index", "array_foreach", "array_height_2d", "array_intersection",
+    "array_length", "array_length_1d", "array_length_2d", "array_resize", "array_reverse_ext",
+    "array_shuffle_ext", "array_union", "array_unique_ext",
   ]);
-  if (typedArrayFunctions.has(name)) {
+  if (arrayFunctions.has(name)) {
+    const preservesElementType = ![
+      "array_delete", "array_equals", "array_height_2d", "array_length", "array_length_1d",
+      "array_length_2d", "array_resize", "array_reverse_ext", "array_shuffle_ext", "array_unique_ext",
+    ].includes(name);
+    const mutatingArrayFunctions = new Set([
+      "array_set", "array_push", "array_pop", "array_shift", "array_insert", "array_copy",
+      "array_filter_ext", "array_map_ext", "array_sort", "array_delete", "array_resize",
+      "array_reverse_ext", "array_shuffle_ext", "array_unique_ext",
+    ]);
     parameters.forEach((parameter, index) => {
-      if (mapType(parameter.Type) === "GMValue[]") parameterTypes.set(index, index === 0 ? "T[]" : "NoInfer<T>[]");
+      if (mapType(parameter.Type) === "GMValue[]") {
+        const element = !preservesElementType ? "unknown" : index === 0 ? "T"
+          : name === "array_union" ? "U" : name === "array_intersection" ? "unknown" : "NoInfer<T>";
+        const readOnly = index === 0 && mutatingArrayFunctions.has(name) ? "" : "readonly ";
+        parameterTypes.set(index, `${readOnly}${element}[]`);
+      }
       if (["value", "argument1"].includes(parameter.Name) && mapType(parameter.Type) === "any") {
         parameterTypes.set(index, name === "array_create" ? "T" : "NoInfer<T>");
       }
@@ -808,15 +826,21 @@ function specializeDataStructureFunction(fn: FunctionSpec): FunctionTypeSpeciali
           : name === "array_create_ext" ? "(index: number) => T"
           : name === "array_map" ? "(value: T, index: number) => U"
           : name === "array_map_ext" ? "(value: T, index: number) => NoInfer<T>"
+          : name === "array_foreach" ? "(value: T, index: number) => void"
           : "(value: T, index: number) => boolean";
         parameterTypes.set(index, callback);
       }
     });
     const elementReturns = ["array_get", "array_first", "array_last", "array_pop", "array_shift"];
     const arrayReturn = mapType(fn.ReturnType) === "GMValue[]" || name === "array_create";
-    return { typeParameters: name === "array_map" ? "<T, U>" : name === "array_create" ? "<T = number>" : "<T>",
-      parameterTypes, returnType: elementReturns.includes(name) ? "T | undefined"
-        : arrayReturn ? name === "array_map" ? "U[]" : "T[]" : undefined };
+    const typeParameters = !preservesElementType ? "" : ["array_map", "array_union"].includes(name)
+      ? "<T, U>" : name === "array_create" ? "<T = number>" : "<T>";
+    let returnType: string | undefined;
+    if (elementReturns.includes(name)) returnType = "T | undefined";
+    else if (arrayReturn) {
+      returnType = name === "array_map" ? "U[]" : name === "array_union" ? "(T | U)[]" : "T[]";
+    }
+    return { typeParameters, parameterTypes, returnType };
   }
   const setHandles = (type: string, names: readonly string[]) => {
     parameters.forEach((parameter, index) => {
@@ -957,17 +981,18 @@ function escapeDocumentation(value: string): string {
   return value.replaceAll("*/", "*\\/");
 }
 
-function mapType(rawType?: string): string {
+function mapType(rawType?: string, untypedArray = "GMValue[]"): string {
   const raw = rawType?.trim();
   if (!raw) return "GMValue";
   if (raw.startsWith("[") && raw.endsWith("]")) {
-    return splitUnion(raw.slice(1, -1)).map(mapType).join(" | ");
+    return splitUnion(raw.slice(1, -1)).map((type) => mapType(type, untypedArray)).join(" | ");
   }
   const union = splitUnion(raw);
-  if (union.length > 1) return union.map(mapType).join(" | ");
+  if (union.length > 1) return union.map((type) => mapType(type, untypedArray)).join(" | ");
   const array = /^Array\[(.*)]$/.exec(raw);
-  if (array) return `Array<${mapType(array[1])}>`;
-  if (raw === "Array" || raw === "Array.String") return "GMValue[]";
+  if (array) return `Array<${mapType(array[1], untypedArray)}>`;
+  // Unspecified input elements may be authored classes or interfaces without a GMStruct index signature.
+  if (raw === "Array" || raw === "Array.String") return untypedArray;
 
   const primitives = new Map<string, string>([
     ["Any", "any"],

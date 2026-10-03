@@ -32,6 +32,8 @@ class DamageRoll {
 
 For ordinary class inheritance, a derived constructor must contain one explicit `super(...)` call as its first statement. Static fields and methods are supported on ordinary and GMObject classes. Accessors, private fields, decorators, and static initialization blocks remain unsupported.
 
+TypeScript `static` belongs to the class and is initialized before construction. To request native GML constructor static storage for an instance field, use `speed = gm_static(() => 4)`. Its initializer runs once on first construction, before instance fields; later `this.speed` writes create instance overrides. See the [supported static forms and restrictions](Supported-Language.md#supported-forms).
+
 Constructors written in unmanaged GML scripts also get a named TypeScript interface. For example, `function Inventory() constructor { count = 0; }` makes `new Inventory().count` a `number`, and `Inventory` can be used as a type. Direct constructor assignments and global struct literals infer members from primitive literals, arrays, nested structs, and documented or defaulted parameters. Expressions that cannot be resolved remain `any`; inferred structs retain the dynamic member access provided by `GMStruct`.
 
 ## GameMaker objects

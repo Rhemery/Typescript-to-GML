@@ -10,6 +10,10 @@ function semanticParameter(value: number | null = 5): number | null { return val
 function semanticField(data: Record<string, number>, key: string): number { return data[key]!; }
 function semanticEffect(counter: { count: number }): number { counter.count += 1; return 9; }
 function semanticLazy(value: number, counter: { count: number }): number { return value || semanticEffect(counter); }
+function semanticConditionalEffect<T>(state: { trace: string }, label: string, value: T): T {
+  state.trace += label;
+  return value;
+}
 
 class SemanticWorker {
   length = 3;
@@ -36,6 +40,41 @@ function semanticContractRun(): void {
   scopeContextExpect("empty condition", semanticCondition(""), 0);
   scopeContextExpect("string condition", semanticCondition("yes"), 1);
   scopeContextExpect("null condition", semanticCondition(null), 0);
+  // All eight paths, including non-boolean truthiness. The trace catches eager
+  // branches, repeated conditions, and reordered side effects in either runtime.
+  for (let index = 0; index < 8; index++) {
+    const first = index < 4 ? "" : 0.25;
+    const second = index % 4 < 2 ? null : "yes";
+    const third = index % 2 === 0 ? undefined : -2;
+    const state = { trace: "" };
+    const falseChain = semanticConditionalEffect(state, "A", first)
+      ? semanticConditionalEffect(state, "h", 10)
+      : semanticConditionalEffect(state, "B", second)
+        ? semanticConditionalEffect(state, "e", 20)
+        : semanticConditionalEffect(state, "C", third)
+          ? semanticConditionalEffect(state, "x", 30)
+          : semanticConditionalEffect(state, "k", 40);
+    scopeContextExpect(`conditional false chain value ${index}`, falseChain, [40, 30, 20, 20, 10, 10, 10, 10][index]);
+    scopeContextExpect(`conditional false chain effects ${index}`, state.trace, ["ABCk", "ABCx", "ABe", "ABe", "Ah", "Ah", "Ah", "Ah"][index]);
+    state.trace = "";
+    const trueChain = semanticConditionalEffect(state, "A", first)
+      ? semanticConditionalEffect(state, "B", second)
+        ? semanticConditionalEffect(state, "C", third)
+          ? semanticConditionalEffect(state, "h", 10)
+          : semanticConditionalEffect(state, "e", 20)
+        : semanticConditionalEffect(state, "x", 30)
+      : semanticConditionalEffect(state, "k", 40);
+    scopeContextExpect(`conditional true chain value ${index}`, trueChain, [40, 40, 40, 40, 30, 30, 20, 10][index]);
+    scopeContextExpect(`conditional true chain effects ${index}`, state.trace, ["Ak", "Ak", "Ak", "Ak", "ABx", "ABx", "ABCe", "ABCh"][index]);
+    state.trace = "";
+    const condition = (semanticConditionalEffect(state, "A", first)
+      ? semanticConditionalEffect(state, "B", second)
+      : semanticConditionalEffect(state, "C", third))
+      ? semanticConditionalEffect(state, "h", 10)
+      : semanticConditionalEffect(state, "e", 20);
+    scopeContextExpect(`conditional condition value ${index}`, condition, [20, 10, 20, 10, 20, 20, 10, 10][index]);
+    scopeContextExpect(`conditional condition effects ${index}`, state.trace, ["ACe", "ACh", "ACe", "ACh", "ABe", "ABe", "ABh", "ABh"][index]);
+  }
   scopeContextExpect("strict boolean", semanticEquality(true), false);
   scopeContextExpect("strict number", semanticEquality(1), true);
   scopeContextExpect("null default", semanticDefault({ value: null }), null);

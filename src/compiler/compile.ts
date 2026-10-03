@@ -76,6 +76,7 @@ const compilerIntrinsicBindings = new Set([
   ...gmlContextAssertions.keys(),
   "console",
   "gm_macro",
+  "gm_static",
   "gm_with",
   "Math",
   "Grid",
@@ -470,6 +471,13 @@ export function toJavaScript(
           if (nativeAccess?.nativeBooleans.has(`${original.pos}:${original.end}:${original.kind}`)) {
             return runtimeCall("__ts2gml_value_truthy", [result as ts.Expression]);
           }
+          // Keep static reads distinguishable after type erasure. The GML
+          // emitter uses a safe struct read, while calls and writes keep their receiver.
+          if (ts.isPropertyAccessExpression(result) && !ts.isOptionalChain(result) &&
+            isCallTo(result.expression, "__ts2gml_class_statics")) {
+            return ts.setTextRange(ts.factory.createElementAccessExpression(
+              result.expression, ts.factory.createStringLiteral(result.name.text)), node);
+          }
           return staticReceivers?.has(`${original.pos}:${original.end}:${original.kind}`)
             ? runtimeCall("__ts2gml_class_statics", [result as ts.Expression])
             : result;
@@ -598,11 +606,8 @@ export function emitClassStatics(
   }
   for (const member of members) {
     if (!ts.isPropertyDeclaration(member)) continue;
-    lines.push(`self.${memberName(member.name, sourceFile)} = undefined;`);
-  }
-  for (const member of members) {
-    if (!ts.isPropertyDeclaration(member) || !member.initializer) continue;
-    lines.push(`self.${memberName(member.name, sourceFile)} = ${emitGml(member.initializer, sourceFile, new Map(), true)};`);
+    const value = member.initializer ? emitGml(member.initializer, sourceFile, new Map(), true) : "undefined";
+    lines.push(`self.${memberName(member.name, sourceFile)} = ${value};`);
   }
   return `method(__ts2gml_class_statics(${name}, true), function() {\n${indent(lines.join("\n"))}\n})();`;
 }
@@ -1249,6 +1254,42 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
     if (isGmMacroCall(node)) {
       validateGmMacroCall(node, report);
       return;
+    }
+    if (isCallTo(node, "gm_static")) {
+      const field = node.parent;
+      const factory = node.arguments[0];
+      if (!ts.isPropertyDeclaration(field) || field.initializer !== node ||
+        !ts.isClassDeclaration(field.parent) || hasModifier(field, ts.SyntaxKind.StaticKeyword)) {
+        report(node, "TS2GML1071", "gm_static must initialize an ordinary instance field.",
+          "Use field = gm_static(() => expression) in an ordinary constructor class.");
+      }
+      if (node.arguments.length !== 1 || !factory || !ts.isArrowFunction(factory) ||
+        factory.parameters.length !== 0 || ts.isBlock(factory.body)) {
+        report(node, "TS2GML1071", "gm_static expects one parameterless expression arrow.",
+          "Use gm_static(() => expression); call a named function for more complex initialization.");
+      } else {
+        const inspect = (child: ts.Node): void => {
+          if (ts.isTypeNode(child)) return;
+          if (child.kind === ts.SyntaxKind.ThisKeyword || child.kind === ts.SyntaxKind.SuperKeyword ||
+            (ts.isIdentifier(child) && isIdentifierReference(child) &&
+              ["self", "other", "gm_self", "gm_other", "arguments"].includes(child.text))) {
+            report(child, "TS2GML1071", "gm_static factories cannot depend on instance context.",
+              "Use literals, class statics, or named initialization functions; native statics initialize before instance fields.");
+          }
+          if (ts.isFunctionLike(child)) {
+            report(child, "TS2GML1071", "gm_static factories cannot contain nested functions.",
+              "Use a normal instance method or an instance arrow field for callbacks.");
+            return;
+          }
+          ts.forEachChild(child, inspect);
+        };
+        inspect(factory.body);
+      }
+    }
+    if (ts.isIdentifier(node) && node.text === "gm_static" &&
+      isIdentifierReference(node) && !isDirectCallTarget(node)) {
+      report(node, "TS2GML1071", "gm_static is a compiler intrinsic and cannot be used as a runtime value.",
+        "Use it directly as the initializer of an ordinary instance field.");
     }
     if (isGmWithCall(node)) validateGmWithCall(node, report);
     const contextKeyword = getGmlContextAssertion(node);
@@ -3154,8 +3195,11 @@ function emitConstructorClass(
     if (hasModifier(member, ts.SyntaxKind.StaticKeyword)) continue;
     if (ts.isPropertyDeclaration(member)) {
       const name = memberName(member.name, sourceFile);
-      const value = member.initializer ? emitGml(member.initializer, sourceFile) : "undefined";
-      lines.push(`self.${name} = ${value};`);
+      const nativeStatic = member.initializer && isCallTo(member.initializer, "gm_static");
+      const initializer = nativeStatic
+        ? (member.initializer!.arguments[0] as ts.ArrowFunction).body : member.initializer;
+      const value = initializer ? emitGml(initializer, sourceFile) : "undefined";
+      lines.push(`${nativeStatic ? "static " : "self."}${name} = ${value};`);
     }
     if (ts.isMethodDeclaration(member)) {
       if (!member.body) continue;
@@ -3274,6 +3318,11 @@ function gmlTransformer(
   };
 
   const visit: ts.Visitor = (node) => {
+    if (isCallTo(node, "gm_static")) {
+      throw nodeError(node, sourceFile, "TS2GML1071",
+        "gm_static is only supported in ordinary constructor classes, not GMObject or GMRoom assets.",
+        "Use a TypeScript static field for class state on GameMaker assets.");
+    }
     if (ts.isCallExpression(node) && ts.isParenthesizedExpression(node.expression)) {
       let expression = node.expression.expression;
       while (ts.isParenthesizedExpression(expression)) expression = expression.expression;
@@ -3359,10 +3408,10 @@ function gmlTransformer(
     if (ts.isElementAccessExpression(node) &&
       isCallTo(node.expression, "__ts2gml_class_statics") &&
       ts.isStringLiteralLike(node.argumentExpression)) {
-      return ts.factory.createPropertyAccessExpression(
+      return runtimeCall("variable_struct_get", [
         ts.visitNode(node.expression, visit) as ts.Expression,
-        node.argumentExpression.text,
-      );
+        ts.factory.createStringLiteral(node.argumentExpression.text),
+      ]);
     }
     const optionalChain = ts.isExpressionStatement(node) ? getOptionalCallStatement(node.expression, true) : undefined;
     if (optionalChain) {
@@ -3377,7 +3426,9 @@ function gmlTransformer(
           ? freshIdentifier("optional") : undefined;
         const receiver = temporary ?? value;
         const next = ts.setOriginalNode(segment.kind === "property"
-          ? ts.factory.createPropertyAccessExpression(receiver, segment.name)
+          ? segment.classStatic && optionalChain.segments[index + 1]?.kind !== "call"
+            ? runtimeCall("variable_struct_get", [receiver, ts.factory.createStringLiteral(segment.name.text)])
+            : ts.factory.createPropertyAccessExpression(receiver, segment.name)
           : ts.factory.createCallExpression(receiver, undefined, segment.arguments), node);
         const continuation = build(index + 1, next);
         if (!segment.optional) return continuation;
@@ -3427,10 +3478,11 @@ function gmlTransformer(
       node.condition ? runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.condition, visit) as ts.Expression]) : undefined,
       ts.visitNode(node.incrementor, visit) as ts.Expression | undefined,
       ts.visitNode(node.statement, visit) as ts.Statement);
-    if (ts.isConditionalExpression(node)) return ts.factory.updateConditionalExpression(node,
+    // GML requires explicit grouping for nested ternaries; the TS printer does not.
+    if (ts.isConditionalExpression(node)) return ts.factory.createParenthesizedExpression(ts.factory.updateConditionalExpression(node,
       runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.condition, visit) as ts.Expression]),
       node.questionToken, ts.visitNode(node.whenTrue, visit) as ts.Expression,
-      node.colonToken, ts.visitNode(node.whenFalse, visit) as ts.Expression);
+      node.colonToken, ts.visitNode(node.whenFalse, visit) as ts.Expression));
     if (ts.isPrefixUnaryExpression(node) && node.operator === ts.SyntaxKind.ExclamationToken) {
       return ts.factory.createLogicalNot(runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.operand, visit) as ts.Expression]));
     }
@@ -3897,7 +3949,7 @@ function lowerGmWithStatement(
 }
 
 type OptionalChainSegment =
-  | { kind: "property"; name: ts.MemberName; optional: boolean }
+  | { kind: "property"; name: ts.MemberName; optional: boolean; classStatic: boolean }
   | { kind: "element"; argument: ts.Expression; optional: boolean }
   | { kind: "call"; arguments: readonly ts.Expression[]; optional: boolean };
 
@@ -3940,6 +3992,7 @@ function decomposeOptionalChain(node: ts.OptionalChain): {
         kind: "property",
         name: expression.name,
         optional: Boolean(expression.questionDotToken),
+        classStatic: isCallTo(expression.expression, "__ts2gml_class_statics"),
       });
       return base;
     }
@@ -3975,7 +4028,9 @@ function applyChainSegment(
   origin: ts.Node,
 ): ts.Expression {
   if (segment.kind === "property") {
-    return ts.factory.createPropertyAccessExpression(value, segment.name);
+    return segment.classStatic
+      ? runtimeCall("variable_struct_get", [value, ts.factory.createStringLiteral(segment.name.text)])
+      : ts.factory.createPropertyAccessExpression(value, segment.name);
   }
   if (segment.kind === "element") {
     return ts.factory.createElementAccessExpression(

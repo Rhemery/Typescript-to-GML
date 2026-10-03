@@ -15,7 +15,7 @@ self.weapon = new Weapon(self, {
             var __ts2gml_env_3_self = method_get_self(function () { });
             __ts2gml_with_self_96_1.on_step = method({ __ts2gml_env_2: __ts2gml_env_2, __ts2gml_receiver: __ts2gml_env_3_self, __ts2gml_closure: true }, function () {
                 var __ts2gml_env_2 = self.__ts2gml_env_2;
-                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                     x += lengthdir_x(__ts2gml_env_2.__ts2gml_capture_1.projectile_speed, __ts2gml_env_2.__ts2gml_capture_1.direction);
                     y += lengthdir_y(__ts2gml_env_2.__ts2gml_capture_1.projectile_speed, __ts2gml_env_2.__ts2gml_capture_1.direction);
                 }
@@ -37,7 +37,7 @@ self.weapon = new Weapon(self, {
         __ts2gml_env_5.__ts2gml_capture_2.spd = __ts2gml_env_5_parameter_2.projectile_speed;
         __ts2gml_env_5.__ts2gml_capture_2.on_step = __ts2gml_value_method(__ts2gml_env_5.__ts2gml_capture_2, method({ __ts2gml_env_5: __ts2gml_env_5, __ts2gml_receiver: __ts2gml_env_5_self, __ts2gml_closure: true }, function () {
             var __ts2gml_env_5 = self.__ts2gml_env_5;
-            with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+            with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                 x += lengthdir_x(__ts2gml_env_5.__ts2gml_capture_2.spd, direction);
                 y += lengthdir_y(__ts2gml_env_5.__ts2gml_capture_2.spd, direction);
             }

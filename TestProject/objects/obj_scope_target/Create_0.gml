@@ -28,35 +28,35 @@ self.deepCaptured = function(__ts2gml_capture_3_parameter) {
     var __ts2gml_env_25 = { __ts2gml_capture_3: __ts2gml_capture_3_parameter };
     return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_25_self, __ts2gml_closure: true }, function () {
         var __ts2gml_env_25 = self.__ts2gml_env_25;
-        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             var __ts2gml_env_26_self = method_get_self(function () { });
             return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_26_self, __ts2gml_closure: true }, function () {
                 var __ts2gml_env_25 = self.__ts2gml_env_25;
-                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                     var __ts2gml_env_27_self = method_get_self(function () { });
                     return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_27_self, __ts2gml_closure: true }, function () {
                         var __ts2gml_env_25 = self.__ts2gml_env_25;
-                        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                             var __ts2gml_env_28_self = method_get_self(function () { });
                             return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_28_self, __ts2gml_closure: true }, function () {
                                 var __ts2gml_env_25 = self.__ts2gml_env_25;
-                                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                                     var __ts2gml_env_29_self = method_get_self(function () { });
                                     return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_29_self, __ts2gml_closure: true }, function () {
                                         var __ts2gml_env_25 = self.__ts2gml_env_25;
-                                        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                                        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                                             var __ts2gml_env_30_self = method_get_self(function () { });
                                             return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_30_self, __ts2gml_closure: true }, function () {
                                                 var __ts2gml_env_25 = self.__ts2gml_env_25;
-                                                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                                                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                                                     var __ts2gml_env_31_self = method_get_self(function () { });
                                                     return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_31_self, __ts2gml_closure: true }, function () {
                                                         var __ts2gml_env_25 = self.__ts2gml_env_25;
-                                                        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                                                        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                                                             var __ts2gml_env_32_self = method_get_self(function () { });
                                                             return method({ __ts2gml_env_25: __ts2gml_env_25, __ts2gml_receiver: __ts2gml_env_32_self, __ts2gml_closure: true }, function () {
                                                                 var __ts2gml_env_25 = self.__ts2gml_env_25;
-                                                                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                                                                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                                                                     return __ts2gml_guard_object(self, obj_scope_target, "self").value + __ts2gml_env_25.__ts2gml_capture_3;
                                                                 }
                                                             });
@@ -80,7 +80,7 @@ self.nativeCaptured = function(__ts2gml_capture_4_parameter) {
     var __ts2gml_env_34 = { __ts2gml_capture_4: __ts2gml_capture_4_parameter };
     return method({ __ts2gml_env_34: __ts2gml_env_34, __ts2gml_receiver: __ts2gml_env_34_self, __ts2gml_closure: true }, function () {
         var __ts2gml_env_34 = self.__ts2gml_env_34;
-        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             x += __ts2gml_env_34.__ts2gml_capture_4;
             return x;
         }
@@ -93,7 +93,7 @@ self.throwingCaptured = function(__ts2gml_capture_5_parameter) {
     return method({ __ts2gml_env_36: __ts2gml_env_36, __ts2gml_receiver: __ts2gml_env_36_self, __ts2gml_this: __ts2gml_env_36_lexical, __ts2gml_closure: true }, function () {
         var __ts2gml_env_36 = self.__ts2gml_env_36;
         var __ts2gml_env_37_this = self.__ts2gml_this;
-        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             var result = __ts2gml_env_37_this.value + __ts2gml_env_36.__ts2gml_capture_5;
             throw result;
         }
@@ -104,7 +104,7 @@ self.otherFactory = function(__ts2gml_capture_6_parameter) {
     var __ts2gml_env_38 = { __ts2gml_capture_6: __ts2gml_capture_6_parameter };
     return method({ __ts2gml_env_38: __ts2gml_env_38, __ts2gml_receiver: __ts2gml_env_38_self, __ts2gml_closure: true }, function () {
         var __ts2gml_env_38 = self.__ts2gml_env_38;
-        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             __ts2gml_env_38.__ts2gml_capture_6 += 1;
             return function () {
                 return other.id;

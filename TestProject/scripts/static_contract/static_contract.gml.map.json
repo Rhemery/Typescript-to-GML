@@ -1,0 +1,312 @@
+{
+  "formatVersion": 1,
+  "generatedFile": "scripts/static_contract/static_contract.gml",
+  "mappings": [
+    {
+      "generatedLine": 2,
+      "source": "typescript/static_contract.ts",
+      "line": 5,
+      "column": 19
+    },
+    {
+      "generatedLine": 16,
+      "source": "typescript/static_contract.ts",
+      "line": 19,
+      "column": 19
+    },
+    {
+      "generatedLine": 19,
+      "source": "typescript/static_contract.ts",
+      "line": 20,
+      "column": 26
+    },
+    {
+      "generatedLine": 22,
+      "source": "typescript/static_contract.ts",
+      "line": 21,
+      "column": 24
+    },
+    {
+      "generatedLine": 25,
+      "source": "typescript/static_contract.ts",
+      "line": 22,
+      "column": 27
+    },
+    {
+      "generatedLine": 30,
+      "source": "typescript/static_contract.ts",
+      "line": 23,
+      "column": 32
+    },
+    {
+      "generatedLine": 49,
+      "source": "typescript/static_contract.ts",
+      "line": 29,
+      "column": 25
+    },
+    {
+      "generatedLine": 50,
+      "source": "typescript/static_contract.ts",
+      "line": 29,
+      "column": 41
+    },
+    {
+      "generatedLine": 56,
+      "source": "typescript/static_contract.ts",
+      "line": 32,
+      "column": 1
+    },
+    {
+      "generatedLine": 57,
+      "source": "typescript/static_contract.ts",
+      "line": 33,
+      "column": 3
+    },
+    {
+      "generatedLine": 58,
+      "source": "typescript/static_contract.ts",
+      "line": 34,
+      "column": 3
+    },
+    {
+      "generatedLine": 59,
+      "source": "typescript/static_contract.ts",
+      "line": 35,
+      "column": 3
+    },
+    {
+      "generatedLine": 60,
+      "source": "typescript/static_contract.ts",
+      "line": 36,
+      "column": 3
+    },
+    {
+      "generatedLine": 61,
+      "source": "typescript/static_contract.ts",
+      "line": 37,
+      "column": 3
+    },
+    {
+      "generatedLine": 62,
+      "source": "typescript/static_contract.ts",
+      "line": 38,
+      "column": 3
+    },
+    {
+      "generatedLine": 63,
+      "source": "typescript/static_contract.ts",
+      "line": 39,
+      "column": 3
+    },
+    {
+      "generatedLine": 64,
+      "source": "typescript/static_contract.ts",
+      "line": 40,
+      "column": 3
+    },
+    {
+      "generatedLine": 65,
+      "source": "typescript/static_contract.ts",
+      "line": 41,
+      "column": 3
+    },
+    {
+      "generatedLine": 66,
+      "source": "typescript/static_contract.ts",
+      "line": 42,
+      "column": 3
+    },
+    {
+      "generatedLine": 67,
+      "source": "typescript/static_contract.ts",
+      "line": 43,
+      "column": 3
+    },
+    {
+      "generatedLine": 68,
+      "source": "typescript/static_contract.ts",
+      "line": 44,
+      "column": 3
+    },
+    {
+      "generatedLine": 69,
+      "source": "typescript/static_contract.ts",
+      "line": 45,
+      "column": 3
+    },
+    {
+      "generatedLine": 70,
+      "source": "typescript/static_contract.ts",
+      "line": 46,
+      "column": 3
+    },
+    {
+      "generatedLine": 71,
+      "source": "typescript/static_contract.ts",
+      "line": 47,
+      "column": 3
+    },
+    {
+      "generatedLine": 72,
+      "source": "typescript/static_contract.ts",
+      "line": 48,
+      "column": 3
+    },
+    {
+      "generatedLine": 79,
+      "source": "typescript/static_contract.ts",
+      "line": 57,
+      "column": 12
+    },
+    {
+      "generatedLine": 82,
+      "source": "typescript/static_contract.ts",
+      "line": 58,
+      "column": 17
+    },
+    {
+      "generatedLine": 88,
+      "source": "typescript/static_contract.ts",
+      "line": 56,
+      "column": 25
+    },
+    {
+      "generatedLine": 89,
+      "source": "typescript/static_contract.ts",
+      "line": 56,
+      "column": 52
+    },
+    {
+      "generatedLine": 103,
+      "source": "typescript/static_contract.ts",
+      "line": 66,
+      "column": 1
+    },
+    {
+      "generatedLine": 104,
+      "source": "typescript/static_contract.ts",
+      "line": 67,
+      "column": 3
+    },
+    {
+      "generatedLine": 105,
+      "source": "typescript/static_contract.ts",
+      "line": 68,
+      "column": 3
+    },
+    {
+      "generatedLine": 106,
+      "source": "typescript/static_contract.ts",
+      "line": 69,
+      "column": 3
+    },
+    {
+      "generatedLine": 107,
+      "source": "typescript/static_contract.ts",
+      "line": 70,
+      "column": 3
+    },
+    {
+      "generatedLine": 108,
+      "source": "typescript/static_contract.ts",
+      "line": 71,
+      "column": 3
+    },
+    {
+      "generatedLine": 109,
+      "source": "typescript/static_contract.ts",
+      "line": 72,
+      "column": 3
+    },
+    {
+      "generatedLine": 110,
+      "source": "typescript/static_contract.ts",
+      "line": 73,
+      "column": 3
+    },
+    {
+      "generatedLine": 111,
+      "source": "typescript/static_contract.ts",
+      "line": 74,
+      "column": 3
+    },
+    {
+      "generatedLine": 112,
+      "source": "typescript/static_contract.ts",
+      "line": 75,
+      "column": 3
+    },
+    {
+      "generatedLine": 113,
+      "source": "typescript/static_contract.ts",
+      "line": 76,
+      "column": 3
+    },
+    {
+      "generatedLine": 114,
+      "source": "typescript/static_contract.ts",
+      "line": 77,
+      "column": 3
+    },
+    {
+      "generatedLine": 115,
+      "source": "typescript/static_contract.ts",
+      "line": 78,
+      "column": 3
+    },
+    {
+      "generatedLine": 116,
+      "source": "typescript/static_contract.ts",
+      "line": 79,
+      "column": 3
+    },
+    {
+      "generatedLine": 117,
+      "source": "typescript/static_contract.ts",
+      "line": 80,
+      "column": 3
+    },
+    {
+      "generatedLine": 118,
+      "source": "typescript/static_contract.ts",
+      "line": 81,
+      "column": 3
+    },
+    {
+      "generatedLine": 119,
+      "source": "typescript/static_contract.ts",
+      "line": 82,
+      "column": 3
+    },
+    {
+      "generatedLine": 120,
+      "source": "typescript/static_contract.ts",
+      "line": 83,
+      "column": 3
+    },
+    {
+      "generatedLine": 121,
+      "source": "typescript/static_contract.ts",
+      "line": 84,
+      "column": 3
+    },
+    {
+      "generatedLine": 122,
+      "source": "typescript/static_contract.ts",
+      "line": 85,
+      "column": 3
+    },
+    {
+      "generatedLine": 123,
+      "source": "typescript/static_contract.ts",
+      "line": 86,
+      "column": 3
+    },
+    {
+      "generatedLine": 124,
+      "source": "typescript/static_contract.ts",
+      "line": 87,
+      "column": 3
+    }
+  ]
+}

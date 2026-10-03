@@ -74,6 +74,7 @@ This inventories stable compiler codes, not an exhaustive compatibility or execu
 | TS2GML1068 | Binding '…' conflicts with a GameMaker function, constant, or asset name. |
 | TS2GML1069 | Coercive equality has no supported JavaScript-compatible GML lowering. |
 | TS2GML1070 | An enum value must be finite.<br>A numeric literal must be finite. |
+| TS2GML1071 | gm_static must initialize an ordinary instance field.<br>gm_static expects one parameterless expression arrow.<br>gm_static factories cannot depend on instance context.<br>gm_static factories cannot contain nested functions.<br>gm_static is a compiler intrinsic and cannot be used as a runtime value.<br>gm_static is only supported in ordinary constructor classes, not GMObject or GMRoom assets. |
 | TS2GML2001 | Anonymous classes cannot become GML constructors. |
 | TS2GML2002 | A static member receiver cannot mix class and instance types.<br>Static member element access requires a literal GML member name. |
 | TS2GML2003 | Class accessors are not supported yet. |

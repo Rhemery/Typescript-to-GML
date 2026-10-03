@@ -159,6 +159,19 @@ const expiryType: GM.Constant.TimeSourceExpiryType = time_source_expire_after;
 // @ts-expect-error An expiry mode is not a time-source ID or parent constant.
 time_source_create(expiryType, 1, time_source_units_frames, () => undefined);
 const macroValue: number = gm_macro<number>("4", { Debug: "8" });
+class NativeStaticTypes {
+  value = gm_static(() => 4);
+  data = gm_static(() => ({ label: "shared" }));
+}
+const nativeStaticTypes = new NativeStaticTypes();
+const nativeStaticNumber: number = nativeStaticTypes.value;
+const nativeStaticLabel: string = nativeStaticTypes.data.label;
+// @ts-expect-error Native static fields retain their inferred instance type.
+nativeStaticTypes.value = "wrong";
+// @ts-expect-error Native static storage does not declare a TypeScript class member.
+NativeStaticTypes.value;
+// @ts-expect-error An explicit field type constrains the factory result.
+gm_static<number>(() => "wrong");
 const numberList = ds_list_create<number>();
 ds_list_add(numberList, 1);
 const listValue: number | undefined = ds_list_find_value(numberList, 0);
@@ -225,3 +238,78 @@ const nativeMapped: string[] = array_map(nativeNumbers, (value) => string(value)
 array_map_ext(nativeNumbers, (value) => string(value));
 void nativeFirst;
 void nativeMapped;
+
+// Native arrays can contain authored interfaces, classes, and unconstrained values.
+const nativeSettings: GlobalSettings[] = [{ title: "Game", weapons: [new GlobalWeapon()] }];
+const nativeWeapons = [new GlobalWeapon()];
+const nativeUnknowns: unknown[] = nativeSettings;
+const nativeArrayLength: <T>(values: readonly T[]) => number = array_length;
+declare const nativeArrayUnion: number[] | string[];
+array_length(nativeArrayUnion);
+array_resize(nativeArrayUnion, 2);
+array_delete(nativeArrayUnion, 0, 1);
+array_equals(nativeArrayUnion, nativeSettings);
+array_length(nativeSettings);
+array_length(nativeWeapons);
+array_length(nativeUnknowns);
+array_length([nativeSettings]);
+array_length_1d(nativeSettings);
+array_length_2d([nativeSettings], 0);
+array_height_2d([nativeSettings]);
+array_delete(nativeSettings, 0, 1);
+array_resize(nativeSettings, 2);
+array_reverse_ext(nativeSettings);
+array_shuffle_ext(nativeSettings);
+array_unique_ext(nativeSettings);
+array_equals(nativeSettings, nativeWeapons);
+array_contains_ext(nativeSettings, nativeSettings);
+const nativeUnion: (GlobalSettings | GlobalWeapon)[] = array_union(nativeSettings, nativeWeapons);
+const nativeIntersection: GlobalSettings[] = array_intersection(nativeSettings, nativeWeapons);
+const nativeCopy: GlobalSettings[] = array_copy_while(nativeSettings, (value, index) => value.title.length > index);
+array_all(nativeSettings, (value) => value.title.length > 0);
+array_any(nativeSettings, (value) => value.weapons.length > 0);
+array_find_index(nativeSettings, (value) => value.title === "Game");
+array_foreach(nativeSettings, (value, index) => {
+  const title: string = value.title;
+  const position: number = index;
+  // @ts-expect-error Array callbacks retain the element type.
+  const damage: number = value.damage;
+  void title;
+  void position;
+  void damage;
+});
+array_reduce(nativeSettings, (previous, value) => previous + value.title.length, 0);
+const nativeFiltered: GlobalSettings[] = array_filter(nativeSettings, (value) => value.title.length > 0);
+const nativeTitles: string[] = array_map(nativeSettings, (value) => value.title);
+const nativeReadonly: readonly GlobalSettings[] = nativeSettings;
+array_length(nativeReadonly);
+array_all(nativeReadonly, (value) => value.title.length > 0);
+array_equals(nativeReadonly, nativeWeapons);
+array_copy(nativeSettings, 0, nativeReadonly, 0, 1);
+// @ts-expect-error Length requires an array.
+array_length({ length: 1 });
+// @ts-expect-error Mutating functions require a mutable array.
+array_resize(nativeReadonly, 1);
+// @ts-expect-error Copied elements must match the destination array.
+array_copy(nativeSettings, 0, nativeWeapons, 0, 1);
+// @ts-expect-error Predicates must return a boolean.
+array_all(nativeSettings, (value) => value.title);
+
+// Runtime argument arrays must also accept authored values without an index signature.
+method_call(() => {}, nativeSettings);
+script_execute_ext(() => {}, nativeWeapons);
+show_debug_message_ext("{0}", nativeSettings);
+string_concat_ext(nativeSettings);
+string_join_ext(",", nativeWeapons);
+string_ext("{0}", nativeUnknowns);
+time_source_create(time_source_global, 1, time_source_units_frames, () => {}, nativeSettings);
+// @ts-expect-error Runtime argument arrays still require an array.
+method_call(() => {}, { title: "Game" });
+// @ts-expect-error Explicitly typed runtime arrays retain their element constraints.
+shader_set_uniform_i_array(0, nativeSettings);
+void nativeUnion;
+void nativeIntersection;
+void nativeCopy;
+void nativeFiltered;
+void nativeTitles;
+void nativeArrayLength;

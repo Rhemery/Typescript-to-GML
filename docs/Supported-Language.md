@@ -16,7 +16,7 @@ This is not a JavaScript compatibility layer. A feature is supported only when i
 | Operators | JavaScript `instanceof`, `in`, `typeof`, `void`, and collection/property `delete` through defined GML lowering |
 | Null access | Property-only optional chains such as `player?.transform?.position.x`; standalone method calls such as `this.weapon?.onEndStep()` |
 | Modules | Type-only imports/exports; named exported declarations become GameMaker globals without module isolation |
-| Compiler forms | `gm_macro`, `gm_with`, `gm_self`, `gm_other`, `GMObject`, and `GMRoom` |
+| Compiler forms | `gm_macro`, `gm_static`, `gm_with`, `gm_self`, `gm_other`, `GMObject`, and `GMRoom` |
 
 Typed `gm_self<T>()` and `gm_other<T>()` context assertions receive runtime object guards by default. Repeated assertions of the same context and object type are checked once at the containing function or event boundary. The `maximum` runtime guard level additionally checks reifiable values inserted through typed arrays and compiler collections. Guard profiles come from the project-level `ts2gml.config.json`; see [runtime type guards](Runtime-Guards.md).
 
@@ -40,9 +40,25 @@ function nextCount(): number {
 }
 ```
 
-The compiler initializes a shared class struct at the class declaration, installs methods before evaluating field initializers, and preserves field initializer order. This also works for `GMObject` classes without creating an instance or running an event. Inherited static methods receive the class used to call them as `this`; arrows capture their defining class context. Static and instance members can share a name. GML's native `static` initializes on the first function call, so TypeScript class statics require this additional lowering. Ordinary instance methods continue to use native GML constructor statics.
+The compiler initializes a shared class struct at the class declaration, installs methods before evaluating field initializers, and creates each field in declaration order. An early initializer can therefore read an inherited value before a later child declaration hides it; missing fields read as `undefined`. A field without an initializer becomes `undefined` at its declaration, including when an earlier initializer already wrote that field. This also works for `GMObject` classes without creating an instance or running an event. Inherited static methods receive the class used to call them as `this`; arrows capture their defining class context. Static and instance members can share a name. Ordinary instance methods continue to use native GML constructor statics.
 
 Use `Counter.count` or `Counter["count"]` for static member access. Dynamic static member keys, static initialization blocks, static accessors, and `super.member` remain unsupported. `GMRoom` classes still only define their room creation event. Startup initializers follow GameMaker's script initialization order; keep classes with dependent static initializers together, with parents before children.
+
+Use `gm_static` explicitly for native GML storage on an instance field:
+
+```ts
+class Enemy {
+  speed = gm_static(() => 4);
+  settings = gm_static(() => ({ enabled: true }));
+  readSpeed() { return this.speed; }
+}
+```
+
+These fields emit `static speed = 4` and `static settings = { enabled: true }` inside the GML constructor. Their factories run once on first construction, before ordinary instance fields and the constructor body. Instances read the shared values until an assignment such as `enemy.speed = 8` or `this.speed += 1` creates an instance override. Mutating a shared struct's members affects other instances still referencing that struct. A child can declare its own native static without replacing the parent's storage.
+
+`gm_static` preserves an instance member's TypeScript type; access it through `this.speed` or `enemy.speed`. It does not declare `Enemy.speed` as a TypeScript class member. Ordinary TypeScript `static` remains separate and initializes at class declaration, even if a native static instance field uses the same name.
+
+Only direct initializers of ordinary constructor-class instance fields are supported. Supply one parameterless expression arrow. Factories cannot contain nested functions or directly reference `this`, `super`, `self`, `other`, `gm_self`, `gm_other`, or `arguments`. Use literals, class statics, or named initialization functions that do not require initialized instance state. Blocks, factory aliases, runtime references to `gm_static`, and `GMObject`/`GMRoom` fields are rejected. This intrinsic deliberately requests GML behavior and is not a JavaScript runtime function.
 
 ## Enums
 

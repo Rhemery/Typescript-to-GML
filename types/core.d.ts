@@ -138,6 +138,14 @@ declare function gm_macro<T = GMValue>(
   configurations?: { readonly [configuration: string]: string },
 ): T;
 
+/**
+ * Defines an instance field in native GML constructor static storage.
+ * The parameterless expression factory runs once, on first construction, before instance fields.
+ * The factory cannot contain nested functions or reference this, self, other, or context assertions.
+ * Instance writes shadow the shared value. Only ordinary constructor fields support this intrinsic.
+ */
+declare function gm_static<T>(initializer: () => T): T;
+
 interface GMRoomClass {
   readonly __ts2gmlRoomClass: true;
 }

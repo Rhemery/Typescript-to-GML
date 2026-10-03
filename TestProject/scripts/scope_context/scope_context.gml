@@ -57,11 +57,10 @@ function ScopeContextStruct(_value) constructor {
 method(__ts2gml_class_statics(obj_scope_target, true), function() {
     self.increment = method(undefined, function() {
         __ts2gml_class_statics(self.__ts2gml_class).total += 1;
-        return __ts2gml_class_statics(self.__ts2gml_class).total;
+        return variable_struct_get(__ts2gml_class_statics(self.__ts2gml_class), "total");
     });
     self.identity = method(undefined, function() {
         return self.__ts2gml_class;
     });
-    self.total = undefined;
     self.total = 5;
 })();

@@ -123,1107 +123,1221 @@
       "column": 76
     },
     {
-      "generatedLine": 42,
+      "generatedLine": 37,
       "source": "typescript/semantic_contract.ts",
-      "line": 18,
+      "line": 13,
+      "column": 1
+    },
+    {
+      "generatedLine": 38,
+      "source": "typescript/semantic_contract.ts",
+      "line": 14,
+      "column": 3
+    },
+    {
+      "generatedLine": 39,
+      "source": "typescript/semantic_contract.ts",
+      "line": 15,
+      "column": 3
+    },
+    {
+      "generatedLine": 47,
+      "source": "typescript/semantic_contract.ts",
+      "line": 22,
       "column": 32
     },
     {
-      "generatedLine": 45,
+      "generatedLine": 50,
       "source": "typescript/semantic_contract.ts",
-      "line": 19,
+      "line": 23,
       "column": 33
-    },
-    {
-      "generatedLine": 53,
-      "source": "typescript/semantic_contract.ts",
-      "line": 21,
-      "column": 53
-    },
-    {
-      "generatedLine": 54,
-      "source": "typescript/semantic_contract.ts",
-      "line": 21,
-      "column": 78
     },
     {
       "generatedLine": 58,
       "source": "typescript/semantic_contract.ts",
-      "line": 24,
-      "column": 1
+      "line": 25,
+      "column": 53
     },
     {
       "generatedLine": 59,
       "source": "typescript/semantic_contract.ts",
       "line": 25,
-      "column": 3
-    },
-    {
-      "generatedLine": 60,
-      "source": "typescript/semantic_contract.ts",
-      "line": 26,
-      "column": 3
-    },
-    {
-      "generatedLine": 61,
-      "source": "typescript/semantic_contract.ts",
-      "line": 27,
-      "column": 3
-    },
-    {
-      "generatedLine": 62,
-      "source": "typescript/semantic_contract.ts",
-      "line": 28,
-      "column": 3
+      "column": 78
     },
     {
       "generatedLine": 63,
+      "source": "typescript/semantic_contract.ts",
+      "line": 28,
+      "column": 1
+    },
+    {
+      "generatedLine": 64,
       "source": "typescript/semantic_contract.ts",
       "line": 29,
       "column": 3
     },
     {
-      "generatedLine": 64,
+      "generatedLine": 65,
       "source": "typescript/semantic_contract.ts",
       "line": 30,
       "column": 3
     },
     {
-      "generatedLine": 65,
+      "generatedLine": 66,
       "source": "typescript/semantic_contract.ts",
       "line": 31,
       "column": 3
     },
     {
-      "generatedLine": 66,
+      "generatedLine": 67,
       "source": "typescript/semantic_contract.ts",
       "line": 32,
       "column": 3
     },
     {
-      "generatedLine": 67,
+      "generatedLine": 68,
       "source": "typescript/semantic_contract.ts",
       "line": 33,
       "column": 3
     },
     {
-      "generatedLine": 68,
+      "generatedLine": 69,
       "source": "typescript/semantic_contract.ts",
       "line": 34,
       "column": 3
     },
     {
-      "generatedLine": 69,
+      "generatedLine": 70,
       "source": "typescript/semantic_contract.ts",
       "line": 35,
       "column": 3
     },
     {
-      "generatedLine": 70,
+      "generatedLine": 71,
       "source": "typescript/semantic_contract.ts",
       "line": 36,
       "column": 3
     },
     {
-      "generatedLine": 71,
+      "generatedLine": 72,
       "source": "typescript/semantic_contract.ts",
       "line": 37,
       "column": 3
     },
     {
-      "generatedLine": 72,
+      "generatedLine": 73,
       "source": "typescript/semantic_contract.ts",
       "line": 38,
       "column": 3
     },
     {
-      "generatedLine": 73,
+      "generatedLine": 74,
       "source": "typescript/semantic_contract.ts",
       "line": 39,
       "column": 3
     },
     {
-      "generatedLine": 74,
+      "generatedLine": 75,
       "source": "typescript/semantic_contract.ts",
       "line": 40,
       "column": 3
     },
     {
-      "generatedLine": 75,
+      "generatedLine": 76,
       "source": "typescript/semantic_contract.ts",
       "line": 41,
       "column": 3
     },
     {
-      "generatedLine": 76,
+      "generatedLine": 77,
       "source": "typescript/semantic_contract.ts",
       "line": 42,
       "column": 3
     },
     {
-      "generatedLine": 77,
-      "source": "typescript/semantic_contract.ts",
-      "line": 43,
-      "column": 3
-    },
-    {
-      "generatedLine": 78,
-      "source": "typescript/semantic_contract.ts",
-      "line": 44,
-      "column": 3
-    },
-    {
-      "generatedLine": 79,
+      "generatedLine": 80,
       "source": "typescript/semantic_contract.ts",
       "line": 45,
       "column": 3
     },
     {
-      "generatedLine": 80,
-      "source": "typescript/semantic_contract.ts",
-      "line": 46,
-      "column": 3
-    },
-    {
       "generatedLine": 81,
       "source": "typescript/semantic_contract.ts",
-      "line": 47,
-      "column": 3
+      "line": 46,
+      "column": 5
     },
     {
       "generatedLine": 82,
       "source": "typescript/semantic_contract.ts",
-      "line": 48,
-      "column": 3
+      "line": 47,
+      "column": 5
     },
     {
       "generatedLine": 83,
       "source": "typescript/semantic_contract.ts",
-      "line": 49,
-      "column": 3
+      "line": 48,
+      "column": 5
     },
     {
-      "generatedLine": 86,
+      "generatedLine": 84,
+      "source": "typescript/semantic_contract.ts",
+      "line": 49,
+      "column": 5
+    },
+    {
+      "generatedLine": 85,
       "source": "typescript/semantic_contract.ts",
       "line": 50,
-      "column": 3
-    },
-    {
-      "generatedLine": 87,
-      "source": "typescript/semantic_contract.ts",
-      "line": 51,
-      "column": 3
-    },
-    {
-      "generatedLine": 88,
-      "source": "typescript/semantic_contract.ts",
-      "line": 52,
-      "column": 3
+      "column": 5
     },
     {
       "generatedLine": 89,
       "source": "typescript/semantic_contract.ts",
-      "line": 53,
-      "column": 3
+      "line": 57,
+      "column": 5
     },
     {
       "generatedLine": 90,
       "source": "typescript/semantic_contract.ts",
-      "line": 54,
-      "column": 3
+      "line": 58,
+      "column": 5
     },
     {
       "generatedLine": 91,
       "source": "typescript/semantic_contract.ts",
-      "line": 55,
-      "column": 3
+      "line": 59,
+      "column": 5
     },
     {
       "generatedLine": 92,
       "source": "typescript/semantic_contract.ts",
-      "line": 56,
-      "column": 3
+      "line": 60,
+      "column": 5
     },
     {
-      "generatedLine": 93,
+      "generatedLine": 96,
       "source": "typescript/semantic_contract.ts",
-      "line": 57,
-      "column": 3
+      "line": 67,
+      "column": 5
     },
     {
-      "generatedLine": 94,
+      "generatedLine": 97,
       "source": "typescript/semantic_contract.ts",
-      "line": 58,
-      "column": 3
+      "line": 68,
+      "column": 5
     },
     {
-      "generatedLine": 95,
+      "generatedLine": 98,
       "source": "typescript/semantic_contract.ts",
-      "line": 59,
-      "column": 3
+      "line": 69,
+      "column": 5
+    },
+    {
+      "generatedLine": 99,
+      "source": "typescript/semantic_contract.ts",
+      "line": 70,
+      "column": 5
     },
     {
       "generatedLine": 102,
       "source": "typescript/semantic_contract.ts",
-      "line": 61,
-      "column": 3
+      "line": 75,
+      "column": 5
     },
     {
       "generatedLine": 103,
       "source": "typescript/semantic_contract.ts",
-      "line": 62,
-      "column": 3
-    },
-    {
-      "generatedLine": 104,
-      "source": "typescript/semantic_contract.ts",
-      "line": 63,
-      "column": 3
+      "line": 76,
+      "column": 5
     },
     {
       "generatedLine": 105,
-      "source": "typescript/semantic_contract.ts",
-      "line": 64,
-      "column": 3
-    },
-    {
-      "generatedLine": 112,
-      "source": "typescript/semantic_contract.ts",
-      "line": 66,
-      "column": 3
-    },
-    {
-      "generatedLine": 113,
-      "source": "typescript/semantic_contract.ts",
-      "line": 67,
-      "column": 3
-    },
-    {
-      "generatedLine": 114,
-      "source": "typescript/semantic_contract.ts",
-      "line": 68,
-      "column": 3
-    },
-    {
-      "generatedLine": 115,
-      "source": "typescript/semantic_contract.ts",
-      "line": 69,
-      "column": 3
-    },
-    {
-      "generatedLine": 116,
-      "source": "typescript/semantic_contract.ts",
-      "line": 70,
-      "column": 3
-    },
-    {
-      "generatedLine": 123,
-      "source": "typescript/semantic_contract.ts",
-      "line": 72,
-      "column": 3
-    },
-    {
-      "generatedLine": 124,
-      "source": "typescript/semantic_contract.ts",
-      "line": 73,
-      "column": 3
-    },
-    {
-      "generatedLine": 125,
-      "source": "typescript/semantic_contract.ts",
-      "line": 74,
-      "column": 3
-    },
-    {
-      "generatedLine": 134,
-      "source": "typescript/semantic_contract.ts",
-      "line": 76,
-      "column": 3
-    },
-    {
-      "generatedLine": 135,
-      "source": "typescript/semantic_contract.ts",
-      "line": 77,
-      "column": 3
-    },
-    {
-      "generatedLine": 136,
       "source": "typescript/semantic_contract.ts",
       "line": 78,
       "column": 3
     },
     {
-      "generatedLine": 144,
+      "generatedLine": 106,
       "source": "typescript/semantic_contract.ts",
       "line": 79,
-      "column": 8
+      "column": 3
     },
     {
-      "generatedLine": 145,
+      "generatedLine": 107,
       "source": "typescript/semantic_contract.ts",
       "line": 80,
       "column": 3
     },
     {
-      "generatedLine": 146,
+      "generatedLine": 108,
       "source": "typescript/semantic_contract.ts",
       "line": 81,
       "column": 3
     },
     {
-      "generatedLine": 155,
+      "generatedLine": 109,
+      "source": "typescript/semantic_contract.ts",
+      "line": 82,
+      "column": 3
+    },
+    {
+      "generatedLine": 110,
       "source": "typescript/semantic_contract.ts",
       "line": 83,
       "column": 3
     },
     {
-      "generatedLine": 156,
+      "generatedLine": 111,
       "source": "typescript/semantic_contract.ts",
       "line": 84,
       "column": 3
     },
     {
-      "generatedLine": 157,
+      "generatedLine": 112,
       "source": "typescript/semantic_contract.ts",
       "line": 85,
       "column": 3
     },
     {
-      "generatedLine": 158,
+      "generatedLine": 113,
       "source": "typescript/semantic_contract.ts",
       "line": 86,
       "column": 3
     },
     {
-      "generatedLine": 159,
+      "generatedLine": 114,
       "source": "typescript/semantic_contract.ts",
       "line": 87,
       "column": 3
     },
     {
-      "generatedLine": 160,
+      "generatedLine": 115,
       "source": "typescript/semantic_contract.ts",
       "line": 88,
       "column": 3
     },
     {
-      "generatedLine": 161,
+      "generatedLine": 118,
       "source": "typescript/semantic_contract.ts",
       "line": 89,
       "column": 3
     },
     {
-      "generatedLine": 162,
+      "generatedLine": 119,
       "source": "typescript/semantic_contract.ts",
       "line": 90,
       "column": 3
     },
     {
-      "generatedLine": 163,
+      "generatedLine": 120,
       "source": "typescript/semantic_contract.ts",
       "line": 91,
       "column": 3
     },
     {
-      "generatedLine": 164,
+      "generatedLine": 121,
       "source": "typescript/semantic_contract.ts",
       "line": 92,
       "column": 3
     },
     {
-      "generatedLine": 165,
+      "generatedLine": 122,
       "source": "typescript/semantic_contract.ts",
       "line": 93,
       "column": 3
     },
     {
-      "generatedLine": 166,
+      "generatedLine": 123,
       "source": "typescript/semantic_contract.ts",
       "line": 94,
       "column": 3
     },
     {
-      "generatedLine": 167,
+      "generatedLine": 124,
       "source": "typescript/semantic_contract.ts",
       "line": 95,
       "column": 3
     },
     {
-      "generatedLine": 168,
+      "generatedLine": 125,
       "source": "typescript/semantic_contract.ts",
       "line": 96,
       "column": 3
     },
     {
-      "generatedLine": 171,
+      "generatedLine": 126,
       "source": "typescript/semantic_contract.ts",
       "line": 97,
       "column": 3
     },
     {
-      "generatedLine": 172,
+      "generatedLine": 127,
       "source": "typescript/semantic_contract.ts",
       "line": 98,
       "column": 3
     },
     {
-      "generatedLine": 173,
-      "source": "typescript/semantic_contract.ts",
-      "line": 99,
-      "column": 3
-    },
-    {
-      "generatedLine": 174,
+      "generatedLine": 134,
       "source": "typescript/semantic_contract.ts",
       "line": 100,
       "column": 3
     },
     {
-      "generatedLine": 175,
+      "generatedLine": 135,
       "source": "typescript/semantic_contract.ts",
       "line": 101,
       "column": 3
     },
     {
-      "generatedLine": 176,
+      "generatedLine": 136,
       "source": "typescript/semantic_contract.ts",
       "line": 102,
       "column": 3
     },
     {
-      "generatedLine": 177,
+      "generatedLine": 137,
       "source": "typescript/semantic_contract.ts",
       "line": 103,
       "column": 3
     },
     {
-      "generatedLine": 178,
-      "source": "typescript/semantic_contract.ts",
-      "line": 104,
-      "column": 3
-    },
-    {
-      "generatedLine": 179,
+      "generatedLine": 144,
       "source": "typescript/semantic_contract.ts",
       "line": 105,
       "column": 3
     },
     {
-      "generatedLine": 182,
+      "generatedLine": 145,
       "source": "typescript/semantic_contract.ts",
       "line": 106,
       "column": 3
     },
     {
-      "generatedLine": 183,
+      "generatedLine": 146,
       "source": "typescript/semantic_contract.ts",
       "line": 107,
       "column": 3
     },
     {
-      "generatedLine": 186,
+      "generatedLine": 147,
       "source": "typescript/semantic_contract.ts",
       "line": 108,
       "column": 3
     },
     {
-      "generatedLine": 187,
+      "generatedLine": 148,
       "source": "typescript/semantic_contract.ts",
       "line": 109,
       "column": 3
     },
     {
-      "generatedLine": 188,
-      "source": "typescript/semantic_contract.ts",
-      "line": 110,
-      "column": 3
-    },
-    {
-      "generatedLine": 189,
+      "generatedLine": 155,
       "source": "typescript/semantic_contract.ts",
       "line": 111,
       "column": 3
     },
     {
-      "generatedLine": 190,
+      "generatedLine": 156,
       "source": "typescript/semantic_contract.ts",
       "line": 112,
       "column": 3
     },
     {
-      "generatedLine": 191,
+      "generatedLine": 157,
       "source": "typescript/semantic_contract.ts",
       "line": 113,
       "column": 3
     },
     {
-      "generatedLine": 192,
-      "source": "typescript/semantic_contract.ts",
-      "line": 114,
-      "column": 3
-    },
-    {
-      "generatedLine": 193,
+      "generatedLine": 166,
       "source": "typescript/semantic_contract.ts",
       "line": 115,
       "column": 3
     },
     {
-      "generatedLine": 194,
+      "generatedLine": 167,
       "source": "typescript/semantic_contract.ts",
       "line": 116,
       "column": 3
     },
     {
-      "generatedLine": 195,
+      "generatedLine": 168,
       "source": "typescript/semantic_contract.ts",
       "line": 117,
       "column": 3
     },
     {
-      "generatedLine": 196,
+      "generatedLine": 176,
       "source": "typescript/semantic_contract.ts",
       "line": 118,
-      "column": 3
+      "column": 8
     },
     {
-      "generatedLine": 197,
+      "generatedLine": 177,
       "source": "typescript/semantic_contract.ts",
       "line": 119,
       "column": 3
     },
     {
-      "generatedLine": 198,
+      "generatedLine": 178,
       "source": "typescript/semantic_contract.ts",
       "line": 120,
       "column": 3
     },
     {
-      "generatedLine": 199,
-      "source": "typescript/semantic_contract.ts",
-      "line": 121,
-      "column": 3
-    },
-    {
-      "generatedLine": 200,
+      "generatedLine": 187,
       "source": "typescript/semantic_contract.ts",
       "line": 122,
       "column": 3
     },
     {
-      "generatedLine": 203,
+      "generatedLine": 188,
       "source": "typescript/semantic_contract.ts",
-      "line": 125,
-      "column": 1
+      "line": 123,
+      "column": 3
     },
     {
-      "generatedLine": 205,
+      "generatedLine": 189,
+      "source": "typescript/semantic_contract.ts",
+      "line": 124,
+      "column": 3
+    },
+    {
+      "generatedLine": 190,
+      "source": "typescript/semantic_contract.ts",
+      "line": 125,
+      "column": 3
+    },
+    {
+      "generatedLine": 191,
       "source": "typescript/semantic_contract.ts",
       "line": 126,
       "column": 3
     },
     {
-      "generatedLine": 206,
+      "generatedLine": 192,
       "source": "typescript/semantic_contract.ts",
       "line": 127,
       "column": 3
     },
     {
-      "generatedLine": 210,
+      "generatedLine": 193,
       "source": "typescript/semantic_contract.ts",
       "line": 128,
       "column": 3
     },
     {
-      "generatedLine": 212,
-      "source": "typescript/semantic_contract.ts",
-      "line": 128,
-      "column": 33
-    },
-    {
-      "generatedLine": 213,
-      "source": "typescript/semantic_contract.ts",
-      "line": 128,
-      "column": 50
-    },
-    {
-      "generatedLine": 215,
+      "generatedLine": 194,
       "source": "typescript/semantic_contract.ts",
       "line": 129,
       "column": 3
     },
     {
-      "generatedLine": 216,
+      "generatedLine": 195,
       "source": "typescript/semantic_contract.ts",
       "line": 130,
       "column": 3
     },
     {
-      "generatedLine": 219,
+      "generatedLine": 196,
       "source": "typescript/semantic_contract.ts",
-      "line": 133,
-      "column": 1
+      "line": 131,
+      "column": 3
     },
     {
-      "generatedLine": 221,
+      "generatedLine": 197,
+      "source": "typescript/semantic_contract.ts",
+      "line": 132,
+      "column": 3
+    },
+    {
+      "generatedLine": 198,
+      "source": "typescript/semantic_contract.ts",
+      "line": 133,
+      "column": 3
+    },
+    {
+      "generatedLine": 199,
       "source": "typescript/semantic_contract.ts",
       "line": 134,
       "column": 3
     },
     {
-      "generatedLine": 232,
+      "generatedLine": 200,
       "source": "typescript/semantic_contract.ts",
-      "line": 137,
-      "column": 1
+      "line": 135,
+      "column": 3
     },
     {
-      "generatedLine": 234,
+      "generatedLine": 203,
+      "source": "typescript/semantic_contract.ts",
+      "line": 136,
+      "column": 3
+    },
+    {
+      "generatedLine": 204,
+      "source": "typescript/semantic_contract.ts",
+      "line": 137,
+      "column": 3
+    },
+    {
+      "generatedLine": 205,
       "source": "typescript/semantic_contract.ts",
       "line": 138,
       "column": 3
     },
     {
-      "generatedLine": 236,
-      "source": "typescript/semantic_contract.ts",
-      "line": 138,
-      "column": 21
-    },
-    {
-      "generatedLine": 238,
+      "generatedLine": 206,
       "source": "typescript/semantic_contract.ts",
       "line": 139,
       "column": 3
     },
     {
-      "generatedLine": 239,
+      "generatedLine": 207,
       "source": "typescript/semantic_contract.ts",
       "line": 140,
       "column": 3
     },
     {
-      "generatedLine": 249,
+      "generatedLine": 208,
       "source": "typescript/semantic_contract.ts",
-      "line": 153,
-      "column": 5
+      "line": 141,
+      "column": 3
     },
     {
-      "generatedLine": 253,
+      "generatedLine": 209,
       "source": "typescript/semantic_contract.ts",
-      "line": 153,
-      "column": 20
+      "line": 142,
+      "column": 3
     },
     {
-      "generatedLine": 254,
+      "generatedLine": 210,
       "source": "typescript/semantic_contract.ts",
-      "line": 153,
-      "column": 42
+      "line": 143,
+      "column": 3
     },
     {
-      "generatedLine": 262,
+      "generatedLine": 211,
       "source": "typescript/semantic_contract.ts",
-      "line": 156,
-      "column": 5
+      "line": 144,
+      "column": 3
     },
     {
-      "generatedLine": 279,
+      "generatedLine": 214,
       "source": "typescript/semantic_contract.ts",
-      "line": 158,
-      "column": 15
+      "line": 145,
+      "column": 3
     },
     {
-      "generatedLine": 280,
+      "generatedLine": 215,
       "source": "typescript/semantic_contract.ts",
-      "line": 158,
-      "column": 35
+      "line": 146,
+      "column": 3
     },
     {
-      "generatedLine": 289,
+      "generatedLine": 218,
       "source": "typescript/semantic_contract.ts",
       "line": 147,
-      "column": 5
+      "column": 3
     },
     {
-      "generatedLine": 291,
+      "generatedLine": 219,
       "source": "typescript/semantic_contract.ts",
       "line": 148,
-      "column": 5
+      "column": 3
     },
     {
-      "generatedLine": 298,
+      "generatedLine": 220,
       "source": "typescript/semantic_contract.ts",
       "line": 149,
-      "column": 5
+      "column": 3
     },
     {
-      "generatedLine": 306,
+      "generatedLine": 221,
+      "source": "typescript/semantic_contract.ts",
+      "line": 150,
+      "column": 3
+    },
+    {
+      "generatedLine": 222,
+      "source": "typescript/semantic_contract.ts",
+      "line": 151,
+      "column": 3
+    },
+    {
+      "generatedLine": 223,
+      "source": "typescript/semantic_contract.ts",
+      "line": 152,
+      "column": 3
+    },
+    {
+      "generatedLine": 224,
+      "source": "typescript/semantic_contract.ts",
+      "line": 153,
+      "column": 3
+    },
+    {
+      "generatedLine": 225,
+      "source": "typescript/semantic_contract.ts",
+      "line": 154,
+      "column": 3
+    },
+    {
+      "generatedLine": 226,
+      "source": "typescript/semantic_contract.ts",
+      "line": 155,
+      "column": 3
+    },
+    {
+      "generatedLine": 227,
+      "source": "typescript/semantic_contract.ts",
+      "line": 156,
+      "column": 3
+    },
+    {
+      "generatedLine": 228,
+      "source": "typescript/semantic_contract.ts",
+      "line": 157,
+      "column": 3
+    },
+    {
+      "generatedLine": 229,
+      "source": "typescript/semantic_contract.ts",
+      "line": 158,
+      "column": 3
+    },
+    {
+      "generatedLine": 230,
       "source": "typescript/semantic_contract.ts",
       "line": 159,
-      "column": 33
+      "column": 3
     },
     {
-      "generatedLine": 318,
+      "generatedLine": 231,
       "source": "typescript/semantic_contract.ts",
-      "line": 162,
+      "line": 160,
+      "column": 3
+    },
+    {
+      "generatedLine": 232,
+      "source": "typescript/semantic_contract.ts",
+      "line": 161,
+      "column": 3
+    },
+    {
+      "generatedLine": 235,
+      "source": "typescript/semantic_contract.ts",
+      "line": 164,
       "column": 1
     },
     {
-      "generatedLine": 320,
-      "source": "typescript/semantic_contract.ts",
-      "line": 163,
-      "column": 3
-    },
-    {
-      "generatedLine": 321,
-      "source": "typescript/semantic_contract.ts",
-      "line": 164,
-      "column": 3
-    },
-    {
-      "generatedLine": 322,
+      "generatedLine": 237,
       "source": "typescript/semantic_contract.ts",
       "line": 165,
       "column": 3
     },
     {
-      "generatedLine": 323,
+      "generatedLine": 238,
       "source": "typescript/semantic_contract.ts",
       "line": 166,
       "column": 3
     },
     {
-      "generatedLine": 324,
+      "generatedLine": 242,
       "source": "typescript/semantic_contract.ts",
       "line": 167,
       "column": 3
     },
     {
-      "generatedLine": 325,
+      "generatedLine": 244,
+      "source": "typescript/semantic_contract.ts",
+      "line": 167,
+      "column": 33
+    },
+    {
+      "generatedLine": 245,
+      "source": "typescript/semantic_contract.ts",
+      "line": 167,
+      "column": 50
+    },
+    {
+      "generatedLine": 247,
       "source": "typescript/semantic_contract.ts",
       "line": 168,
       "column": 3
     },
     {
-      "generatedLine": 326,
+      "generatedLine": 248,
       "source": "typescript/semantic_contract.ts",
       "line": 169,
       "column": 3
     },
     {
-      "generatedLine": 327,
-      "source": "typescript/semantic_contract.ts",
-      "line": 170,
-      "column": 3
-    },
-    {
-      "generatedLine": 328,
-      "source": "typescript/semantic_contract.ts",
-      "line": 171,
-      "column": 3
-    },
-    {
-      "generatedLine": 329,
+      "generatedLine": 251,
       "source": "typescript/semantic_contract.ts",
       "line": 172,
-      "column": 3
+      "column": 1
     },
     {
-      "generatedLine": 330,
+      "generatedLine": 253,
       "source": "typescript/semantic_contract.ts",
       "line": 173,
       "column": 3
     },
     {
-      "generatedLine": 335,
-      "source": "typescript/semantic_contract.ts",
-      "line": 174,
-      "column": 3
-    },
-    {
-      "generatedLine": 336,
-      "source": "typescript/semantic_contract.ts",
-      "line": 175,
-      "column": 3
-    },
-    {
-      "generatedLine": 337,
+      "generatedLine": 264,
       "source": "typescript/semantic_contract.ts",
       "line": 176,
-      "column": 3
+      "column": 1
     },
     {
-      "generatedLine": 338,
+      "generatedLine": 266,
       "source": "typescript/semantic_contract.ts",
       "line": 177,
       "column": 3
     },
     {
-      "generatedLine": 339,
+      "generatedLine": 268,
+      "source": "typescript/semantic_contract.ts",
+      "line": 177,
+      "column": 21
+    },
+    {
+      "generatedLine": 270,
       "source": "typescript/semantic_contract.ts",
       "line": 178,
       "column": 3
     },
     {
-      "generatedLine": 340,
+      "generatedLine": 271,
       "source": "typescript/semantic_contract.ts",
       "line": 179,
       "column": 3
     },
     {
-      "generatedLine": 341,
+      "generatedLine": 281,
       "source": "typescript/semantic_contract.ts",
-      "line": 180,
-      "column": 3
+      "line": 192,
+      "column": 5
     },
     {
-      "generatedLine": 342,
+      "generatedLine": 285,
       "source": "typescript/semantic_contract.ts",
-      "line": 181,
-      "column": 3
+      "line": 192,
+      "column": 20
     },
     {
-      "generatedLine": 343,
+      "generatedLine": 286,
       "source": "typescript/semantic_contract.ts",
-      "line": 182,
-      "column": 3
+      "line": 192,
+      "column": 42
     },
     {
-      "generatedLine": 344,
+      "generatedLine": 294,
       "source": "typescript/semantic_contract.ts",
-      "line": 183,
-      "column": 3
+      "line": 195,
+      "column": 5
+    },
+    {
+      "generatedLine": 311,
+      "source": "typescript/semantic_contract.ts",
+      "line": 197,
+      "column": 15
+    },
+    {
+      "generatedLine": 312,
+      "source": "typescript/semantic_contract.ts",
+      "line": 197,
+      "column": 35
+    },
+    {
+      "generatedLine": 321,
+      "source": "typescript/semantic_contract.ts",
+      "line": 186,
+      "column": 5
+    },
+    {
+      "generatedLine": 323,
+      "source": "typescript/semantic_contract.ts",
+      "line": 187,
+      "column": 5
+    },
+    {
+      "generatedLine": 330,
+      "source": "typescript/semantic_contract.ts",
+      "line": 188,
+      "column": 5
+    },
+    {
+      "generatedLine": 338,
+      "source": "typescript/semantic_contract.ts",
+      "line": 198,
+      "column": 33
     },
     {
       "generatedLine": 349,
       "source": "typescript/semantic_contract.ts",
-      "line": 184,
-      "column": 3
-    },
-    {
-      "generatedLine": 350,
-      "source": "typescript/semantic_contract.ts",
-      "line": 185,
-      "column": 3
+      "line": 201,
+      "column": 1
     },
     {
       "generatedLine": 351,
-      "source": "typescript/semantic_contract.ts",
-      "line": 186,
-      "column": 3
-    },
-    {
-      "generatedLine": 352,
-      "source": "typescript/semantic_contract.ts",
-      "line": 187,
-      "column": 3
-    },
-    {
-      "generatedLine": 353,
-      "source": "typescript/semantic_contract.ts",
-      "line": 188,
-      "column": 3
-    },
-    {
-      "generatedLine": 354,
-      "source": "typescript/semantic_contract.ts",
-      "line": 189,
-      "column": 3
-    },
-    {
-      "generatedLine": 356,
-      "source": "typescript/semantic_contract.ts",
-      "line": 189,
-      "column": 36
-    },
-    {
-      "generatedLine": 357,
-      "source": "typescript/semantic_contract.ts",
-      "line": 189,
-      "column": 48
-    },
-    {
-      "generatedLine": 359,
-      "source": "typescript/semantic_contract.ts",
-      "line": 190,
-      "column": 3
-    },
-    {
-      "generatedLine": 360,
-      "source": "typescript/semantic_contract.ts",
-      "line": 191,
-      "column": 3
-    },
-    {
-      "generatedLine": 361,
-      "source": "typescript/semantic_contract.ts",
-      "line": 192,
-      "column": 3
-    },
-    {
-      "generatedLine": 362,
-      "source": "typescript/semantic_contract.ts",
-      "line": 193,
-      "column": 3
-    },
-    {
-      "generatedLine": 363,
-      "source": "typescript/semantic_contract.ts",
-      "line": 194,
-      "column": 3
-    },
-    {
-      "generatedLine": 367,
-      "source": "typescript/semantic_contract.ts",
-      "line": 195,
-      "column": 3
-    },
-    {
-      "generatedLine": 368,
-      "source": "typescript/semantic_contract.ts",
-      "line": 196,
-      "column": 3
-    },
-    {
-      "generatedLine": 369,
-      "source": "typescript/semantic_contract.ts",
-      "line": 197,
-      "column": 3
-    },
-    {
-      "generatedLine": 373,
-      "source": "typescript/semantic_contract.ts",
-      "line": 198,
-      "column": 3
-    },
-    {
-      "generatedLine": 374,
-      "source": "typescript/semantic_contract.ts",
-      "line": 199,
-      "column": 3
-    },
-    {
-      "generatedLine": 375,
-      "source": "typescript/semantic_contract.ts",
-      "line": 200,
-      "column": 3
-    },
-    {
-      "generatedLine": 382,
-      "source": "typescript/semantic_contract.ts",
-      "line": 201,
-      "column": 3
-    },
-    {
-      "generatedLine": 387,
       "source": "typescript/semantic_contract.ts",
       "line": 202,
       "column": 3
     },
     {
-      "generatedLine": 391,
+      "generatedLine": 352,
       "source": "typescript/semantic_contract.ts",
       "line": 203,
       "column": 3
     },
     {
-      "generatedLine": 392,
+      "generatedLine": 353,
       "source": "typescript/semantic_contract.ts",
       "line": 204,
       "column": 3
     },
     {
-      "generatedLine": 393,
+      "generatedLine": 354,
       "source": "typescript/semantic_contract.ts",
       "line": 205,
       "column": 3
     },
     {
-      "generatedLine": 394,
+      "generatedLine": 355,
       "source": "typescript/semantic_contract.ts",
       "line": 206,
       "column": 3
     },
     {
-      "generatedLine": 398,
+      "generatedLine": 356,
       "source": "typescript/semantic_contract.ts",
       "line": 207,
       "column": 3
     },
     {
-      "generatedLine": 399,
+      "generatedLine": 357,
       "source": "typescript/semantic_contract.ts",
       "line": 208,
       "column": 3
     },
     {
-      "generatedLine": 400,
+      "generatedLine": 358,
       "source": "typescript/semantic_contract.ts",
       "line": 209,
       "column": 3
     },
     {
-      "generatedLine": 401,
+      "generatedLine": 359,
       "source": "typescript/semantic_contract.ts",
       "line": 210,
       "column": 3
     },
     {
-      "generatedLine": 409,
+      "generatedLine": 360,
       "source": "typescript/semantic_contract.ts",
       "line": 211,
       "column": 3
     },
     {
-      "generatedLine": 410,
+      "generatedLine": 361,
       "source": "typescript/semantic_contract.ts",
       "line": 212,
       "column": 3
     },
     {
-      "generatedLine": 411,
+      "generatedLine": 366,
       "source": "typescript/semantic_contract.ts",
       "line": 213,
       "column": 3
     },
     {
-      "generatedLine": 412,
+      "generatedLine": 367,
       "source": "typescript/semantic_contract.ts",
       "line": 214,
       "column": 3
     },
     {
-      "generatedLine": 413,
+      "generatedLine": 368,
       "source": "typescript/semantic_contract.ts",
       "line": 215,
       "column": 3
     },
     {
-      "generatedLine": 415,
-      "source": "typescript/semantic_contract.ts",
-      "line": 215,
-      "column": 26
-    },
-    {
-      "generatedLine": 418,
-      "source": "typescript/semantic_contract.ts",
-      "line": 215,
-      "column": 48
-    },
-    {
-      "generatedLine": 420,
+      "generatedLine": 369,
       "source": "typescript/semantic_contract.ts",
       "line": 216,
       "column": 3
     },
     {
-      "generatedLine": 421,
+      "generatedLine": 370,
       "source": "typescript/semantic_contract.ts",
       "line": 217,
       "column": 3
     },
     {
-      "generatedLine": 422,
+      "generatedLine": 371,
       "source": "typescript/semantic_contract.ts",
       "line": 218,
+      "column": 3
+    },
+    {
+      "generatedLine": 372,
+      "source": "typescript/semantic_contract.ts",
+      "line": 219,
+      "column": 3
+    },
+    {
+      "generatedLine": 373,
+      "source": "typescript/semantic_contract.ts",
+      "line": 220,
+      "column": 3
+    },
+    {
+      "generatedLine": 374,
+      "source": "typescript/semantic_contract.ts",
+      "line": 221,
+      "column": 3
+    },
+    {
+      "generatedLine": 375,
+      "source": "typescript/semantic_contract.ts",
+      "line": 222,
+      "column": 3
+    },
+    {
+      "generatedLine": 380,
+      "source": "typescript/semantic_contract.ts",
+      "line": 223,
+      "column": 3
+    },
+    {
+      "generatedLine": 381,
+      "source": "typescript/semantic_contract.ts",
+      "line": 224,
+      "column": 3
+    },
+    {
+      "generatedLine": 382,
+      "source": "typescript/semantic_contract.ts",
+      "line": 225,
+      "column": 3
+    },
+    {
+      "generatedLine": 383,
+      "source": "typescript/semantic_contract.ts",
+      "line": 226,
+      "column": 3
+    },
+    {
+      "generatedLine": 384,
+      "source": "typescript/semantic_contract.ts",
+      "line": 227,
+      "column": 3
+    },
+    {
+      "generatedLine": 385,
+      "source": "typescript/semantic_contract.ts",
+      "line": 228,
+      "column": 3
+    },
+    {
+      "generatedLine": 387,
+      "source": "typescript/semantic_contract.ts",
+      "line": 228,
+      "column": 36
+    },
+    {
+      "generatedLine": 388,
+      "source": "typescript/semantic_contract.ts",
+      "line": 228,
+      "column": 48
+    },
+    {
+      "generatedLine": 390,
+      "source": "typescript/semantic_contract.ts",
+      "line": 229,
+      "column": 3
+    },
+    {
+      "generatedLine": 391,
+      "source": "typescript/semantic_contract.ts",
+      "line": 230,
+      "column": 3
+    },
+    {
+      "generatedLine": 392,
+      "source": "typescript/semantic_contract.ts",
+      "line": 231,
+      "column": 3
+    },
+    {
+      "generatedLine": 393,
+      "source": "typescript/semantic_contract.ts",
+      "line": 232,
+      "column": 3
+    },
+    {
+      "generatedLine": 394,
+      "source": "typescript/semantic_contract.ts",
+      "line": 233,
+      "column": 3
+    },
+    {
+      "generatedLine": 398,
+      "source": "typescript/semantic_contract.ts",
+      "line": 234,
+      "column": 3
+    },
+    {
+      "generatedLine": 399,
+      "source": "typescript/semantic_contract.ts",
+      "line": 235,
+      "column": 3
+    },
+    {
+      "generatedLine": 400,
+      "source": "typescript/semantic_contract.ts",
+      "line": 236,
+      "column": 3
+    },
+    {
+      "generatedLine": 404,
+      "source": "typescript/semantic_contract.ts",
+      "line": 237,
+      "column": 3
+    },
+    {
+      "generatedLine": 405,
+      "source": "typescript/semantic_contract.ts",
+      "line": 238,
+      "column": 3
+    },
+    {
+      "generatedLine": 406,
+      "source": "typescript/semantic_contract.ts",
+      "line": 239,
+      "column": 3
+    },
+    {
+      "generatedLine": 413,
+      "source": "typescript/semantic_contract.ts",
+      "line": 240,
+      "column": 3
+    },
+    {
+      "generatedLine": 418,
+      "source": "typescript/semantic_contract.ts",
+      "line": 241,
+      "column": 3
+    },
+    {
+      "generatedLine": 422,
+      "source": "typescript/semantic_contract.ts",
+      "line": 242,
+      "column": 3
+    },
+    {
+      "generatedLine": 423,
+      "source": "typescript/semantic_contract.ts",
+      "line": 243,
+      "column": 3
+    },
+    {
+      "generatedLine": 424,
+      "source": "typescript/semantic_contract.ts",
+      "line": 244,
+      "column": 3
+    },
+    {
+      "generatedLine": 425,
+      "source": "typescript/semantic_contract.ts",
+      "line": 245,
+      "column": 3
+    },
+    {
+      "generatedLine": 429,
+      "source": "typescript/semantic_contract.ts",
+      "line": 246,
+      "column": 3
+    },
+    {
+      "generatedLine": 430,
+      "source": "typescript/semantic_contract.ts",
+      "line": 247,
+      "column": 3
+    },
+    {
+      "generatedLine": 431,
+      "source": "typescript/semantic_contract.ts",
+      "line": 248,
+      "column": 3
+    },
+    {
+      "generatedLine": 432,
+      "source": "typescript/semantic_contract.ts",
+      "line": 249,
+      "column": 3
+    },
+    {
+      "generatedLine": 440,
+      "source": "typescript/semantic_contract.ts",
+      "line": 250,
+      "column": 3
+    },
+    {
+      "generatedLine": 441,
+      "source": "typescript/semantic_contract.ts",
+      "line": 251,
+      "column": 3
+    },
+    {
+      "generatedLine": 442,
+      "source": "typescript/semantic_contract.ts",
+      "line": 252,
+      "column": 3
+    },
+    {
+      "generatedLine": 443,
+      "source": "typescript/semantic_contract.ts",
+      "line": 253,
+      "column": 3
+    },
+    {
+      "generatedLine": 444,
+      "source": "typescript/semantic_contract.ts",
+      "line": 254,
+      "column": 3
+    },
+    {
+      "generatedLine": 446,
+      "source": "typescript/semantic_contract.ts",
+      "line": 254,
+      "column": 26
+    },
+    {
+      "generatedLine": 449,
+      "source": "typescript/semantic_contract.ts",
+      "line": 254,
+      "column": 48
+    },
+    {
+      "generatedLine": 451,
+      "source": "typescript/semantic_contract.ts",
+      "line": 255,
+      "column": 3
+    },
+    {
+      "generatedLine": 452,
+      "source": "typescript/semantic_contract.ts",
+      "line": 256,
+      "column": 3
+    },
+    {
+      "generatedLine": 453,
+      "source": "typescript/semantic_contract.ts",
+      "line": 257,
       "column": 3
     }
   ]

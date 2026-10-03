@@ -250,7 +250,7 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
         return method({ __ts2gml_env_22: __ts2gml_env_22, __ts2gml_receiver: __ts2gml_env_22_self, __ts2gml_this: __ts2gml_env_22_lexical, __ts2gml_closure: true }, function () {
             var __ts2gml_env_22 = self.__ts2gml_env_22;
             var __ts2gml_env_23_this = self.__ts2gml_this;
-            with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+            with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                 return __ts2gml_env_23_this.value + __ts2gml_env_22.__ts2gml_capture_18;
             }
         });
@@ -263,26 +263,26 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
             read: method({ __ts2gml_env_26: __ts2gml_env_26, __ts2gml_receiver: __ts2gml_env_26_self, __ts2gml_this: __ts2gml_env_26_lexical, __ts2gml_closure: true }, function () {
                 var __ts2gml_env_26 = self.__ts2gml_env_26;
                 var __ts2gml_env_27_this = self.__ts2gml_this;
-                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                     return __ts2gml_env_27_this.value + __ts2gml_env_26.__ts2gml_capture_20;
                 }
             }),
             nested: method({ __ts2gml_env_26: __ts2gml_env_26, __ts2gml_receiver: __ts2gml_env_26_self, __ts2gml_this: __ts2gml_env_26_lexical, __ts2gml_closure: true }, function () {
                 var __ts2gml_env_26 = self.__ts2gml_env_26;
                 var __ts2gml_env_28_this = self.__ts2gml_this;
-                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                     var __ts2gml_env_28_self = method_get_self(function () { });
                     return method({ __ts2gml_env_26: __ts2gml_env_26, __ts2gml_receiver: __ts2gml_env_28_self, __ts2gml_this: __ts2gml_env_28_this, __ts2gml_closure: true }, function (__ts2gml_capture_21_parameter) {
                         var __ts2gml_env_26 = self.__ts2gml_env_26;
                         var __ts2gml_env_29_this = self.__ts2gml_this;
-                        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                             var __ts2gml_env_29_self = method_get_self(function () { });
                             var __ts2gml_env_29 = { __ts2gml_capture_21: __ts2gml_capture_21_parameter };
                             return method({ __ts2gml_env_26: __ts2gml_env_26, __ts2gml_env_29: __ts2gml_env_29, __ts2gml_receiver: __ts2gml_env_29_self, __ts2gml_this: __ts2gml_env_29_this, __ts2gml_closure: true }, function () {
                                 var __ts2gml_env_26 = self.__ts2gml_env_26;
                                 var __ts2gml_env_29 = self.__ts2gml_env_29;
                                 var __ts2gml_env_30_this = self.__ts2gml_this;
-                                with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                                with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                                     return __ts2gml_env_30_this.value + __ts2gml_env_26.__ts2gml_capture_20 + __ts2gml_env_29.__ts2gml_capture_21;
                                 }
                             });
@@ -293,7 +293,7 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
             array: [method({ __ts2gml_env_26: __ts2gml_env_26, __ts2gml_receiver: __ts2gml_env_26_self, __ts2gml_this: __ts2gml_env_26_lexical, __ts2gml_closure: true }, function () {
                     var __ts2gml_env_26 = self.__ts2gml_env_26;
                     var __ts2gml_env_31_this = self.__ts2gml_this;
-                    with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                    with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                         return __ts2gml_env_31_this.value + __ts2gml_env_26.__ts2gml_capture_20;
                     }
                 })],
@@ -309,7 +309,7 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
                 return method({ __ts2gml_env_33: __ts2gml_env_33, __ts2gml_receiver: __ts2gml_env_33_self, __ts2gml_this: __ts2gml_env_33_lexical, __ts2gml_closure: true }, function () {
                     var __ts2gml_env_33 = self.__ts2gml_env_33;
                     var __ts2gml_env_34_this = self.__ts2gml_this;
-                    with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                    with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                         return __ts2gml_env_34_this.value + __ts2gml_env_33.__ts2gml_capture_22;
                     }
                 });
@@ -321,7 +321,7 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
                     return method({ __ts2gml_env_35: __ts2gml_env_35, __ts2gml_receiver: __ts2gml_env_35_self, __ts2gml_this: __ts2gml_env_35_lexical, __ts2gml_closure: true }, function () {
                         var __ts2gml_env_35 = self.__ts2gml_env_35;
                         var __ts2gml_env_36_this = self.__ts2gml_this;
-                        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                             return __ts2gml_env_36_this.value + __ts2gml_env_35.__ts2gml_capture_23;
                         }
                     });
@@ -335,7 +335,7 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
         return method({ __ts2gml_env_37: __ts2gml_env_37, __ts2gml_receiver: __ts2gml_env_37_self, __ts2gml_this: __ts2gml_env_37_lexical, __ts2gml_closure: true }, function () {
             var __ts2gml_env_37 = self.__ts2gml_env_37;
             var __ts2gml_env_38_this = self.__ts2gml_this;
-            with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+            with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                 return __ts2gml_env_38_this.value + __ts2gml_env_37.__ts2gml_capture_24 + __ts2gml_env_37.__ts2gml_capture_25;
             }
         });
@@ -349,7 +349,7 @@ function ClosureContractBase(__ts2gml_capture_19_parameter) constructor {
     self.readConstructor = method({ __ts2gml_env_24: __ts2gml_env_24, __ts2gml_receiver: __ts2gml_env_24_self, __ts2gml_this: __ts2gml_env_24_lexical, __ts2gml_closure: true }, function () {
         var __ts2gml_env_24 = self.__ts2gml_env_24;
         var __ts2gml_env_25_this = self.__ts2gml_this;
-        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             return __ts2gml_env_24.__ts2gml_capture_19 + __ts2gml_env_25_this.value;
         }
     });
@@ -364,20 +364,20 @@ method(__ts2gml_class_statics(ClosureContractBase, true), function() {
         return method({ __ts2gml_env_39: __ts2gml_env_39, __ts2gml_receiver: __ts2gml_env_39_self, __ts2gml_this: __ts2gml_env_39_lexical, __ts2gml_closure: true }, function () {
             var __ts2gml_env_39 = self.__ts2gml_env_39;
             var __ts2gml_env_40_this = self.__ts2gml_this;
-            with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+            with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                 var __ts2gml_env_40_self = method_get_self(function () { });
                 return method({ __ts2gml_env_39: __ts2gml_env_39, __ts2gml_receiver: __ts2gml_env_40_self, __ts2gml_this: __ts2gml_env_40_this, __ts2gml_closure: true }, function (__ts2gml_capture_27_parameter) {
                     var __ts2gml_env_39 = self.__ts2gml_env_39;
                     var __ts2gml_env_41_this = self.__ts2gml_this;
-                    with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+                    with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                         var __ts2gml_env_41_self = method_get_self(function () { });
                         var __ts2gml_env_41 = { __ts2gml_capture_27: __ts2gml_capture_27_parameter };
                         return method({ __ts2gml_env_39: __ts2gml_env_39, __ts2gml_env_41: __ts2gml_env_41, __ts2gml_receiver: __ts2gml_env_41_self, __ts2gml_this: __ts2gml_env_41_this, __ts2gml_closure: true }, function () {
                             var __ts2gml_env_39 = self.__ts2gml_env_39;
                             var __ts2gml_env_41 = self.__ts2gml_env_41;
                             var __ts2gml_env_42_this = self.__ts2gml_this;
-                            with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
-                                return __ts2gml_class_statics(__ts2gml_env_42_this).value + __ts2gml_env_39.__ts2gml_capture_26 + __ts2gml_env_41.__ts2gml_capture_27;
+                            with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
+                                return variable_struct_get(__ts2gml_class_statics(__ts2gml_env_42_this), "value") + __ts2gml_env_39.__ts2gml_capture_26 + __ts2gml_env_41.__ts2gml_capture_27;
                             }
                         });
                     }
@@ -385,7 +385,6 @@ method(__ts2gml_class_statics(ClosureContractBase, true), function() {
             }
         });
     });
-    self.value = undefined;
     self.value = 100;
 })();
 
@@ -400,7 +399,7 @@ function ClosureContractChild(__ts2gml_capture_28_parameter) : ClosureContractBa
     self.readChild = method({ __ts2gml_env_44: __ts2gml_env_44, __ts2gml_receiver: __ts2gml_env_44_self, __ts2gml_this: __ts2gml_env_44_lexical, __ts2gml_closure: true }, function () {
         var __ts2gml_env_44 = self.__ts2gml_env_44;
         var __ts2gml_env_45_this = self.__ts2gml_this;
-        with (__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver) {
+        with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             return __ts2gml_env_44.__ts2gml_capture_28 + __ts2gml_env_44.__ts2gml_capture_29 + __ts2gml_env_45_this.value;
         }
     });
@@ -409,7 +408,6 @@ function ClosureContractChild(__ts2gml_capture_28_parameter) : ClosureContractBa
 
 method(__ts2gml_class_statics(ClosureContractChild, true), function() {
     static_set(self, __ts2gml_class_statics(ClosureContractBase));
-    self.value = undefined;
     self.value = 200;
 })();
 
@@ -615,7 +613,7 @@ function closureContractRun() {
     scopeContextExpect("derived constructor capture", owner.readChild(), 25);
     var packet = owner.factory(5);
     var detached = packet.read;
-    var __ts2gml_destructure_4647_1 = packet, destructured = variable_struct_get(__ts2gml_destructure_4647_1, "read");
+    var __ts2gml_destructure_4650_1 = packet, destructured = variable_struct_get(__ts2gml_destructure_4650_1, "read");
     var forwarded = { value: 1000, read: packet.read };
     var noArguments = [];
     scopeContextExpect("captured arrow in struct", packet.read(), 15);
@@ -682,7 +680,7 @@ function closureContractRun() {
     scopeContextExpect("inherited static factory receiver", staticRead(), 215);
     __ts2gml_class_statics(ClosureContractChild).value = 300;
     scopeContextExpect("static receiver remains live", staticRead(), 315);
-    scopeContextExpect("static base remains independent", __ts2gml_class_statics(ClosureContractBase).value, 100);
+    scopeContextExpect("static base remains independent", variable_struct_get(__ts2gml_class_statics(ClosureContractBase), "value"), 100);
     show_debug_message("TS2GML_CLOSURE_BINDINGS_BEGIN");
     var defaults = closureContractDefaults();
     scopeContextExpect("captured dependent parameter defaults", defaults(), 9);
@@ -726,11 +724,11 @@ function closureContractRun() {
     __ts2gml_env_54.__ts2gml_capture_40 = undefined;
     __ts2gml_env_54.__ts2gml_capture_41 = method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function (depth) {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
-        return __ts2gml_value_truthy(__ts2gml_value_equal(depth, 0)) ? true : __ts2gml_env_54.__ts2gml_capture_40(depth - 1);
+        return (__ts2gml_value_truthy(__ts2gml_value_equal(depth, 0)) ? true : __ts2gml_env_54.__ts2gml_capture_40(depth - 1));
     });
     __ts2gml_env_54.__ts2gml_capture_40 = method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function (depth) {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
-        return __ts2gml_value_truthy(__ts2gml_value_equal(depth, 0)) ? false : __ts2gml_env_54.__ts2gml_capture_41(depth - 1);
+        return (__ts2gml_value_truthy(__ts2gml_value_equal(depth, 0)) ? false : __ts2gml_env_54.__ts2gml_capture_41(depth - 1));
     });
     scopeContextExpect("mutually recursive captured callbacks", __ts2gml_env_54.__ts2gml_capture_41(12), true);
     scopeContextExpect("mutual recursion other branch", __ts2gml_env_54.__ts2gml_capture_40(11), true);
@@ -742,10 +740,10 @@ function closureContractRun() {
     });
     var lazy = method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function (value) {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
-        return (function (__ts2gml_logical_4647_2, __ts2gml_env_54) {
-            return __ts2gml_value_truthy(__ts2gml_logical_4647_2) ? __ts2gml_logical_4647_2 : __ts2gml_env_54.__ts2gml_capture_43();
-        })(((function (__ts2gml_logical_4647_3, __ts2gml_env_54) {
-            return __ts2gml_value_nullish(__ts2gml_logical_4647_3) ? __ts2gml_env_54.__ts2gml_capture_43() : __ts2gml_logical_4647_3;
+        return (function (__ts2gml_logical_4650_2, __ts2gml_env_54) {
+            return __ts2gml_value_truthy(__ts2gml_logical_4650_2) ? __ts2gml_logical_4650_2 : __ts2gml_env_54.__ts2gml_capture_43();
+        })(((function (__ts2gml_logical_4650_3, __ts2gml_env_54) {
+            return __ts2gml_value_nullish(__ts2gml_logical_4650_3) ? __ts2gml_env_54.__ts2gml_capture_43() : __ts2gml_logical_4650_3;
         })(value, __ts2gml_env_54)), __ts2gml_env_54);
     });
     scopeContextExpect("logical defined branch skips captures", lazy(7), 7);
@@ -761,8 +759,8 @@ function closureContractRun() {
     });
     var update = method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function () {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
-        (function (__ts2gml_assignment_4647_4, __ts2gml_env_54) {
-            return __ts2gml_value_set(__ts2gml_assignment_4647_4[0], __ts2gml_assignment_4647_4[1], __ts2gml_value_get(__ts2gml_assignment_4647_4[0], __ts2gml_assignment_4647_4[1]) + __ts2gml_env_54.__ts2gml_capture_42);
+        (function (__ts2gml_assignment_4650_4, __ts2gml_env_54) {
+            return __ts2gml_value_set(__ts2gml_assignment_4650_4[0], __ts2gml_assignment_4650_4[1], __ts2gml_value_get(__ts2gml_assignment_4650_4[0], __ts2gml_assignment_4650_4[1]) + __ts2gml_env_54.__ts2gml_capture_42);
         })([__ts2gml_env_54.__ts2gml_capture_45, __ts2gml_env_54.__ts2gml_capture_46()], __ts2gml_env_54);
         return __ts2gml_value_get(__ts2gml_env_54.__ts2gml_capture_45, 0);
     });
@@ -788,14 +786,14 @@ function closureContractRun() {
         return __ts2gml_env_54.__ts2gml_capture_48;
     });
     {
-        var __ts2gml_optional_4647_5 = packetFactory();
-        if (__ts2gml_value_truthy(__ts2gml_optional_4647_5)) {
-            (function (__ts2gml_unused, __ts2gml_optional_4647_5, noArguments) {
-                var __ts2gml_receiver = __ts2gml_optional_4647_5;
+        var __ts2gml_optional_4650_5 = packetFactory();
+        if (__ts2gml_value_truthy(__ts2gml_optional_4650_5)) {
+            (function (__ts2gml_unused, __ts2gml_optional_4650_5, noArguments) {
+                var __ts2gml_receiver = __ts2gml_optional_4650_5;
                 var __ts2gml_method = __ts2gml_receiver.run;
                 __ts2gml_method = is_method(__ts2gml_method) && !is_undefined(method_get_self(__ts2gml_method)) ? __ts2gml_method : method(is_array(__ts2gml_receiver) ? undefined : __ts2gml_receiver, __ts2gml_method);
                 return method_call(__ts2gml_method, array_concat([], noArguments));
-            })(undefined, __ts2gml_optional_4647_5, noArguments);
+            })(undefined, __ts2gml_optional_4650_5, noArguments);
         }
     }
     scopeContextExpect("optional factory spread callback retains environment", __ts2gml_env_54.__ts2gml_capture_47, 2);
@@ -852,7 +850,7 @@ function closureContractRun() {
     try {
         finish(true);
     }
-    catch (__ts2gml_caught_4647_6) {
+    catch (__ts2gml_caught_4650_6) {
         __ts2gml_env_54.__ts2gml_capture_52 += 100;
     }
     scopeContextExpect("closure throw through finally", __ts2gml_env_54.__ts2gml_capture_52, 122);

@@ -423,6 +423,12 @@
         "name": "enum_contract",
         "path": "scripts/enum_contract/enum_contract.yy"
       }
+    },
+    {
+      "id": {
+        "name": "static_contract",
+        "path": "scripts/static_contract/static_contract.yy"
+      }
     }
   ],
   "resourceType": "GMProject",

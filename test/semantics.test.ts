@@ -11,16 +11,39 @@ import { compileTypeScript, Ts2GmlError } from "../src/compiler/compile.js";
 
 const execFileAsync = promisify(execFile);
 
+for (const [name, source, expected] of [
+  ["false-branch chain", `function amount(kind, v) {
+    const amount = kind === "health" ? v.drop_health
+      : kind === "energy" ? v.drop_energy
+      : kind === "experience" ? v.drop_experience : v.drop_coins;
+    return amount;
+  }`, `var amount = (__ts2gml_value_truthy(__ts2gml_value_equal(kind, "health")) ? v.drop_health
+    : (__ts2gml_value_truthy(__ts2gml_value_equal(kind, "energy")) ? v.drop_energy
+    : (__ts2gml_value_truthy(__ts2gml_value_equal(kind, "experience")) ? v.drop_experience : v.drop_coins)));`],
+  ["true branch", "function choose(a, b, c, d, e) { return a ? b ? c : d : e; }",
+    "return (__ts2gml_value_truthy(a) ? (__ts2gml_value_truthy(b) ? c : d) : e);"],
+  ["condition", "function choose(a, b, c, d, e) { return (a ? b : c) ? d : e; }",
+    "return (__ts2gml_value_truthy(((__ts2gml_value_truthy(a) ? b : c))) ? d : e);"],
+] as const) {
+  test(`explicitly groups conditional expressions in the ${name}`, () => {
+    const { gml } = compileTypeScript(source, "conditional.ts");
+    assert.ok(gml.replace(/\s+/g, " ").includes(expected.replace(/\s+/g, " ")), gml);
+  });
+}
+
 test("the GameMaker semantic fixture also satisfies the JavaScript contract", async () => {
   const source = await fs.readFile("TestProject/typescript/semantic_contract.ts", "utf8");
   let comparisons = 0;
+  let conditionalComparisons = 0;
   runInNewContext(`${ts.transpile(source)}\nsemanticContractRun();`, {
     scopeContextExpect: (name: string, actual: unknown, expected: unknown) => {
       comparisons++;
+      if (name.startsWith("conditional ")) conditionalComparisons++;
       assert.equal(actual, expected, name);
     },
   });
   assert.ok(comparisons >= 30);
+  assert.equal(conditionalComparisons, 48);
   const { gml } = compileTypeScript(source, "semantic_contract.ts");
   assert.match(gml, /"😀"/u);
   assert.doesNotMatch(gml, /\\uD83D|\\uDE00/);

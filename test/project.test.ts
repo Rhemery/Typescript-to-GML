@@ -125,6 +125,37 @@ async function waitFor(check: () => Promise<boolean>, timeoutMs = 15_000): Promi
   throw new Error("Timed out waiting for the watched project to rebuild.");
 }
 
+test("generates native static constructor fields and rejects them on GameMaker assets", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-native-statics-"));
+  try {
+    const projectPath = await createEmptyProject(temporary, "NativeStatics");
+    await installTool(temporary);
+    const sourceDirectory = path.join(temporary, "typescript");
+    await fs.mkdir(sourceDirectory);
+    const source = path.join(sourceDirectory, "native_fields.ts");
+    await fs.writeFile(source, "class NativeFields { value = gm_static(() => 4); read() { return this.value; } }");
+    const built = await buildGameMakerProject([], projectPath);
+    assert.deepEqual(built.scripts, ["native_fields"]);
+    const gml = await fs.readFile(path.join(temporary, "scripts/native_fields/native_fields.gml"), "utf8");
+    assert.match(gml, /static value = 4;/);
+    assert.doesNotMatch(gml, /gm_static|__ts2gml_class_statics/);
+    assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
+    await fs.writeFile(path.join(sourceDirectory, "obj_parent.ts"), "class obj_parent extends GMObject {}");
+    for (const invalid of [
+      "class obj_direct extends GMObject { value = gm_static(() => 4); }",
+      "class obj_child extends obj_parent { value = gm_static(() => 4); }",
+      "class TestRoom extends GMRoom { value = gm_static(() => 4); onCreate() {} }",
+    ]) {
+      await fs.writeFile(source, invalid);
+      await assert.rejects(checkGameMakerProject([], projectPath),
+        (error: unknown) => error instanceof Ts2GmlError && error.diagnostics.some((item) =>
+          ["TS2GML1071", "TS2GML3002"].includes(item.code) && item.line > 0 && item.column > 0));
+    }
+  } finally {
+    await fs.rm(temporary, { recursive: true, force: true });
+  }
+});
+
 test("generates shared object statics across files and removes stale static scripts", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-statics-"));
   try {

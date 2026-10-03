@@ -30,7 +30,7 @@ function use() {
   assert.match(result.gml, /return method\(self, function/);
   assert.match(result.gml, /self\.arrow = method\(self, function/);
   assert.match(result.gml, /__ts2gml_class_statics\(Counter\)\.count \+= 1;/);
-  assert.match(result.gml, /__ts2gml_class_statics\(Counter\)\.count\+\+;/);
+  assert.equal(result.gml.match(/__ts2gml_class_statics\(Counter\)\.count \+= 1;/g)?.length, 2);
   assert.doesNotMatch(result.gml, /static (?:initial|count|read)\b|\bthis\b/);
 });
 
@@ -55,7 +55,7 @@ function generic<T extends typeof Parent>(value: T) { return value.count; }
   assert.match(result.gml, /__ts2gml_class_statics\(Alias\)\.count = 7;/);
   assert.match(result.gml, /var __ts2gml_destructure_\w+ = __ts2gml_class_statics\(Alias\)/);
   assert.match(result.gml, /return Parent\.count;/);
-  assert.match(result.gml, /return __ts2gml_class_statics\(value\)\.count;/);
+  assert.match(result.gml, /return variable_struct_get\(__ts2gml_class_statics\(value\), "count"\);/);
   assert.doesNotMatch(result.gml, /Alias\["count"\]/);
 });
 

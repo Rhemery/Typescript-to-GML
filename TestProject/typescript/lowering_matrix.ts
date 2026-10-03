@@ -81,6 +81,8 @@ class LoweringMatrixStaticChild extends LoweringMatrixStatics {
 
 function loweringMatrixRun(): void {
   semanticContractRun();
+  staticContractRun();
+  nativeStaticContractRun();
   scopeContextExpect("static before construction", LoweringMatrixStatics.initial, 2);
   scopeContextExpect("uninitialized static", LoweringMatrixStatics.label, undefined);
   scopeContextExpect("inherited static", LoweringMatrixStaticChild.read(), 2);

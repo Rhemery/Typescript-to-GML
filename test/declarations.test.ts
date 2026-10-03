@@ -256,6 +256,60 @@ test("renders strict generic types for every GameMaker data structure", () => {
   );
 });
 
+test("accepts arbitrary runtime array inputs while preserving explicit element and return types", () => {
+  const declarations = renderDeclarations({
+    runtimeVersion: "test",
+    functions: [{
+      Name: "runtime_arrays",
+      ReturnType: "Array",
+      Parameter: [
+        { Name: "values", Type: "Array" },
+        { Name: "optional", Type: "Array", Optional: "true" },
+        { Name: "union", Type: "[String,Array]", Optional: "true" },
+        { Name: "nested", Type: "Array[Array]", Optional: "true" },
+        { Name: "numbers", Type: "Array[Real]", Optional: "true" },
+      ],
+    }],
+    variables: [], constants: [], structures: [], enumerations: [],
+  });
+
+  assert.ok(declarations.includes(
+    "declare function runtime_arrays(values: unknown[], optional?: unknown[], union?: string | unknown[], nested?: Array<unknown[]>, numbers?: Array<number>): GMValue[];",
+  ));
+});
+
+test("preserves authored element types across native array functions", () => {
+  const declarations = renderDeclarations({
+    runtimeVersion: "test",
+    functions: [
+      { Name: "array_length", ReturnType: "Real", Parameter: [{ Name: "array", Type: "Array" }] },
+      {
+        Name: "array_resize", ReturnType: "Undefined",
+        Parameter: [{ Name: "array", Type: "Array" }, { Name: "new_size", Type: "Real" }],
+      },
+      ...["array_copy_while", "array_foreach"].map((Name) => ({
+        Name, ReturnType: Name === "array_copy_while" ? "Array" : "Undefined",
+        Parameter: [{ Name: "array", Type: "Array" }, { Name: "function", Type: "Function" }],
+      })),
+      ...["array_equals", "array_union", "array_intersection"].map((Name) => ({
+        Name, ReturnType: Name === "array_equals" ? "Bool" : "Array",
+        Parameter: [{ Name: "array0", Type: "Array" }, { Name: "array1", Type: "Array" }],
+      })),
+    ],
+    variables: [], constants: [], structures: [], enumerations: [],
+  });
+
+  for (const signature of [
+    "array_length(array: readonly unknown[]): number",
+    "array_resize(array: unknown[], new_size: number): undefined",
+    "array_copy_while<T>(array: readonly T[], _function: (value: T, index: number) => boolean): T[]",
+    "array_foreach<T>(array: readonly T[], _function: (value: T, index: number) => void): undefined",
+    "array_equals(array0: readonly unknown[], array1: readonly unknown[]): boolean",
+    "array_union<T, U>(array0: readonly T[], array1: readonly U[]): (T | U)[]",
+    "array_intersection<T>(array0: readonly T[], array1: readonly unknown[]): T[]",
+  ]) assert.ok(declarations.includes(`declare function ${signature};`), signature);
+});
+
 test("selects the active runtime compatible with the project IDE family", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-runtime-discovery-"));
   const projectPath = path.join(temporary, "Fixture.yyp");
@@ -387,6 +441,14 @@ test("generates and refreshes project-local runtime declarations from GmlSpec", 
   );
   const repaired = await ensureProjectRuntimeDeclarations(projectPath, discovery);
   assert.equal(repaired.written, true);
+  assert.equal(await fs.readFile(declarationPath, "utf8"), firstContents);
+
+  await fs.writeFile(
+    declarationPath,
+    firstContents.replace(/Declaration format version: \d+/, "Declaration format version: 4"),
+  );
+  const upgraded = await ensureProjectRuntimeDeclarations(projectPath, discovery);
+  assert.equal(upgraded.written, true);
   assert.equal(await fs.readFile(declarationPath, "utf8"), firstContents);
 
   const unchanged = await ensureProjectRuntimeDeclarations(projectPath, discovery);

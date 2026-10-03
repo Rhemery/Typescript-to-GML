@@ -32,9 +32,9 @@ npm run verify
 
 `verify:release` is portable and runs strict tool type checking, compiler/project tests, distribution smoke checks, and YYMPS construction/validation. Its project tests create isolated local declaration fixtures; the release artifacts contain no runtime declaration snapshot.
 
-It also builds and validates the prerelease VSIX at `release/typescript-to-gml-vscode-<version>.vsix`. The extension has its own increasing numeric version: compiler `0.2.0-beta.4` used VSIX `0.2.0`; compiler `0.2.0-beta.5` used VSIX `0.2.5`; compiler `0.2.0-beta.6` used VSIX `0.2.6`; compiler `0.2.0-beta.7` uses VSIX `0.2.7`. Never reuse or decrease a published VSIX version. Its `ts2gmlCompilerVersion` records the matching compiler. Package, lockfile, CLI, changelog, minimum editor API, and archive metadata are checked during packaging. `package.json` is the authoritative compiler version.
+It also builds and validates the prerelease VSIX at `release/typescript-to-gml-vscode-<version>.vsix`. The extension has its own increasing numeric version: compiler `0.2.0-beta.4` used VSIX `0.2.0`; compiler `0.2.0-beta.5` used VSIX `0.2.5`; compiler `0.2.0-beta.6` used VSIX `0.2.6`; compiler `0.2.0-beta.7` used VSIX `0.2.7`; compiler `0.2.0-beta.8` uses VSIX `0.2.8`. Never reuse or decrease a published VSIX version. Its `ts2gmlCompilerVersion` records the matching compiler. Package, lockfile, CLI, changelog, minimum editor API, and archive metadata are checked during packaging. `package.json` is the authoritative compiler version.
 
-`verify` additionally regenerates and type-checks declarations from the installed GameMaker runtime, regenerates and checks `TestProject`, and uses that runtime to compile and run the game. On Windows, successful VM execution must print `TS2GML_CLOSURE_CONTRACT_OK`, `TS2GML_CLOSURE_CONTEXT_OK`, and `TS2GML_SCOPE_CONTEXT_OK`. Runtime discovery can be overridden with `GAMEMAKER_GML_SPEC`, `GAMEMAKER_RUNTIME_PATH`, `GAMEMAKER_IGOR`, `GAMEMAKER_RUNNER`, and `GAMEMAKER_USER_DIR`.
+`verify` additionally regenerates and type-checks declarations from the installed GameMaker runtime, regenerates and checks `TestProject`, and uses that runtime to compile and run the game. On Windows, successful VM execution must print every suite marker required by `scripts/smoke-gamemaker.mjs`, including `TS2GML_STATIC_CONTRACT_OK` and `TS2GML_NATIVE_STATIC_CONTRACT_OK`. Runtime discovery can be overridden with `GAMEMAKER_GML_SPEC`, `GAMEMAKER_RUNTIME_PATH`, `GAMEMAKER_IGOR`, `GAMEMAKER_RUNNER`, and `GAMEMAKER_USER_DIR`.
 
 ## Versioning
 
@@ -45,7 +45,7 @@ Before a release, keep these values identical:
 - The release heading in `CHANGELOG.md`.
 - `vscode-extension/package.json`'s `ts2gmlCompilerVersion`; increase its separate numeric `version` too.
 
-Update current-version references in the README, documentation, and issue template, then regenerate `TestProject` so its manifest records the new compiler. Preserve historical versions in the changelog and evaluation. Keep the new changelog heading marked `Unreleased` until publication.
+Update current-version references in the README, documentation, and issue template, then regenerate `TestProject` so its manifest records the new compiler. Preserve historical versions in the changelog and evaluation. Replace `Unreleased` with the release date when preparing the release commit; use GitHub publication dates for earlier releases.
 
 Use semantic versioning. Until compatibility and target coverage are broader, publish prereleases such as `0.2.0-beta.1`.
 
