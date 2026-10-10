@@ -724,11 +724,11 @@ function closureContractRun() {
     __ts2gml_env_54.__ts2gml_capture_40 = undefined;
     __ts2gml_env_54.__ts2gml_capture_41 = method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function (depth) {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
-        return (__ts2gml_value_truthy(__ts2gml_value_equal(depth, 0)) ? true : __ts2gml_env_54.__ts2gml_capture_40(depth - 1));
+        return (depth == 0 ? true : __ts2gml_env_54.__ts2gml_capture_40(depth - 1));
     });
     __ts2gml_env_54.__ts2gml_capture_40 = method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function (depth) {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
-        return (__ts2gml_value_truthy(__ts2gml_value_equal(depth, 0)) ? false : __ts2gml_env_54.__ts2gml_capture_41(depth - 1));
+        return (depth == 0 ? false : __ts2gml_env_54.__ts2gml_capture_41(depth - 1));
     });
     scopeContextExpect("mutually recursive captured callbacks", __ts2gml_env_54.__ts2gml_capture_41(12), true);
     scopeContextExpect("mutual recursion other branch", __ts2gml_env_54.__ts2gml_capture_40(11), true);
@@ -837,7 +837,7 @@ function closureContractRun() {
         var __ts2gml_env_54 = self.__ts2gml_env_54;
         try {
             __ts2gml_env_54.__ts2gml_capture_52 += 1;
-            if (__ts2gml_value_truthy(fail))
+            if (fail)
                 throw "closure test";
             return __ts2gml_env_54.__ts2gml_capture_52;
         }
@@ -861,7 +861,7 @@ function closureContractRun() {
     scopeContextExpect("closure remains callable after exception", readCompleted(), 122);
     __ts2gml_env_54.__ts2gml_capture_53 = 0;
     var readers = [];
-    for (var iteration = 0; __ts2gml_value_truthy(iteration < 3); iteration++) {
+    for (var iteration = 0; iteration < 3; iteration++) {
         __ts2gml_env_54.__ts2gml_capture_53 += 1;
         __ts2gml_collection_push(readers, [method({ __ts2gml_env_54: __ts2gml_env_54, __ts2gml_closure: true }, function () {
                 var __ts2gml_env_54 = self.__ts2gml_env_54;
@@ -884,7 +884,7 @@ function closureContractRun() {
         return method_call(__ts2gml_method, []);
     })(undefined, readers), 4);
     var isolated = [];
-    for (var iteration = 0; __ts2gml_value_truthy(iteration < 3); iteration++) {
+    for (var iteration = 0; iteration < 3; iteration++) {
         __ts2gml_collection_push(isolated, [closureContractShadow(iteration).outer]);
     }
     scopeContextExpect("per-call environments inside loop first", (function (__ts2gml_unused, isolated) {

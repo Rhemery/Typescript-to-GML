@@ -122,36 +122,9 @@ function enumContractRun() {
     scopeContextExpect("enum mixed collection guard", __ts2gml_value_get(mixedValues, 0), "yes");
     scopeContextExpect("enum const", EnumBits.Second, 2);
     scopeContextExpect("enum merged", EnumMerged.Second, 8);
-    scopeContextExpect("enum empty", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })(EnumEmpty), "object");
+    scopeContextExpect("enum empty", __ts2gml_value_typeof(EnumEmpty), "object");
     var alias = EnumNumeric;
-    var copy = (function (__ts2gml_parts, __ts2gml_excluded, __ts2gml_ignore_nullish) {
-        var __ts2gml_result = {};
-        for (var __ts2gml_part_index = 0; __ts2gml_part_index < array_length(__ts2gml_parts); __ts2gml_part_index++) {
-            var __ts2gml_part = __ts2gml_parts[__ts2gml_part_index];
-            if (__ts2gml_ignore_nullish && __ts2gml_value_nullish(__ts2gml_part))
-                continue;
-            var __ts2gml_names = variable_struct_get_names(__ts2gml_part);
-            for (var __ts2gml_name_index = 0; __ts2gml_name_index < array_length(__ts2gml_names); __ts2gml_name_index++) {
-                var __ts2gml_name = __ts2gml_names[__ts2gml_name_index];
-                if (!array_contains(__ts2gml_excluded, __ts2gml_name)) {
-                    variable_struct_set(__ts2gml_result, __ts2gml_name, variable_struct_get(__ts2gml_part, __ts2gml_name));
-                }
-            }
-        }
-        return __ts2gml_result;
-    })([EnumNumeric], [], true);
+    var copy = __ts2gml_value_copy([EnumNumeric], [], true);
     scopeContextExpect("enum numeric key in", variable_struct_exists(copy, __ts2gml_value_key(0)), true);
     __ts2gml_remove(copy, 0);
     scopeContextExpect("enum numeric key delete", variable_struct_exists(copy, __ts2gml_value_key(0)), false);

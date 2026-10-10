@@ -1,3 +1,24 @@
+function semanticSparseCondition(values: boolean[], index: number): boolean {
+  return !!values[index];
+}
+function semanticSparseEqual(values: boolean[], index: number): boolean {
+  return values[index] === false;
+}
+function semanticSparseStored(values: boolean[]): boolean {
+  const value = values[0];
+  return !!value;
+}
+function semanticSparseNumber(values: number[], index: number): boolean {
+  return values[index] === 0;
+}
+
+function semanticTypedEqual(left: number, right: number): boolean {
+  return left === right;
+}
+function semanticTypedChoose(enabled: boolean, left: number, right: number, mode: string): boolean {
+  return enabled && left === right && mode !== "idle";
+}
+
 function semanticFallback(value: number, fallback: number): number { return value || fallback; }
 function semanticAnd(flag: boolean, value: number): number | false { return flag && value; }
 function semanticCondition(value: number | string | null): number { return value ? 1 : 0; }
@@ -26,6 +47,27 @@ class SemanticWorker {
 }
 
 function semanticContractRun(): void {
+  scopeContextExpect("missing typed boolean element truthiness", semanticSparseCondition([], 0), false);
+  scopeContextExpect("missing typed boolean element equality", semanticSparseEqual([], 0), false);
+  scopeContextExpect("missing stored typed boolean truthiness", semanticSparseStored([]), false);
+  scopeContextExpect("missing typed number element equality", semanticSparseNumber([], 0), false);
+  for (const left of [0, -0, -1, 0.25, 1]) for (const right of [0, -1, 0.25, 1]) {
+    scopeContextExpect("typed native number comparison", semanticTypedEqual(left, right), left === right);
+    scopeContextExpect("typed native boolean condition", semanticTypedChoose(true, left, right, "active"), left === right);
+    scopeContextExpect("typed native boolean false", semanticTypedChoose(false, left, right, "active"), false);
+    scopeContextExpect("typed native string comparison", semanticTypedChoose(true, left, right, "idle"), false);
+  }
+  const native_boolean = instance_exists(undefined);
+  scopeContextExpect("native API result is normalized boolean", is_bool(native_boolean), true);
+  for (let index = 0; index < 2; index++) {
+    const enabled = index === 1;
+    const state = { trace: "" };
+    const selected = semanticConditionalEffect(state, "A", enabled)
+      && semanticConditionalEffect(state, "B", true);
+    scopeContextExpect("typed boolean short circuit value", selected, enabled);
+    scopeContextExpect("typed boolean short circuit effects", state.trace, enabled ? "AB" : "A");
+  }
+  console.log("TS2GML_TYPED_PRIMITIVE_CONTRACT_OK");
   semanticClosuresRun();
   scopeContextExpect("logical operand", semanticFallback(0, 5), 5);
   scopeContextExpect("logical local", semanticAnd(true, 42), 42);

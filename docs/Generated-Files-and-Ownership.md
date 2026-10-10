@@ -20,6 +20,7 @@ The compiler separates source-owned, compiler-owned, and IDE-owned data. Underst
 | Manual Object Variables | GameMaker IDE | Preserved unless they conflict with a source field |
 | Existing room `.yy` | GameMaker IDE | Only the creation-code link is managed while a matching room class exists |
 | Generated room creation `.gml` | Compiler | Contains the compiled creation-code body |
+| Sprite `.yy`, frame PNGs, and layer PNGs | GameMaker IDE/user | Referenced for declarations; never rewritten or deleted by ts2gml |
 | Unmanaged GML resources | GameMaker IDE/user | Parsed for declarations; never adopted, overwritten, or deleted |
 | `.yyp` resource/folder references | Shared | Deterministically updated while preserving unmanaged entries |
 
@@ -34,6 +35,8 @@ An asset created in GameMaker is unmanaged. If TypeScript tries to generate the 
 Builds automatically replace external edits to compiler-owned output, recreate missing output, and remove stale files recorded in the manifest. Make lasting code changes in TypeScript. The legacy `--overwrite-generated` flag is accepted for compatibility but is no longer required and never permits taking over unmanaged assets.
 
 Unchanged files retain their timestamps. GameMaker-only JSON formatting changes and existing resource/folder order are preserved to avoid repeated rewrites after IDE saves.
+
+Saved native sprite edits, including disabled layers and composed frame pixels, survive builds and generated-file cleanup. Project and extension hooks supplied by the game run independently; their own asset import or copy logic must also preserve these edits.
 
 Object `.yy` files are not treated as opaque generated text because users need to configure them in the IDE. The compiler merges documented IDE-owned fields while replacing compiler-owned fields.
 

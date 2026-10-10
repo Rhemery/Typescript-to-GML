@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.0-beta.9 - 2026-10-10
+
+- Add regression coverage for saved native sprite layers and PNGs across incremental builds, Run/Build hooks, and stale generated-file cleanup. Document native sprite ownership and the boundary with custom project hooks.
+- Emit the runtime type-guard asset only when lowered code calls it. `off` removes stale guard code, resources and manifest entries; standard collection-only code no longer emits an unused guard library.
+- Carry checked primitive type facts through JavaScript erasure to emit direct boolean conditions and same-kind primitive comparisons. Normalize native boolean API results with a direct comparison; retain semantic helpers for mixed, nullable and dynamic values.
+- Lower boolean conditions to native short-circuit expressions without allocating operand-returning closures. Reuse normalized native booleans and omit redundant truthiness checks for comparisons.
+- Share `typeof` and object spread/rest runtime helpers instead of creating a function at each use. Preserve single evaluation, copy precedence, nullish spread handling, and rest exclusions.
+- Preserve public struct keys when closure conversion renames captured parameters.
+- Avoid per-use closures for logical defaults with primitive literal fallbacks, while keeping calls, indexed reads and reference allocations lazy.
+- Specialize strict comparisons with number, string, and boolean literals, retaining type distinctions and NaN behavior. Add evaluation-order, truthiness, equality, and copy regression matrices.
+- Include only referenced value runtime helpers and their dependencies in generated projects.
+- Advance the companion VSIX to `0.2.9` with matching compiler metadata, and update its packaging dependency to clear the development dependency audit.
+
 ## 0.2.0-beta.8 - 2026-10-03
 
 - Add `gm_static(() => expression)` for native GML static storage on ordinary instance fields. Initialize once on first construction, preserve instance shadowing and shared struct references, and reject unsupported factories and GameMaker asset usage with source-located diagnostics.

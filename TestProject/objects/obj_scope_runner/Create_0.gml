@@ -124,8 +124,8 @@ self.checkMethodCaptures = function(_target) {
     var fromSelf = function () { return 0; };
     var fromOther = function () { return 0; };
     with (_target) {
-        var __ts2gml_with_self_11669_1 = self;
-        var __ts2gml_with_other_11669_2 = other;
+        var __ts2gml_with_self_11675_1 = self;
+        var __ts2gml_with_other_11675_2 = other;
         fromSelf = __ts2gml_value_method(self, unboundCapture);
         fromOther = __ts2gml_value_method(other, unboundCapture);
     }
@@ -162,10 +162,10 @@ self.checkWithCaptures = function(__ts2gml_capture_16_parameter) {
         with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
             var __ts2gml_env_85 = { __ts2gml_capture_17: __ts2gml_capture_17_parameter };
             with (__ts2gml_env_84.__ts2gml_capture_16) {
-                var __ts2gml_with_self_15751_1 = self;
-                var __ts2gml_with_other_15751_2 = other;
+                var __ts2gml_with_self_15757_1 = self;
+                var __ts2gml_with_other_15757_2 = other;
                 var __ts2gml_env_86_self = method_get_self(function () { });
-                __ts2gml_with_self_15751_1.on_step = method({ __ts2gml_env_85: __ts2gml_env_85, __ts2gml_receiver: __ts2gml_env_86_self, __ts2gml_closure: true }, function () {
+                __ts2gml_with_self_15757_1.on_step = method({ __ts2gml_env_85: __ts2gml_env_85, __ts2gml_receiver: __ts2gml_env_86_self, __ts2gml_closure: true }, function () {
                     var __ts2gml_env_85 = self.__ts2gml_env_85;
                     with ((__ts2gml_value_truthy(is_undefined(self.__ts2gml_receiver)) ? other : self.__ts2gml_receiver)) {
                         x += lengthdir_x(__ts2gml_env_85.__ts2gml_capture_17.projectile_speed, __ts2gml_env_85.__ts2gml_capture_17.direction);
@@ -195,11 +195,11 @@ self.checkWithCaptures = function(__ts2gml_capture_16_parameter) {
     __ts2gml_env_84.__ts2gml_capture_16.x = originalX;
     __ts2gml_env_84.__ts2gml_capture_16.y = originalY;
     with (__ts2gml_env_84.__ts2gml_capture_16) {
-        var __ts2gml_with_self_15751_3 = self;
-        var __ts2gml_with_other_15751_4 = other;
+        var __ts2gml_with_self_15757_3 = self;
+        var __ts2gml_with_other_15757_4 = other;
         var __ts2gml_env_89_self = method_get_self(function () { });
-        var __ts2gml_env_89_lexical = __ts2gml_with_other_15751_4;
-        var __ts2gml_env_89 = { __ts2gml_capture_18: undefined, __ts2gml_capture_21: __ts2gml_with_self_15751_3, __ts2gml_capture_22: __ts2gml_with_other_15751_4 };
+        var __ts2gml_env_89_lexical = __ts2gml_with_other_15757_4;
+        var __ts2gml_env_89 = { __ts2gml_capture_18: undefined, __ts2gml_capture_21: __ts2gml_with_self_15757_3, __ts2gml_capture_22: __ts2gml_with_other_15757_4 };
         __ts2gml_env_89.__ts2gml_capture_18 = 3;
         __ts2gml_env_89.__ts2gml_capture_21.lexicalReader = method({ __ts2gml_env_89: __ts2gml_env_89, __ts2gml_env_84: __ts2gml_env_84, __ts2gml_receiver: __ts2gml_env_89_self, __ts2gml_this: __ts2gml_env_89_lexical, __ts2gml_closure: true }, function () {
             var __ts2gml_env_89 = self.__ts2gml_env_89;
@@ -223,21 +223,21 @@ self.checkWithCaptures = function(__ts2gml_capture_16_parameter) {
     scopeContextExpect("with body local shared with stored arrow", self.capturedWithReader(), self.value + 4);
     scopeContextExpect("with body local shared with ordinary function", __ts2gml_env_84.__ts2gml_capture_16.contextReader(), __ts2gml_env_84.__ts2gml_capture_16.value + self.value + 4);
     with (__ts2gml_env_84.__ts2gml_capture_16) {
-        var __ts2gml_with_self_15751_5 = self;
-        var __ts2gml_with_other_15751_6 = other;
-        var __ts2gml_env_92 = { __ts2gml_capture_23: __ts2gml_with_self_15751_5, __ts2gml_capture_27: undefined };
+        var __ts2gml_with_self_15757_5 = self;
+        var __ts2gml_with_other_15757_6 = other;
+        var __ts2gml_env_92 = { __ts2gml_capture_23: __ts2gml_with_self_15757_5, __ts2gml_capture_27: undefined };
         __ts2gml_env_92.__ts2gml_capture_27 = 3;
-        with (__ts2gml_with_other_15751_6) {
-            var __ts2gml_with_self_15751_7 = self;
-            var __ts2gml_with_other_15751_8 = other;
-            var __ts2gml_env_93 = { __ts2gml_capture_24: __ts2gml_with_self_15751_7, __ts2gml_capture_28: undefined };
+        with (__ts2gml_with_other_15757_6) {
+            var __ts2gml_with_self_15757_7 = self;
+            var __ts2gml_with_other_15757_8 = other;
+            var __ts2gml_env_93 = { __ts2gml_capture_24: __ts2gml_with_self_15757_7, __ts2gml_capture_28: undefined };
             __ts2gml_env_93.__ts2gml_capture_28 = 4;
-            with (__ts2gml_with_other_15751_8) {
-                var __ts2gml_with_self_15751_9 = self;
-                var __ts2gml_with_other_15751_10 = other;
+            with (__ts2gml_with_other_15757_8) {
+                var __ts2gml_with_self_15757_9 = self;
+                var __ts2gml_with_other_15757_10 = other;
                 var __ts2gml_env_94_self = method_get_self(function () { });
-                var __ts2gml_env_94_lexical = __ts2gml_with_other_15751_6;
-                var __ts2gml_env_94 = { __ts2gml_capture_25: __ts2gml_with_self_15751_9, __ts2gml_capture_26: __ts2gml_with_other_15751_10, __ts2gml_capture_29: undefined };
+                var __ts2gml_env_94_lexical = __ts2gml_with_other_15757_6;
+                var __ts2gml_env_94 = { __ts2gml_capture_25: __ts2gml_with_self_15757_9, __ts2gml_capture_26: __ts2gml_with_other_15757_10, __ts2gml_capture_29: undefined };
                 __ts2gml_env_94.__ts2gml_capture_29 = 5;
                 __ts2gml_env_94.__ts2gml_capture_25.readerFactory = method({ __ts2gml_env_92: __ts2gml_env_92, __ts2gml_env_84: __ts2gml_env_84, __ts2gml_env_93: __ts2gml_env_93, __ts2gml_env_94: __ts2gml_env_94, __ts2gml_receiver: __ts2gml_env_94_self, __ts2gml_this: __ts2gml_env_94_lexical, __ts2gml_closure: true }, function () {
                     var __ts2gml_env_92 = self.__ts2gml_env_92;
@@ -275,8 +275,8 @@ self.checkWithCaptures = function(__ts2gml_capture_16_parameter) {
     var readers = [];
     __ts2gml_env_84.__ts2gml_capture_32 = 0;
     with (obj_scope_target) {
-        var __ts2gml_with_self_15751_11 = self;
-        var __ts2gml_with_other_15751_12 = other;
+        var __ts2gml_with_self_15757_11 = self;
+        var __ts2gml_with_other_15757_12 = other;
         var __ts2gml_env_97 = { __ts2gml_capture_31: undefined };
         __ts2gml_env_97.__ts2gml_capture_31 = 0;
         __ts2gml_collection_push(readers, [method({ __ts2gml_env_97: __ts2gml_env_97, __ts2gml_env_84: __ts2gml_env_84, __ts2gml_closure: true }, function () {
@@ -394,7 +394,7 @@ self.checkClosureContexts = function(_target) {
         return value;
     }));
     scopeContextExpect("indirect argument context callbacks ran", __ts2gml_env_99.__ts2gml_capture_33, 3);
-    scopeContextExpect("captured callback exposes a struct environment", __ts2gml_value_truthy(is_struct(method_get_self(read))), true);
+    scopeContextExpect("captured callback exposes a struct environment", is_struct(method_get_self(read)) != 0, true);
     var reboundTarget = instance_create_depth(600, 600, 0, obj_scope_target);
     reboundTarget.value = 90;
     var rebound = __ts2gml_value_method(reboundTarget, read);
@@ -402,27 +402,27 @@ self.checkClosureContexts = function(_target) {
     scopeContextExpect("rebinding does not mutate original callback", read(), expected);
     instance_destroy(reboundTarget);
     with (_target) {
-        var __ts2gml_with_self_20785_1 = self;
-        var __ts2gml_with_other_20785_2 = other;
+        var __ts2gml_with_self_20791_1 = self;
+        var __ts2gml_with_other_20791_2 = other;
         scopeContextExpect("captured callback from with", read(), expected);
         scopeContextExpect("with self restored after closure", self.id, targetId);
         scopeContextExpect("with other restored after closure", other.id, ownerId);
-        with (__ts2gml_with_other_20785_2) {
-            var __ts2gml_with_self_20785_3 = self;
-            var __ts2gml_with_other_20785_4 = other;
-            with (__ts2gml_with_other_20785_4) {
-                var __ts2gml_with_self_20785_5 = self;
-                var __ts2gml_with_other_20785_6 = other;
+        with (__ts2gml_with_other_20791_2) {
+            var __ts2gml_with_self_20791_3 = self;
+            var __ts2gml_with_other_20791_4 = other;
+            with (__ts2gml_with_other_20791_4) {
+                var __ts2gml_with_self_20791_5 = self;
+                var __ts2gml_with_other_20791_6 = other;
                 scopeContextExpect("captured callback from three with scopes", method_call(read, []), expected);
                 scopeContextExpect("deep with self after closure", self.id, targetId);
                 scopeContextExpect("deep with other after closure", other.id, ownerId);
-                scopeContextExpect("deep with previous alias survives", __ts2gml_with_other_20785_6.id, ownerId);
-                scopeContextExpect("deep with middle alias survives", __ts2gml_with_self_20785_3.id, ownerId);
-                scopeContextExpect("deep with inner alias survives", __ts2gml_with_self_20785_5.id, targetId);
+                scopeContextExpect("deep with previous alias survives", __ts2gml_with_other_20791_6.id, ownerId);
+                scopeContextExpect("deep with middle alias survives", __ts2gml_with_self_20791_3.id, ownerId);
+                scopeContextExpect("deep with inner alias survives", __ts2gml_with_self_20791_5.id, targetId);
             }
         }
         // These captures belong to the factory invocation, not the inline with.
-        var lexicalFactory = method(__ts2gml_with_other_20785_2, function (__ts2gml_capture_34_parameter) {
+        var lexicalFactory = method(__ts2gml_with_other_20791_2, function (__ts2gml_capture_34_parameter) {
             var __ts2gml_env_105_self = method_get_self(function () { });
             var __ts2gml_env_105_lexical = self;
             var __ts2gml_env_105 = { __ts2gml_capture_34: __ts2gml_capture_34_parameter };
@@ -451,9 +451,9 @@ self.checkClosureContexts = function(_target) {
                 }
             });
         };
-        __ts2gml_with_self_20785_1.readerFactory = lexicalFactory(3);
-        __ts2gml_with_self_20785_1.contextReader = nativeFactory(4);
-        scopeContextExpect("with enclosing caller alias", __ts2gml_with_other_20785_2.id, ownerId);
+        __ts2gml_with_self_20791_1.readerFactory = lexicalFactory(3);
+        __ts2gml_with_self_20791_1.contextReader = nativeFactory(4);
+        scopeContextExpect("with enclosing caller alias", __ts2gml_with_other_20791_2.id, ownerId);
     }
     var lexical = _target.readerFactory();
     scopeContextExpect("factory within with preserves outer lexical this", lexical(), ownerValue + 3);
@@ -503,7 +503,7 @@ self.checkClosureContexts = function(_target) {
     try {
         _target.checkedInvoke(thrower);
     }
-    catch (__ts2gml_caught_20785_7) {
+    catch (__ts2gml_caught_20791_7) {
         caught = true;
     }
     scopeContextExpect("captured callback exception observed", caught, true);
@@ -631,49 +631,49 @@ scopeContextExpect("method binding", method_get_self(self.callerValue), self.id)
 scopeContextExpect("callback other", target.invoke(self.callerValue), target.value);
 var amount = 3;
 with (obj_scope_target) {
-    var __ts2gml_with_self_7640_1 = self;
-    var __ts2gml_with_other_7640_2 = other;
-    scopeContextExpect("with self", __ts2gml_with_self_7640_1.value, 20);
-    scopeContextExpect("with other", __ts2gml_with_other_7640_2.value, 41);
-    __ts2gml_with_self_7640_1.value += amount;
-    __ts2gml_with_other_7640_2.value += 1;
+    var __ts2gml_with_self_7669_1 = self;
+    var __ts2gml_with_other_7669_2 = other;
+    scopeContextExpect("with self", __ts2gml_with_self_7669_1.value, 20);
+    scopeContextExpect("with other", __ts2gml_with_other_7669_2.value, 41);
+    __ts2gml_with_self_7669_1.value += amount;
+    __ts2gml_with_other_7669_2.value += 1;
 }
 scopeContextExpect("with local capture", target.value, 23);
 scopeContextExpect("with lexical this", self.value, 42);
 with (obj_scope_target) {
-    var __ts2gml_with_self_8044_1 = self;
-    var __ts2gml_with_other_8044_2 = other;
+    var __ts2gml_with_self_8073_1 = self;
+    var __ts2gml_with_other_8073_2 = other;
     with (obj_scope_target) {
-        var __ts2gml_with_self_8044_3 = self;
-        var __ts2gml_with_other_8044_4 = other;
-        __ts2gml_with_self_8044_3.value += 1;
-        __ts2gml_with_other_8044_4.value += 2;
-        __ts2gml_with_other_8044_2.value += 4;
-        __ts2gml_with_other_8044_2.value += 8;
+        var __ts2gml_with_self_8073_3 = self;
+        var __ts2gml_with_other_8073_4 = other;
+        __ts2gml_with_self_8073_3.value += 1;
+        __ts2gml_with_other_8073_4.value += 2;
+        __ts2gml_with_other_8073_2.value += 4;
+        __ts2gml_with_other_8073_2.value += 8;
     }
-    scopeContextExpect("nested with native self alias", __ts2gml_with_self_8044_1.value, 26);
+    scopeContextExpect("nested with native self alias", __ts2gml_with_self_8073_1.value, 26);
 }
 scopeContextExpect("nested with self/other", target.value, 26);
 scopeContextExpect("nested with lexical this", self.value, 54);
 with (instance_create_depth(100, 100, 0, obj_scope_target)) {
-    var __ts2gml_with_self_8550_1 = self;
-    var __ts2gml_with_other_8550_2 = other;
-    scopeContextExpect("with callback native other alias", __ts2gml_with_other_8550_2.value, __ts2gml_with_other_8550_2.value);
-    __ts2gml_with_self_8550_1.direction = 0;
-    __ts2gml_with_self_8550_1.on_step = function () {
+    var __ts2gml_with_self_8579_1 = self;
+    var __ts2gml_with_other_8579_2 = other;
+    scopeContextExpect("with callback native other alias", __ts2gml_with_other_8579_2.value, __ts2gml_with_other_8579_2.value);
+    __ts2gml_with_self_8579_1.direction = 0;
+    __ts2gml_with_self_8579_1.on_step = function () {
         x += lengthdir_x(5, direction);
         y += lengthdir_y(5, direction);
     };
-    __ts2gml_with_self_8550_1.lexicalReader = method(__ts2gml_with_other_8550_2, function () { return self.value; });
-    __ts2gml_with_self_8550_1.contextReader = function () {
+    __ts2gml_with_self_8579_1.lexicalReader = method(__ts2gml_with_other_8579_2, function () { return self.value; });
+    __ts2gml_with_self_8579_1.contextReader = function () {
         __ts2gml_guard_object(self, obj_scope_target, "self");
         return self.value;
     };
-    __ts2gml_with_self_8550_1.readerFactory = method(__ts2gml_with_other_8550_2, function () { return method(self, function () { return self.value; }); });
-    __ts2gml_with_other_8550_2.projectile = __ts2gml_with_self_8550_1;
+    __ts2gml_with_self_8579_1.readerFactory = method(__ts2gml_with_other_8579_2, function () { return method(self, function () { return self.value; }); });
+    __ts2gml_with_other_8579_2.projectile = __ts2gml_with_self_8579_1;
 }
 var collisionSurface = surface_create(1, 1);
-__ts2gml_value_truthy(surface_set_target(collisionSurface));
+surface_set_target(collisionSurface);
 draw_clear(c_white);
 surface_reset_target();
 var collisionSprite = sprite_create_from_surface(collisionSurface, 0, 0, 1, 1, false, false, 0, 0);

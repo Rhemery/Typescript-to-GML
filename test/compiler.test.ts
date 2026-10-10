@@ -468,7 +468,7 @@ const nothing = void reset();
   assert.match(result.gml, /__ts2gml_value_nullish\(__ts2gml_optional/);
   assert.match(result.gml, /is_instanceof\(player, Player\)/);
   assert.match(result.gml, /variable_struct_exists\(player, "health"\)/);
-  assert.match(result.gml, /is_callable\(__ts2gml_typeof_value\)/);
+  assert.match(result.gml, /__ts2gml_value_typeof\(/);
   assert.match(result.gml, /reset\(\)/);
 });
 
@@ -555,8 +555,8 @@ function spreadValues(left: number[], right: number[], source: GMStruct, calcula
 `, "spread.ts");
 
   assert.match(result.gml, /array_concat\(\[\], \[0\], left, \[3\], right\)/);
-  assert.match(result.gml, /variable_struct_get_names\(__ts2gml_part\)/);
-  assert.match(result.gml, /variable_struct_set\(__ts2gml_result/);
+  assert.match(result.gml, /variable_struct_get_names\(_part\)/);
+  assert.match(result.gml, /__ts2gml_value_copy\(/);
   assert.match(result.gml, /is_method\(__ts2gml_callable\) \? method_call/);
   assert.match(result.gml, /var __ts2gml_callable = sum;/);
   assert.match(result.gml, /var __ts2gml_arguments = array_concat\(\[\], \[1\], values\)/);
@@ -990,7 +990,7 @@ function run(limit: number): number {
 `, "statement-lowering.ts");
 
   assert.match(result.gml, /for \(var __ts2gml_do_first_/);
-  assert.match(result.gml, /__ts2gml_do_first_\d+_\d+ \|\| __ts2gml_value_truthy\(count < limit\)/);
+  assert.match(result.gml, /__ts2gml_do_first_\d+_\d+ \|\| count < limit/);
   assert.match(result.gml, /catch \(__ts2gml_caught_/);
   assert.doesNotMatch(result.gml, /\bdo\s*\{|catch\s*\{/);
 });

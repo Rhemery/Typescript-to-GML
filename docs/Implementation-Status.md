@@ -1,14 +1,14 @@
 # Evaluation implementation status
 
-Updated 2026-10-03. The repository targets **0.2.0-beta.8**, with companion VSIX **0.2.8**. It builds on the beta.5 stabilization milestone from [the evaluation](Tool-Evaluation.md), beta.6's external TypeScript library support, and beta.7's declaration and closure work. Beta.8 is prepared for publication.
+Updated 2026-10-10. The repository targets **0.2.0-beta.9**, with companion VSIX **0.2.9**. It builds on the beta.5 stabilization milestone from [the evaluation](Tool-Evaluation.md), beta.6's external TypeScript library support, beta.7's declaration and closure work, and beta.8's static storage and array typing.
 
-## Next-version scope and readiness
+## Current release scope and readiness
 
-Beta.8 distinguishes TypeScript class statics from native GML constructor storage. TypeScript static fields are created in declaration order and missing reads return `undefined`, preserving inherited values until child declarations run. `gm_static(() => expression)` explicitly gives ordinary instance fields native initialize-once storage, with instance shadowing and shared struct references. Factories requiring instance context and unsupported GameMaker asset usage are rejected. JavaScript comparison, compiler, type, project-generation, and VM fixtures cover the behavior. Compiler, lockfile, CLI, extension, documentation, and generated-project versions advance together.
+Beta.9 carries checker-proven primitive facts through JavaScript erasure. Boolean conditions use native short-circuit operations, same-kind primitive comparisons avoid dynamic type dispatch, and typed string-dictionary reads use native struct access. Native boolean API results normalize numeric 0/1 directly. Nullable, mixed, and unknown values retain the semantic helpers required for JavaScript behavior. Compiler, JavaScript comparison, project-generation, and GameMaker VM tests cover evaluation order, truthiness, equality, and typed boundaries.
 
-Beta.8 also groups nested conditional expressions for valid GML while preserving truthiness, lazy evaluation, and side-effect order. Native array declarations accept authored element types, retain typed callbacks and results, and allow readonly inputs for non-mutating operations; the declaration cache format advances so installed projects regenerate stale signatures.
+Shared `typeof`, object spread/rest, and primitive literal fallback helpers reduce per-use closures. Generated value libraries include only referenced helpers and their dependencies; the runtime guard asset is emitted only when lowered code calls it. Closure conversion preserves public struct keys when parameter names change. A native sprite regression verifies saved disabled layers and PNGs survive builds, Run/Build hooks, and stale generated-file cleanup. Custom game hooks remain responsible for preserving assets they import or copy. Compiler, lockfile, CLI, extension, documentation, and generated-project versions advance together.
 
-The remaining publication gates are importing the exact beta.8 YYMPS into a disposable GameMaker project and checking its VSIX installation, interactive activation, diagnostics, and navigation. Automated package validation and earlier CLI installation checks are separate evidence. The feature roadmap below does not block this beta; broader target claims and a stable release still need real-game use and additional executed coverage.
+The remaining publication gates are importing the exact beta.9 YYMPS into a disposable GameMaker project and checking its VSIX installation, interactive activation, diagnostics, and navigation. Automated package validation and earlier CLI installation checks are separate evidence. The feature roadmap below does not block this beta; broader target claims and a stable release still need real-game use and additional executed coverage.
 
 ## Immediate fixes
 
@@ -18,7 +18,7 @@ The remaining publication gates are importing the exact beta.8 YYMPS into a disp
 | F02 | Runtime access distinguishes arrays, strings, structs, and instances; length writes resize arrays; bracket/parenthesized collection calls lower consistently. Checker planning preserves native arrays such as `alarm`. |
 | F03 | Unicode literals and template chunks retain non-BMP characters accepted by GameMaker. String indexing follows the documented GameMaker character contract. |
 | F04 | Optional collection slots are checked before indexing. Defaults for includes, indexOf, join, and sort are explicit. |
-| F05 | Conditions use explicit truth conversion; logical expressions return selected operands and defer the right-hand side. Immediate generated functions explicitly receive needed local values. |
+| F05 | Conditions use native operations when checked types prove them safe and semantic truth conversion otherwise. Logical value expressions return selected operands and defer effectful right-hand sides. Immediate generated functions explicitly receive needed local values. |
 | F06 | Null and undefined are distinct; defaults test undefined; strict equality preserves supported type distinctions. Native predicates declared boolean are normalized. Coercive equality is rejected. |
 | F07 | Round/random references use wrappers; min/max also handle zero/one/multiple arguments. Other Math members retain documented native numerical-domain behavior. |
 | F08 | Arrays require a comparator and sort stably, including fractional comparator results. Native sorting remains available explicitly. |
@@ -30,10 +30,10 @@ Additional executed fixes include decimal emission for scientific/hexadecimal/bi
 
 | Finding | Status and evidence |
 | --- | --- |
-| H01 | Added a shared JavaScript/GameMaker fixture with 48 deterministic comparisons, plus expanded GameMaker boundary/lifecycle tests. The complete suite has 99 tests, including native struct inference coverage. Exhaustive family-by-family differential coverage and generated-expression fuzzing remain future test work. |
+| H01 | Added shared JavaScript/GameMaker fixtures and expanded boundary, lifecycle, closure, static, primitive, and native sprite coverage. The complete suite has 209 tests. Exhaustive family-by-family differential coverage and generated-expression fuzzing remain future test work. |
 | H02 | Implemented cross-process locking, flushed atomic replacements, a recovery journal, rollback, and preflight refusal to overwrite post-crash edits. Tests cover injected rename/write failure, abrupt process exit, concurrent processes, and successful recovery. |
 | H03 | CLI/build minimum is Node 22; CI covers Node 22/24 on Windows/Linux, and release tooling uses Node 24. Local execution here used Windows/Node 24.1.0; the new CI matrix has not been executed from this session. |
-| H04 | VSIX identity is 0.2.8 and records compiler beta.8. Packaging validates versions and API minimum. The earlier CLI installation/upgrade from 0.2.6 to 0.2.7 passed in an isolated VS Code 1.139.1 profile; beta.8 interactive installation remains a publication gate. |
+| H04 | VSIX identity is 0.2.9 and records compiler beta.9. Packaging validates versions and API minimum. The earlier CLI installation/upgrade from 0.2.6 to 0.2.7 passed in an isolated VS Code 1.139.1 profile; beta.9 interactive installation remains a publication gate. |
 | H05 | Editor validation runs asynchronously through each project's CLI and diagnostic protocol. Tests verify two independently pinned compiler versions and unsaved text transport. Interactive extension-host performance still needs observation in a larger game. |
 | H06 | Watch tests now exercise declaration-only edits, tsconfig changes, guard config, and unmanaged GML signatures. Runtime selection/distributed declarations also trigger builds. See the explicit dependency table and external-config limit in [Compatibility](Compatibility.md). |
 | H07 | Inline TypeScript provenance restores original diagnostics. Generated statement-level `.gml.map.json` files support editor navigation. Full breakpoint/debugger integration remains separate work. |
@@ -48,13 +48,14 @@ The distribution and YYMPS no longer include TypeScript's 100 standard-library d
 
 ## Verification
 
+- `npm run verify` passed for beta.9 on 2026-10-10: declaration generation, strict tool/editor/runtime/game type checks, 209 tests, YYMPS/VSIX packaging, distribution smoke checks, example generation, and GameMaker Igor/VM execution. Runtime `2026.0.0.23` printed `TS2GML_TYPED_PRIMITIVE_CONTRACT_OK` alongside all existing suite markers. Evidence: `output/beta9-release-verify.log` and `output/gamemaker-verification.json`.
 - `npm run verify` passed for beta.8 on 2026-10-03: declaration generation, strict tool/editor/runtime/game type checks, 193 tests, YYMPS/VSIX packaging, distribution smoke checks, example generation, and GameMaker Igor/VM execution. Runtime `2026.0.0.23` printed both `TS2GML_STATIC_CONTRACT_OK` and `TS2GML_NATIVE_STATIC_CONTRACT_OK` alongside all existing suite markers. Evidence: `output/beta8-release-verify.log` and `output/gamemaker-verification.json`.
 - `npm run verify` passed for beta.7 on 2026-09-26: local declaration generation, strict tool/editor/runtime/game type checking, 99 tests, YYMPS/VSIX packaging, distribution smoke checks, example generation, and GameMaker Igor/VM execution.
 - The runner printed `TS2GML_SCOPE_CONTEXT_OK` on Windows VM, runtime `2026.0.0.23`.
 - The real VS Code 1.139.1 CLI upgraded `rhemery.typescript-to-gml@0.2.6` to `0.2.7` in an isolated profile and listed the new installed version.
 - The integration fixture now declares `infer_class` with numeric `__var` and string `a`, and `gm_global.infer_struct` with numeric `__ee` and string `b`. Tests also reject incorrect member assignments and refresh declarations after GML edits.
-- `doctor --json` reports beta.7 and the external TypeScript 5.9.3 installation with no diagnostics. Beta.6's missing default-library regression remains covered.
-- On 2026-10-03, `npm audit --omit=dev` reported zero production vulnerabilities. The full `npm audit` reported nine high-severity findings, all in development dependencies, including the VSIX packaging toolchain; some fixes require a major `@vscode/vsce` upgrade. This release leaves those dependency upgrades outstanding. Evidence: `output/beta8-release-audit.json` and `output/beta8-release-production-audit.json`.
+- The earlier beta.7 `doctor --json` run reported the external TypeScript 5.9.3 installation with no diagnostics. Beta.6's missing default-library regression remains covered.
+- On 2026-10-10, both `npm audit` and `npm audit --omit=dev` reported zero vulnerabilities after upgrading `@vscode/vsce` to 4.0.0. This resolves the nine high-severity development dependency findings recorded during beta.8 preparation. Evidence: `output/beta9-release-audit.json` and `output/beta9-release-production-audit.json`.
 - Earlier local benchmark: five-file project checks took 1,381 / 1,039 / 894 ms; 100/500-function synthetic inputs took 343 / 660 ms. This remains the baseline before program-cache optimization; it was not rerun for beta.7.
 - Local evidence: `output/beta7-verify.log`, `output/gamemaker-verification.json`, `output/beta7-vsix-before.log`, `output/beta7-vsix-after.log`, `output/beta7-doctor.json`, `output/beta7-audit.json`, and `output/benchmark.json`.
 
@@ -62,7 +63,7 @@ GameMaker IDE YYMPS import, interactive VS Code activation, minimum-Node executi
 
 ## Remaining product roadmap
 
-The evaluation's later milestones remain planned. They are not advertised as beta.8 features:
+The evaluation's later milestones remain planned. They are not advertised as beta.9 features:
 
 1. **Dependency-ordered startup:** split declarations from initializers, build an explicit dependency graph, diagnose cycles, and test reversed filenames/resource order. This should precede module support.
 2. **Static runtime modules:** define import/export resolution and deterministic symbol naming on top of startup ordering. Preserve global native GameMaker APIs and reject unsupported module behavior.

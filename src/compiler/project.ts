@@ -31,9 +31,10 @@ import {
   validateTypeScriptSource,
   validateRuntimeAccesses,
   usesCollectionRuntime,
+  usesRuntimeGuards,
   type RuntimeTypeGuardPlan,
 } from "./compile.js";
-import { usesValueRuntime, valueRuntimeGml, valueRuntimeScriptName } from "./values.js";
+import { usesValueRuntime, createValueRuntimeGml, valueRuntimeScriptName } from "./values.js";
 import {
   compileObjectClass,
   isObjectClass,
@@ -385,7 +386,8 @@ async function compileGameMakerProject(
       ? collectStaticReceivers(programSource, guardChecker, staticClasses)
       : undefined;
     if (programSource) validateRuntimeAccesses(programSource, guardChecker);
-    const nativeAccess = programSource ? collectNativeAccessPlan(programSource, guardChecker) : undefined;
+    const nativeAccess = programSource ? collectNativeAccessPlan(programSource, guardChecker,
+      guardProgram.getCompilerOptions().strictNullChecks ?? guardProgram.getCompilerOptions().strict ?? false) : undefined;
     const javascript = toJavaScript(unit.source, unit.fileName, runtimeTypeGuards, staticReceivers, nativeAccess,
       programSource ? { sourceFile: programSource, checker: guardChecker } : undefined);
     const sourceFile = parseJavaScript(javascript, unit.fileName);
@@ -492,22 +494,19 @@ async function compileGameMakerProject(
     assetSourceFiles.set(collectionRuntimeScriptName, collectionUnit.fileName);
   }
 
-  const runtimeGuardUnit = units.find((unit) =>
-    unit.runtimeTypeGuards &&
-    (
-      unit.runtimeTypeGuards.contextObjects.size > 0 ||
-      unit.runtimeTypeGuards.guardedArguments.size > 0
-    )
-  );
+  // The plan also records assertions in off mode for compile-time validation.
+  // Only lowered guard calls require the native runtime asset.
+  const runtimeGuardUnit = units.find((unit) => usesRuntimeGuards(unit.sourceFile));
   if (runtimeGuardUnit) {
     scripts.set(runtimeGuardScriptName, createRuntimeGuardGml());
     assetFolders.set(runtimeGuardScriptName, []);
     assetSourceFiles.set(runtimeGuardScriptName, runtimeGuardUnit.fileName);
   }
 
-  if ([...scripts.values(), ...rooms.map((room) => room.code),
-    ...objects.flatMap((object) => object.events.map((event) => event.code))].some(usesValueRuntime)) {
-    scripts.set(valueRuntimeScriptName, valueRuntimeGml);
+  const valueSources = [...scripts.values(), ...rooms.map((room) => room.code),
+    ...objects.flatMap((object) => object.events.map((event) => event.code))].join("\n");
+  if (usesValueRuntime(valueSources)) {
+    scripts.set(valueRuntimeScriptName, createValueRuntimeGml(valueSources));
     assetFolders.set(valueRuntimeScriptName, []);
     assetSourceFiles.set(valueRuntimeScriptName, units[0]!.fileName);
   }

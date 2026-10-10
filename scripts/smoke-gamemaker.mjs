@@ -56,7 +56,7 @@ try {
     "Compile",
   ]);
   await fs.access(outputPath);
-  const expectedOutput = ["TS2GML_ENUM_CONTRACT_OK", "TS2GML_STATIC_CONTRACT_OK", "TS2GML_NATIVE_STATIC_CONTRACT_OK", "TS2GML_CLOSURE_CONTRACT_OK", "TS2GML_CLOSURE_CONTEXT_OK", "TS2GML_WITH_CLOSURE_OK", "TS2GML_METHOD_CLOSURE_OK", "TS2GML_SCOPE_CONTEXT_OK"];
+  const expectedOutput = ["TS2GML_TYPED_PRIMITIVE_CONTRACT_OK", "TS2GML_ENUM_CONTRACT_OK", "TS2GML_STATIC_CONTRACT_OK", "TS2GML_NATIVE_STATIC_CONTRACT_OK", "TS2GML_CLOSURE_CONTRACT_OK", "TS2GML_CLOSURE_CONTEXT_OK", "TS2GML_WITH_CLOSURE_OK", "TS2GML_METHOD_CLOSURE_OK", "TS2GML_SCOPE_CONTEXT_OK"];
   await run(runnerPath, ["-game", outputPath], 30_000, expectedOutput);
   const evidence = { compilerVersion: JSON.parse(await fs.readFile("package.json", "utf8")).version,
     project: projectPath, runtime: path.basename(runtimePath), target, compiler: runtime,

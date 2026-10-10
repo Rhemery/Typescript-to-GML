@@ -1,6 +1,6 @@
 import ts from "typescript";
 import { collectNativeAccessPlan, inspectRuntimeAccesses, type RuntimeAccessPlan } from "./access.js";
-import { usesValueRuntime, valueRuntimeGml } from "./values.js";
+import { usesValueRuntime, createValueRuntimeGml } from "./values.js";
 import { collectionRuntimeGml } from "./collections.js";
 import { extractGmlSourceMap, originalSourceRange, parseMappedJavaScript, type GmlSourceMap } from "./source-maps.js";
 export { collectionRuntimeGml } from "./collections.js";
@@ -288,7 +288,7 @@ export function compileTypeScript(source: string, fileName = "input.ts"): Compil
   validateTypeScriptSource(source, fileName);
   const input = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
   const staticClasses = collectStaticClassNames([input]);
-  const options: ts.CompilerOptions = { noResolve: true, types: [], target: ts.ScriptTarget.ESNext };
+  const options: ts.CompilerOptions = { noResolve: true, types: [], strictNullChecks: true, target: ts.ScriptTarget.ESNext };
   const host = ts.createCompilerHost(options);
   const readSource = host.getSourceFile.bind(host);
   host.getSourceFile = (name, languageVersion, onError, createNew) => ts.sys.resolvePath(name) === ts.sys.resolvePath(fileName)
@@ -309,7 +309,7 @@ export function compileTypeScript(source: string, fileName = "input.ts"): Compil
   if (usesRuntimeGuards(sourceFile)) {
     chunks.unshift(createRuntimeGuardGml());
   }
-  if (usesValueRuntime(chunks.join("\n"))) chunks.unshift(valueRuntimeGml);
+  if (usesValueRuntime(chunks.join("\n"))) chunks.unshift(createValueRuntimeGml(chunks.join("\n")));
 
   const mapped = extractGmlSourceMap(`${chunks.filter(Boolean).join("\n\n").trim()}\n`,
     fileName.replace(/\.[jt]sx?$/i, ".gml"), ts.sys.getCurrentDirectory());
@@ -455,7 +455,11 @@ export function toJavaScript(
           }
           const enumAssignment = ts.isBinaryExpression(node) && ts.isElementAccessExpression(node.left) &&
             ts.isEnumDeclaration(ts.getOriginalNode(node.left.expression));
-          const result = ts.visitEachChild(node, visit, context);
+          let result = ts.visitEachChild(node, visit, context);
+          if (ts.isElementAccessExpression(result) &&
+            nativeAccess?.nativeStructReads.has(`${original.pos}:${original.end}:${original.kind}`)) {
+            result = runtimeCall("__ts2gml_native_struct_get", [result.expression, result.argumentExpression]);
+          }
           if (ts.isBinaryExpression(result) && result.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
             ts.isElementAccessExpression(result.left) && enumAssignment) {
             // The isolated emitter cannot resolve a string enum member from
@@ -468,9 +472,21 @@ export function toJavaScript(
           if (nativeAccess?.nativeArrays.has(`${original.pos}:${original.end}:${original.kind}`)) {
             return runtimeCall("__ts2gml_native_array", [result as ts.Expression]);
           }
-          if (nativeAccess?.nativeBooleans.has(`${original.pos}:${original.end}:${original.kind}`)) {
-            return runtimeCall("__ts2gml_value_truthy", [result as ts.Expression]);
+          if (nativeAccess?.nativeBooleans.has(`${original.pos}:${original.end}:${original.kind}`) &&
+            !isStandaloneExpression(original as ts.Expression)) {
+            return runtimeCall("__ts2gml_native_boolean", [result as ts.Expression]);
           }
+          if (ts.isBinaryExpression(result) &&
+            nativeAccess?.primitiveComparisons.has(`${original.pos}:${original.end}:${original.kind}`)) {
+            const equal = runtimeCall("__ts2gml_native_equal", [result.left, result.right]);
+            return result.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken
+              ? ts.factory.createLogicalNot(equal) : equal;
+          }
+          if (nativeAccess?.booleanConditions.has(`${original.pos}:${original.end}:${original.kind}`)) {
+            return runtimeCall("__ts2gml_native_condition", [result as ts.Expression]);
+          }
+          const conditionKind = nativeAccess?.typedConditions.get(`${original.pos}:${original.end}:${original.kind}`);
+          if (conditionKind) return runtimeCall("__ts2gml_native_" + conditionKind, [result as ts.Expression]);
           // Keep static reads distinguishable after type erasure. The GML
           // emitter uses a safe struct read, while calls and writes keep their receiver.
           if (ts.isPropertyAccessExpression(result) && !ts.isOptionalChain(result) &&
@@ -677,7 +693,7 @@ export function createRuntimeTypeGuardPlan(
   return { level, contextObjects, guardedArguments };
 }
 
-function usesRuntimeGuards(sourceFile: ts.SourceFile): boolean {
+export function usesRuntimeGuards(sourceFile: ts.SourceFile): boolean {
   let used = false;
   const visit = (node: ts.Node): void => {
     if (used) return;
@@ -1482,7 +1498,7 @@ export function validateJavaScript(sourceFile: ts.SourceFile): void {
       node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
       node.operatorToken.kind <= ts.SyntaxKind.LastAssignment &&
       !unsupportedAssignmentOperators.has(node.operatorToken.kind) &&
-      !isStandaloneAssignment(node)
+      !isStandaloneExpression(node)
     ) {
       report(
         node,
@@ -1712,7 +1728,7 @@ function isTypeOnlyImport(node: ts.ImportDeclaration): boolean {
     clause.namedBindings.elements.every((element) => element.isTypeOnly);
 }
 
-function isStandaloneAssignment(node: ts.BinaryExpression): boolean {
+function isStandaloneExpression(node: ts.Expression): boolean {
   let expression: ts.Expression = node;
   while (ts.isParenthesizedExpression(expression.parent)) expression = expression.parent;
   const parent = expression.parent;
@@ -3317,7 +3333,52 @@ function gmlTransformer(
       [...captured].map((name) => ts.factory.createIdentifier(name)));
   };
 
+  // Conditions need only truthiness, not the operand value returned by JS &&/||.
+  // Keep those operators in the native short-circuit path without allocating an IIFE.
+  const lowerCondition = (expression: ts.Expression): ts.Expression => {
+    if (ts.isParenthesizedExpression(expression)) {
+      return ts.factory.createParenthesizedExpression(lowerCondition(expression.expression));
+    }
+    if (ts.isBinaryExpression(expression) &&
+      (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+        expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)) {
+      return ts.factory.updateBinaryExpression(expression, lowerCondition(expression.left),
+        expression.operatorToken, lowerCondition(expression.right));
+    }
+    if (isCallTo(expression, "__ts2gml_native_condition") || isCallTo(expression, "__ts2gml_native_reference") ||
+      isCallTo(expression, "__ts2gml_native_string")) {
+      let operand = expression.arguments[0]!;
+      while (ts.isParenthesizedExpression(operand)) operand = operand.expression;
+      if (ts.isBinaryExpression(operand) && (operand.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
+        operand.operatorToken.kind === ts.SyntaxKind.BarBarToken)) return lowerCondition(operand);
+    }
+    const lowered = ts.visitNode(expression, visit) as ts.Expression;
+    if (isCallTo(expression, "__ts2gml_native_reference")) return ts.factory.createLogicalNot(runtimeCall("is_undefined", [lowered]));
+    if (isCallTo(expression, "__ts2gml_native_string")) return ts.factory.createBinaryExpression(
+      runtimeCall("string_length", [lowered]), ts.SyntaxKind.ExclamationEqualsToken, ts.factory.createNumericLiteral(0));
+    return isBooleanExpression(expression) ? lowered : runtimeCall("__ts2gml_value_truthy", [lowered]);
+  };
+
   const visit: ts.Visitor = (node) => {
+    // These markers carry checker-proven primitive types through JS erasure.
+    // They disappear during GML emission; none is a native runtime function.
+    if (isCallTo(node, "__ts2gml_native_condition") || isCallTo(node, "__ts2gml_native_reference") ||
+      isCallTo(node, "__ts2gml_native_string")) {
+      return ts.visitNode(node.arguments[0]!, visit);
+    }
+    if (isCallTo(node, "__ts2gml_native_boolean")) {
+      // GML boolean APIs can return numeric 0/1. Normalize once with a native
+      // comparison so the stored result is a boolean without type dispatch.
+      return ts.factory.createBinaryExpression(ts.visitNode(node.arguments[0]!, visit) as ts.Expression,
+        ts.SyntaxKind.ExclamationEqualsToken, ts.factory.createNumericLiteral(0));
+    }
+    if (isCallTo(node, "__ts2gml_native_struct_get")) {
+      return runtimeCall("variable_struct_get", node.arguments.map((argument) => ts.visitNode(argument, visit) as ts.Expression));
+    }
+    if (isCallTo(node, "__ts2gml_native_equal")) {
+      return ts.factory.createBinaryExpression(ts.visitNode(node.arguments[0]!, visit) as ts.Expression,
+        ts.SyntaxKind.EqualsEqualsToken, ts.visitNode(node.arguments[1]!, visit) as ts.Expression);
+    }
     if (isCallTo(node, "gm_static")) {
       throw nodeError(node, sourceFile, "TS2GML1071",
         "gm_static is only supported in ordinary constructor classes, not GMObject or GMRoom assets.",
@@ -3467,24 +3528,24 @@ function gmlTransformer(
       ]);
     }
     if (ts.isIfStatement(node)) return ts.factory.updateIfStatement(node,
-      runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.expression, visit) as ts.Expression]),
+      lowerCondition(node.expression),
       ts.visitNode(node.thenStatement, visit) as ts.Statement,
       ts.visitNode(node.elseStatement, visit) as ts.Statement | undefined);
     if (ts.isWhileStatement(node)) return ts.factory.updateWhileStatement(node,
-      runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.expression, visit) as ts.Expression]),
+      lowerCondition(node.expression),
       ts.visitNode(node.statement, visit) as ts.Statement);
     if (ts.isForStatement(node)) return ts.factory.updateForStatement(node,
       ts.visitNode(node.initializer, visit) as ts.ForInitializer | undefined,
-      node.condition ? runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.condition, visit) as ts.Expression]) : undefined,
+      node.condition ? lowerCondition(node.condition) : undefined,
       ts.visitNode(node.incrementor, visit) as ts.Expression | undefined,
       ts.visitNode(node.statement, visit) as ts.Statement);
     // GML requires explicit grouping for nested ternaries; the TS printer does not.
     if (ts.isConditionalExpression(node)) return ts.factory.createParenthesizedExpression(ts.factory.updateConditionalExpression(node,
-      runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.condition, visit) as ts.Expression]),
+      lowerCondition(node.condition),
       node.questionToken, ts.visitNode(node.whenTrue, visit) as ts.Expression,
       node.colonToken, ts.visitNode(node.whenFalse, visit) as ts.Expression));
     if (ts.isPrefixUnaryExpression(node) && node.operator === ts.SyntaxKind.ExclamationToken) {
-      return ts.factory.createLogicalNot(runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.operand, visit) as ts.Expression]));
+      return ts.factory.createLogicalNot(lowerCondition(node.operand));
     }
     if (ts.isDeleteExpression(node)) {
       const target = node.expression;
@@ -3566,7 +3627,7 @@ function gmlTransformer(
         ]),
         ts.factory.createLogicalOr(
           firstIteration,
-          runtimeCall("__ts2gml_value_truthy", [ts.visitNode(node.expression, visit) as ts.Expression]),
+          lowerCondition(node.expression),
         ),
         ts.factory.createAssignment(firstIteration, ts.factory.createFalse()),
         ts.visitNode(node.statement, visit) as ts.Statement,
@@ -3603,6 +3664,14 @@ function gmlTransformer(
         ts.factory.createIdentifier("undefined"),
         ts.visitNode(node.expression, visit) as ts.Expression,
       );
+    }
+    if (ts.isPropertyAssignment(node)) {
+      // Closure conversion synthesizes property names without parent pointers.
+      // Parameter aliases apply to values, never to public struct/JSON keys.
+      const name = ts.isComputedPropertyName(node.name)
+        ? ts.factory.updateComputedPropertyName(node.name, ts.visitNode(node.name.expression, visit) as ts.Expression)
+        : node.name;
+      return ts.factory.updatePropertyAssignment(node, name, ts.visitNode(node.initializer, visit) as ts.Expression);
     }
     if (ts.isIdentifier(node)) {
       // Only authored references use the closure-aware adapter. The compiler's
@@ -3726,6 +3795,24 @@ function gmlTransformer(
     if (ts.isBinaryExpression(node)) {
       if ([ts.SyntaxKind.BarBarToken, ts.SyntaxKind.AmpersandAmpersandToken,
         ts.SyntaxKind.QuestionQuestionToken].includes(node.operatorToken.kind)) {
+        if (node.operatorToken.kind !== ts.SyntaxKind.QuestionQuestionToken &&
+          isBooleanExpression(node.left) && isBooleanExpression(node.right)) return lowerCondition(node);
+        // A primitive literal cannot have effects or allocate a reference. It
+        // can be passed eagerly to a shared helper instead of creating a closure.
+        let fallback = node.right;
+        while (ts.isParenthesizedExpression(fallback) || isCallTo(fallback, "__ts2gml_native_condition") ||
+          isCallTo(fallback, "__ts2gml_native_reference") || isCallTo(fallback, "__ts2gml_native_string")) {
+          fallback = ts.isParenthesizedExpression(fallback) ? fallback.expression : fallback.arguments[0]!;
+        }
+        if (ts.isStringLiteralLike(fallback) || ts.isNumericLiteral(fallback) ||
+          fallback.kind === ts.SyntaxKind.TrueKeyword || fallback.kind === ts.SyntaxKind.FalseKeyword ||
+          fallback.kind === ts.SyntaxKind.NullKeyword ||
+          (ts.isPrefixUnaryExpression(fallback) && fallback.operator === ts.SyntaxKind.MinusToken && ts.isNumericLiteral(fallback.operand))) {
+          const helper = node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ? "coalesce"
+            : node.operatorToken.kind === ts.SyntaxKind.BarBarToken ? "or" : "and";
+          return runtimeCall("__ts2gml_value_" + helper, [ts.visitNode(node.left, visit) as ts.Expression,
+            ts.visitNode(fallback, visit) as ts.Expression]);
+        }
         const parameter = freshIdentifier("logical");
         const left = ts.visitNode(node.left, visit) as ts.Expression;
         const right = ts.visitNode(node.right, visit) as ts.Expression;
@@ -3737,10 +3824,16 @@ function gmlTransformer(
       }
       if (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
         node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) {
-        const equal = runtimeCall("__ts2gml_value_equal", [
-          ts.visitNode(node.left, visit) as ts.Expression,
-          ts.visitNode(node.right, visit) as ts.Expression,
-        ]);
+        // A literal has no side effects and its runtime type is known after
+        // erasure. Check only the unknown operand's type, evaluating it once.
+        const literal = [node.left, node.right].find((value) => ts.isStringLiteralLike(value) ||
+          ts.isNumericLiteral(value) || value.kind === ts.SyntaxKind.TrueKeyword || value.kind === ts.SyntaxKind.FalseKeyword ||
+          (ts.isPrefixUnaryExpression(value) && value.operator === ts.SyntaxKind.MinusToken && ts.isNumericLiteral(value.operand)));
+        const type = literal ? ts.isStringLiteralLike(literal) ? "string"
+          : literal.kind === ts.SyntaxKind.TrueKeyword || literal.kind === ts.SyntaxKind.FalseKeyword ? "boolean" : "number" : undefined;
+        const operands = literal ? [literal === node.left ? node.right : node.left, literal] : [node.left, node.right];
+        const equal = runtimeCall(type ? "__ts2gml_value_equal_" + type : "__ts2gml_value_equal",
+          operands.map((value) => ts.visitNode(value, visit) as ts.Expression));
         return node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ? equal : ts.factory.createLogicalNot(equal);
       }
       if (node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword) {
@@ -4073,41 +4166,38 @@ function callInlineFunction(
   );
 }
 
-function lowerTypeOfExpression(expression: ts.Expression, visit: ts.Visitor): ts.Expression {
-  if (expression.kind === ts.SyntaxKind.NullKeyword) {
-    return ts.factory.createStringLiteral("object");
+// This is deliberately syntactic: JavaScript has already had its types erased.
+// Unknown values still use JS truthiness (negative numbers and nonempty strings
+// cannot be tested with GML's numeric condition rules).
+function isBooleanExpression(expression: ts.Expression): boolean {
+  if (ts.isParenthesizedExpression(expression)) return isBooleanExpression(expression.expression);
+  if (expression.kind === ts.SyntaxKind.TrueKeyword || expression.kind === ts.SyntaxKind.FalseKeyword) return true;
+  if (ts.isPrefixUnaryExpression(expression)) return expression.operator === ts.SyntaxKind.ExclamationToken;
+  // Native boolean results are normalized before erasure. They are already
+  // boolean, as are these compiler-owned value predicates.
+  if (isCallTo(expression, "__ts2gml_value_truthy") || isCallTo(expression, "__ts2gml_value_nullish") ||
+    isCallTo(expression, "__ts2gml_value_equal") || isCallTo(expression, "__ts2gml_native_condition") ||
+    isCallTo(expression, "__ts2gml_native_boolean") || isCallTo(expression, "__ts2gml_native_equal")) return true;
+  if (!ts.isBinaryExpression(expression)) return false;
+  switch (expression.operatorToken.kind) {
+    case ts.SyntaxKind.EqualsEqualsEqualsToken:
+    case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+    case ts.SyntaxKind.LessThanToken:
+    case ts.SyntaxKind.LessThanEqualsToken:
+    case ts.SyntaxKind.GreaterThanToken:
+    case ts.SyntaxKind.GreaterThanEqualsToken:
+    case ts.SyntaxKind.InstanceOfKeyword:
+    case ts.SyntaxKind.InKeyword: return true;
+    case ts.SyntaxKind.AmpersandAmpersandToken:
+    case ts.SyntaxKind.BarBarToken:
+      return isBooleanExpression(expression.left) && isBooleanExpression(expression.right);
+    default: return false;
   }
+}
 
-  const value = ts.factory.createIdentifier("__ts2gml_typeof_value");
-  const checks: Array<[string, string]> = [
-    ["is_undefined", "undefined"],
-    ["is_bool", "boolean"],
-    ["is_numeric", "number"],
-    ["is_string", "string"],
-    ["is_callable", "function"],
-  ];
-  const functionExpression = ts.factory.createFunctionExpression(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    [ts.factory.createParameterDeclaration(undefined, undefined, value)],
-    undefined,
-    ts.factory.createBlock([
-      ...checks.map(([check, result]) =>
-        ts.factory.createIfStatement(
-          runtimeCall(check, [value]),
-          ts.factory.createReturnStatement(ts.factory.createStringLiteral(result)),
-        ),
-      ),
-      ts.factory.createReturnStatement(ts.factory.createStringLiteral("object")),
-    ], true),
-  );
-  return ts.factory.createCallExpression(
-    ts.factory.createParenthesizedExpression(functionExpression),
-    undefined,
-    [ts.visitNode(expression, visit) as ts.Expression],
-  );
+function lowerTypeOfExpression(expression: ts.Expression, visit: ts.Visitor): ts.Expression {
+  if (expression.kind === ts.SyntaxKind.NullKeyword) return ts.factory.createStringLiteral("object");
+  return runtimeCall("__ts2gml_value_typeof", [ts.visitNode(expression, visit) as ts.Expression]);
 }
 
 function lowerArraySpread(node: ts.ArrayLiteralExpression, visit: ts.Visitor): ts.Expression {
@@ -4415,84 +4505,11 @@ function createObjectCopy(
   excluded: readonly ts.Expression[],
   ignoreNullish: boolean,
 ): ts.Expression {
-  const partsParameter = ts.factory.createIdentifier("__ts2gml_parts");
-  const excludedParameter = ts.factory.createIdentifier("__ts2gml_excluded");
-  const ignoreParameter = ts.factory.createIdentifier("__ts2gml_ignore_nullish");
-  const result = ts.factory.createIdentifier("__ts2gml_result");
-  const partIndex = ts.factory.createIdentifier("__ts2gml_part_index");
-  const part = ts.factory.createIdentifier("__ts2gml_part");
-  const names = ts.factory.createIdentifier("__ts2gml_names");
-  const nameIndex = ts.factory.createIdentifier("__ts2gml_name_index");
-  const name = ts.factory.createIdentifier("__ts2gml_name");
-
-  const copyName = ts.factory.createIfStatement(
-    ts.factory.createPrefixUnaryExpression(
-      ts.SyntaxKind.ExclamationToken,
-      runtimeCall("array_contains", [excludedParameter, name]),
-    ),
-    ts.factory.createBlock([
-      ts.factory.createExpressionStatement(
-        runtimeCall("variable_struct_set", [
-          result,
-          name,
-          runtimeCall("variable_struct_get", [part, name]),
-        ]),
-      ),
-    ], true),
-  );
-  const copyNames = ts.factory.createForStatement(
-    variableList([
-      ts.factory.createVariableDeclaration(nameIndex, undefined, undefined, ts.factory.createNumericLiteral(0)),
-    ]),
-    ts.factory.createLessThan(nameIndex, runtimeCall("array_length", [names])),
-    ts.factory.createPostfixIncrement(nameIndex),
-    ts.factory.createBlock([
-      variableStatement(name, ts.factory.createElementAccessExpression(names, nameIndex)),
-      copyName,
-    ], true),
-  );
-  const copyParts = ts.factory.createForStatement(
-    variableList([
-      ts.factory.createVariableDeclaration(partIndex, undefined, undefined, ts.factory.createNumericLiteral(0)),
-    ]),
-    ts.factory.createLessThan(partIndex, runtimeCall("array_length", [partsParameter])),
-    ts.factory.createPostfixIncrement(partIndex),
-    ts.factory.createBlock([
-      variableStatement(part, ts.factory.createElementAccessExpression(partsParameter, partIndex)),
-      ts.factory.createIfStatement(
-        ts.factory.createLogicalAnd(ignoreParameter, isNullish(part)),
-        ts.factory.createContinueStatement(),
-      ),
-      variableStatement(names, runtimeCall("variable_struct_get_names", [part])),
-      copyNames,
-    ], true),
-  );
-  const functionExpression = ts.factory.createFunctionExpression(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    [
-      ts.factory.createParameterDeclaration(undefined, undefined, partsParameter),
-      ts.factory.createParameterDeclaration(undefined, undefined, excludedParameter),
-      ts.factory.createParameterDeclaration(undefined, undefined, ignoreParameter),
-    ],
-    undefined,
-    ts.factory.createBlock([
-      variableStatement(result, ts.factory.createObjectLiteralExpression()),
-      copyParts,
-      ts.factory.createReturnStatement(result),
-    ], true),
-  );
-  return ts.factory.createCallExpression(
-    ts.factory.createParenthesizedExpression(functionExpression),
-    undefined,
-    [
-      ts.factory.createArrayLiteralExpression(parts),
-      ts.factory.createArrayLiteralExpression(excluded),
-      ignoreNullish ? ts.factory.createTrue() : ts.factory.createFalse(),
-    ],
-  );
+  return runtimeCall("__ts2gml_value_copy", [
+    ts.factory.createArrayLiteralExpression(parts),
+    ts.factory.createArrayLiteralExpression(excluded),
+    ignoreNullish ? ts.factory.createTrue() : ts.factory.createFalse(),
+  ]);
 }
 
 function lowerForOfStatement(

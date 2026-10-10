@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { runInNewContext } from "node:vm";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -812,6 +813,70 @@ test("preserves IDE resource formatting and project order across repeated saves"
   assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
 });
 
+test("preserves saved native sprite layers and PNGs through builds, hooks, and stale cleanup", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-native-sprite-"));
+  const projectPath = await createEmptyProject(temporary, "NativeSprite");
+  const spriteResource = "sprites/spr_outfit/spr_outfit.yy";
+  const project = JSON.parse(await fs.readFile(projectPath, "utf8"));
+  project.resources.push({ id: { name: "spr_outfit", path: spriteResource } });
+  await fs.writeFile(projectPath, JSON.stringify(project));
+  await installTool(temporary);
+  const sourcePath = path.join(temporary, "typescript", "outfit.ts");
+  await fs.mkdir(path.dirname(sourcePath), { recursive: true });
+  await fs.writeFile(sourcePath, "function outfit_sprite() { return spr_outfit; }");
+
+  const spritePath = path.join(temporary, spriteResource);
+  const framePath = path.join(path.dirname(spritePath), "frame.png");
+  const layerPath = path.join(path.dirname(spritePath), "layers", "frame", "default.png");
+  const savedSprite = `{
+    "$GMSprite": "v2", "%Name": "spr_outfit", "name": "spr_outfit",
+    "resourceType": "GMSprite", "resourceVersion": "2.0",
+    "layers": [{ "$GMImageLayer": "", "name": "default", "displayName": "default", "visible": false, }],
+    "frames": [{ "$GMSpriteFrame": "v1", "name": "frame", }],
+  }\n`;
+  const pixels = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN9kAAAAASUVORK5CYII=", "base64");
+  await fs.mkdir(path.dirname(layerPath), { recursive: true });
+  await fs.writeFile(spritePath, savedSprite.replace("\"visible\": false", "\"visible\": true"));
+  await fs.writeFile(framePath, pixels);
+  await fs.writeFile(layerPath, pixels);
+  await buildGameMakerProject([], projectPath);
+
+  // GameMaker saves the disabled layer and its composed frame before Run/Build.
+  await fs.writeFile(spritePath, savedSprite);
+  await fs.writeFile(framePath, pixels);
+  const savedProject = await fs.readFile(projectPath, "utf8");
+  const nativeFiles = new Map([
+    [spritePath, Buffer.from(savedSprite)], [framePath, pixels], [layerPath, pixels],
+  ]);
+  const fixedTime = new Date("2001-02-03T04:05:06.000Z");
+  for (const filename of [...nativeFiles.keys(), projectPath]) await fs.utimes(filename, fixedTime, fixedTime);
+
+  for (const workflow of ["build", "hot reload", "run", "package", "cleanup"] as const) {
+    if (workflow === "cleanup") await fs.unlink(sourcePath);
+    else await fs.writeFile(sourcePath, `function outfit_sprite() { var revision = "${workflow}"; return spr_outfit; }`);
+    if (workflow === "run" || workflow === "package") {
+      await applyRuntimeGuardProfile(projectPath, workflow === "run" ? "run" : "build", {
+        beforeProjectLoad: true,
+      });
+    } else {
+      await buildGameMakerProject([], projectPath, { hotReloadOnly: workflow === "hot reload" });
+    }
+    for (const [filename, contents] of nativeFiles) {
+      assert.deepEqual(await fs.readFile(filename), contents, `${workflow}: ${filename}`);
+      assert.equal((await fs.stat(filename)).mtimeMs, fixedTime.getTime(), `${workflow}: ${filename}`);
+    }
+    if (workflow !== "cleanup") {
+      assert.equal(await fs.readFile(projectPath, "utf8"), savedProject);
+      assert.equal((await fs.stat(projectPath)).mtimeMs, fixedTime.getTime());
+    }
+    const manifest = JSON.parse(await fs.readFile(path.join(temporary, ".ts2gml", "manifest.json"), "utf8")) as {
+      files: string[]; resources: string[];
+    };
+    assert.ok(![...manifest.files, ...manifest.resources].some(filename => filename.startsWith("sprites/")));
+  }
+  assert.deepEqual(JSON.parse(await fs.readFile(projectPath, "utf8")).resources, project.resources);
+});
+
 test("writes creation code for existing rooms and restores the room when source is removed", async () => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-room-code-"));
   const projectPath = await createEmptyProject(temporary, "RoomFixture");
@@ -1208,7 +1273,6 @@ function append_guarded(values: number[], value: number) {
   const summary = await buildGameMakerProject([], projectPath);
   assert.deepEqual(summary.scripts, [
     "__ts2gml_collections",
-    "__ts2gml_runtime_guards",
     "__ts2gml_values",
     "guards",
   ]);
@@ -1226,8 +1290,8 @@ function append_guarded(values: number[], value: number) {
     "__ts2gml_runtime_guards",
     "__ts2gml_runtime_guards.gml",
   );
-  const buildGuards = await fs.readFile(guardPath, "utf8");
-  assert.doesNotMatch(buildGuards, /__TS2GML_RUNTIME_GUARD_LEVEL/);
+  await assert.rejects(fs.access(guardPath), { code: "ENOENT" });
+  assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
 
   await buildGameMakerProject([], projectPath, {
     guardConfiguration: "Debug",
@@ -1239,6 +1303,7 @@ function append_guarded(values: number[], value: number) {
   );
   assert.equal(debugRunGml.match(/__ts2gml_guard_object\(self, obj_guard_entity/g)?.length, 1);
   assert.doesNotMatch(debugRunGml, /__ts2gml_guard_value/);
+  assert.match(await fs.readFile(guardPath, "utf8"), /function __ts2gml_guard_object/);
 
   await applyRuntimeGuardProfile(projectPath, "run");
   const runGml = await fs.readFile(
@@ -1265,12 +1330,21 @@ function append_guarded(values: number[], value: number) {
     await fs.readFile(path.join(temporary, "scripts", "guards", "guards.gml"), "utf8"),
     runGml,
   );
-  await applyRuntimeGuardProfile(projectPath, "build");
+  // Removing the runtime asset must happen before GameMaker loads resources.
+  await assert.rejects(applyRuntimeGuardProfile(projectPath, "build"), StructuralGameMakerChangesError);
+  await applyRuntimeGuardProfile(projectPath, "build", { beforeProjectLoad: true });
   assert.equal(
     await fs.readFile(path.join(temporary, "scripts", "guards", "guards.gml"), "utf8"),
     sourceGml,
   );
-  assert.equal(await fs.readFile(guardPath, "utf8"), buildGuards);
+  for (const filename of [guardPath, guardPath.replace(/\.gml$/, ".yy")]) {
+    await assert.rejects(fs.access(filename), { code: "ENOENT" });
+  }
+  const cleanedProject = JSON.parse(await fs.readFile(projectPath, "utf8"));
+  assert.ok(!cleanedProject.resources.some((resource: { id: { name: string } }) => resource.id.name === "__ts2gml_runtime_guards"));
+  const cleanedManifest = JSON.parse(await fs.readFile(path.join(temporary, ".ts2gml", "manifest.json"), "utf8"));
+  assert.ok(!cleanedManifest.files.some((filename: string) => filename.includes("__ts2gml_runtime_guards")));
+  assert.deepEqual((await buildGameMakerProject([], projectPath)).writtenFiles, []);
 
   await buildGameMakerProject([], projectPath, {
     guardConfiguration: "Debug",
@@ -1369,7 +1443,7 @@ test("pre-project hooks synchronize structural edits before Run and Build", asyn
       assert.equal(await fs.readFile(objectPath, "utf8"), repairedContents);
 
       // A leftover run marker must not skip a package's structural update or profile.
-      await applyRuntimeGuardProfile(projectPath, "run");
+      await applyRuntimeGuardProfile(projectPath, "run", { beforeProjectLoad: true });
       await fs.writeFile(sourcePath, originalSource);
       await fs.unlink(helperPath);
       await execFileAsync(process.execPath, [cliPath, "guard-profile", "auto", projectPath], {
@@ -2385,4 +2459,61 @@ test("watch rechecks declarations, TypeScript options, guard configuration, and 
   results.length = 0;
   await fs.writeFile(native, "/// @param {string} value\nfunction native_dependency(value) { return value; }");
   await waitFor(async () => results.some((result) => result instanceof Error && /not assignable/.test(result.message)), 10_000);
+});
+
+test("standard collection mutations do not emit an unused guard asset", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-unused-guards-"));
+  try {
+    const projectPath = await createEmptyProject(temporary, "UnusedGuards");
+    await installTool(temporary);
+    const sourceDirectory = path.join(temporary, "typescript");
+    await fs.mkdir(sourceDirectory);
+    await fs.writeFile(path.join(sourceDirectory, "append.ts"),
+      "function append(values: number[], value: number) { values.push(value); }");
+    const standard = await buildGameMakerProject([], projectPath);
+    assert.ok(!standard.scripts.includes("__ts2gml_runtime_guards"));
+    await fs.writeFile(path.join(temporary, "ts2gml.config.json"), JSON.stringify({
+      runtimeGuards: { run: "maximum", build: "maximum", configurations: {} },
+    }));
+    const maximum = await buildGameMakerProject([], projectPath);
+    assert.ok(maximum.scripts.includes("__ts2gml_runtime_guards"));
+    const gml = await fs.readFile(path.join(temporary, "scripts/append/append.gml"), "utf8");
+    assert.match(gml, /__ts2gml_guard_value/);
+  } finally {
+    await fs.rm(temporary, { recursive: true, force: true });
+  }
+});
+
+
+test("native boolean APIs normalize 0/1 without value-runtime checks", async () => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-native-booleans-"));
+  try {
+    const projectPath = await createEmptyProject(temporary, "NativeBooleans");
+    const toolDirectory = await installTool(temporary);
+    await fs.appendFile(path.join(toolDirectory, "types/gamemaker.generated.d.ts"),
+      "\ndeclare function native_bool(value: boolean): boolean;\n");
+    const sourceDirectory = path.join(temporary, "typescript");
+    await fs.mkdir(sourceDirectory);
+    await fs.writeFile(path.join(sourceDirectory, "boolean_use.ts"),
+      "function compare(left: boolean, right: boolean) { return native_bool(left) === right; }\n" +
+      "function discard(value: boolean) { native_bool(value); (native_bool(value)); }");
+    const summary = await buildGameMakerProject([], projectPath);
+    assert.deepEqual(summary.scripts, ["boolean_use"]);
+    const gml = await fs.readFile(path.join(temporary, "scripts/boolean_use/boolean_use.gml"), "utf8");
+    assert.doesNotMatch(gml, /__ts2gml_/);
+    assert.match(gml, /native_bool\(left\) != 0/);
+    assert.doesNotMatch(gml, /native_bool\(value\) != 0/);
+    let calls = 0;
+    const context: Record<string, any> = { native_bool(value: boolean) { calls++; return value ? 1 : 0; } };
+    runInNewContext(gml, context);
+    context.discard(true);
+    assert.equal(calls, 2);
+    for (const left of [false, true]) for (const right of [false, true]) {
+      const before: number = calls;
+      assert.equal(context.compare(left, right), left === right);
+      assert.equal(calls, before + 1);
+    }
+  } finally {
+    await fs.rm(temporary, { recursive: true, force: true });
+  }
 });

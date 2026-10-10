@@ -41,7 +41,7 @@ function LoweringMatrixNamedMembers() constructor {
         return _value + 1;
     };
     static includes = function(_value, _offset) {
-        return __ts2gml_value_equal(_value, _offset);
+        return _value == _offset;
     };
     static indexOf = function(_value, _offset) {
         return _value + _offset;
@@ -65,7 +65,7 @@ function LoweringMatrixNamedMembers() constructor {
         return _value + 5;
     };
     static sort = function(_value, _ascending) {
-        return _value + ((__ts2gml_value_truthy(_ascending) ? 1 : 0));
+        return _value + ((_ascending ? 1 : 0));
     };
     static unshift = function(_left, _right) {
         return _left - _right;
@@ -135,14 +135,14 @@ function loweringMatrixRun() {
     scopeContextExpect("construction preserves static", __ts2gml_class_statics(LoweringMatrixStatics).read(), 2);
     scopeContextExpect("top-level global", global.LOWERING_MATRIX_GLOBAL, 17);
     var count = 0;
-    for (var __ts2gml_do_first_1921_1 = true; __ts2gml_do_first_1921_1 || __ts2gml_value_truthy(count < 3); __ts2gml_do_first_1921_1 = false) {
+    for (var __ts2gml_do_first_1968_1 = true; __ts2gml_do_first_1968_1 || count < 3; __ts2gml_do_first_1968_1 = false) {
         count++;
-        if (__ts2gml_value_truthy(count < 3))
+        if (count < 3)
             continue;
     }
     scopeContextExpect("do-while continue", count, 3);
     var once = 0;
-    for (var __ts2gml_do_first_1921_2 = true; __ts2gml_do_first_1921_2 || __ts2gml_value_truthy(false); __ts2gml_do_first_1921_2 = false) {
+    for (var __ts2gml_do_first_1968_2 = true; __ts2gml_do_first_1968_2 || false; __ts2gml_do_first_1968_2 = false) {
         once++;
     }
     scopeContextExpect("do-while first iteration", once, 1);
@@ -150,7 +150,7 @@ function loweringMatrixRun() {
     try {
         throw 7;
     }
-    catch (__ts2gml_caught_1921_3) {
+    catch (__ts2gml_caught_1968_3) {
         caught = 7;
     }
     finally {
@@ -166,60 +166,28 @@ function loweringMatrixRun() {
         var __ts2gml_arguments = array_concat([], pair);
         return is_method(__ts2gml_callable) ? method_call(__ts2gml_callable, __ts2gml_arguments) : script_execute_ext(__ts2gml_callable, __ts2gml_arguments);
     })(undefined, pair), 5);
-    var clone = (function (__ts2gml_parts, __ts2gml_excluded, __ts2gml_ignore_nullish) {
-        var __ts2gml_result = {};
-        for (var __ts2gml_part_index = 0; __ts2gml_part_index < array_length(__ts2gml_parts); __ts2gml_part_index++) {
-            var __ts2gml_part = __ts2gml_parts[__ts2gml_part_index];
-            if (__ts2gml_ignore_nullish && __ts2gml_value_nullish(__ts2gml_part))
-                continue;
-            var __ts2gml_names = variable_struct_get_names(__ts2gml_part);
-            for (var __ts2gml_name_index = 0; __ts2gml_name_index < array_length(__ts2gml_names); __ts2gml_name_index++) {
-                var __ts2gml_name = __ts2gml_names[__ts2gml_name_index];
-                if (!array_contains(__ts2gml_excluded, __ts2gml_name)) {
-                    variable_struct_set(__ts2gml_result, __ts2gml_name, variable_struct_get(__ts2gml_part, __ts2gml_name));
-                }
-            }
-        }
-        return __ts2gml_result;
-    })([{ before: 1 }, { middle: 2 }, { after: 3 }], [], true);
+    var clone = __ts2gml_value_copy([{ before: 1 }, { middle: 2 }, { after: 3 }], [], true);
     scopeContextExpect("object spread", clone.before + clone.middle + clone.after, 6);
-    var __ts2gml_destructure_1921_4 = [1, undefined, 3, 4], first = 0 < array_length(__ts2gml_destructure_1921_4) ? __ts2gml_destructure_1921_4[0] : undefined, __ts2gml_default_1921_5 = 1 < array_length(__ts2gml_destructure_1921_4) ? __ts2gml_destructure_1921_4[1] : undefined, second = is_undefined(__ts2gml_default_1921_5) ? 2 : __ts2gml_default_1921_5, tail = 2 < array_length(__ts2gml_destructure_1921_4) ? array_copy_while(__ts2gml_destructure_1921_4, function () {
+    var __ts2gml_destructure_1968_4 = [1, undefined, 3, 4], first = 0 < array_length(__ts2gml_destructure_1968_4) ? __ts2gml_destructure_1968_4[0] : undefined, __ts2gml_default_1968_5 = 1 < array_length(__ts2gml_destructure_1968_4) ? __ts2gml_destructure_1968_4[1] : undefined, second = is_undefined(__ts2gml_default_1968_5) ? 2 : __ts2gml_default_1968_5, tail = 2 < array_length(__ts2gml_destructure_1968_4) ? array_copy_while(__ts2gml_destructure_1968_4, function () {
         return true;
     }, 2) : [];
     scopeContextExpect("array destructuring", first + second, 3);
     scopeContextExpect("array rest", array_length(tail), 2);
     scopeContextExpect("array rest value", __ts2gml_value_get(tail, 1), 4);
-    var __ts2gml_destructure_1921_6 = { nested: { value: 5 }, label: "ok", extra: 9 }, __ts2gml_destructure_1921_7 = variable_struct_get(__ts2gml_destructure_1921_6, "nested"), nestedValue = variable_struct_get(__ts2gml_destructure_1921_7, "value"), renamed = variable_struct_get(__ts2gml_destructure_1921_6, "label"), objectRest = (function (__ts2gml_parts, __ts2gml_excluded, __ts2gml_ignore_nullish) {
-        var __ts2gml_result = {};
-        for (var __ts2gml_part_index = 0; __ts2gml_part_index < array_length(__ts2gml_parts); __ts2gml_part_index++) {
-            var __ts2gml_part = __ts2gml_parts[__ts2gml_part_index];
-            if (__ts2gml_ignore_nullish && __ts2gml_value_nullish(__ts2gml_part))
-                continue;
-            var __ts2gml_names = variable_struct_get_names(__ts2gml_part);
-            for (var __ts2gml_name_index = 0; __ts2gml_name_index < array_length(__ts2gml_names); __ts2gml_name_index++) {
-                var __ts2gml_name = __ts2gml_names[__ts2gml_name_index];
-                if (!array_contains(__ts2gml_excluded, __ts2gml_name)) {
-                    variable_struct_set(__ts2gml_result, __ts2gml_name, variable_struct_get(__ts2gml_part, __ts2gml_name));
-                }
-            }
-        }
-        return __ts2gml_result;
-    })([__ts2gml_destructure_1921_6], ["nested", "label"], false);
+    var __ts2gml_destructure_1968_6 = { nested: { value: 5 }, label: "ok", extra: 9 }, __ts2gml_destructure_1968_7 = variable_struct_get(__ts2gml_destructure_1968_6, "nested"), nestedValue = variable_struct_get(__ts2gml_destructure_1968_7, "value"), renamed = variable_struct_get(__ts2gml_destructure_1968_6, "label"), objectRest = __ts2gml_value_copy([__ts2gml_destructure_1968_6], ["nested", "label"], false);
     scopeContextExpect("object destructuring", nestedValue, 5);
     scopeContextExpect("object rename", renamed, "ok");
     scopeContextExpect("object rest", objectRest.extra, 9);
     var arrayTotal = 0;
-    for (var __ts2gml_iteration_values_1921_8 = [1, 2, 3], __ts2gml_iteration_index_1921_9 = 0; __ts2gml_iteration_index_1921_9 < array_length(__ts2gml_iteration_values_1921_8); __ts2gml_iteration_index_1921_9++) {
-        var value = __ts2gml_value_get(__ts2gml_iteration_values_1921_8, __ts2gml_iteration_index_1921_9);
+    for (var __ts2gml_iteration_values_1968_8 = [1, 2, 3], __ts2gml_iteration_index_1968_9 = 0; __ts2gml_iteration_index_1968_9 < array_length(__ts2gml_iteration_values_1968_8); __ts2gml_iteration_index_1968_9++) {
+        var value = __ts2gml_value_get(__ts2gml_iteration_values_1968_8, __ts2gml_iteration_index_1968_9);
         arrayTotal += value;
     }
     scopeContextExpect("for-of", arrayTotal, 6);
     var keyCount = 0;
-    for (var __ts2gml_iteration_values_1921_10 = variable_struct_get_names({ first: 1, second: 2 }), __ts2gml_iteration_index_1921_11 = 0; __ts2gml_iteration_index_1921_11 < array_length(__ts2gml_iteration_values_1921_10); __ts2gml_iteration_index_1921_11++) {
-        var key = __ts2gml_value_get(__ts2gml_iteration_values_1921_10, __ts2gml_iteration_index_1921_11);
-        if (__ts2gml_value_truthy((function (__ts2gml_logical_1921_12, key) {
-            return __ts2gml_value_truthy(__ts2gml_logical_1921_12) ? __ts2gml_logical_1921_12 : __ts2gml_value_equal(key, "second");
-        })(__ts2gml_value_equal(key, "first"), key)))
+    for (var __ts2gml_iteration_values_1968_10 = variable_struct_get_names({ first: 1, second: 2 }), __ts2gml_iteration_index_1968_11 = 0; __ts2gml_iteration_index_1968_11 < array_length(__ts2gml_iteration_values_1968_10); __ts2gml_iteration_index_1968_11++) {
+        var key = __ts2gml_value_get(__ts2gml_iteration_values_1968_10, __ts2gml_iteration_index_1968_11);
+        if (key == "first" || key == "second")
             keyCount++;
     }
     scopeContextExpect("for-in", keyCount, 2);
@@ -227,84 +195,12 @@ function loweringMatrixRun() {
     scopeContextExpect("optional chain value", loweringMatrixOptional(optionalValue), 11);
     scopeContextExpect("optional chain undefined", loweringMatrixOptional(undefined), undefined);
     var square = function (value) { return value * value; };
-    scopeContextExpect("typeof undefined", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })(undefined), "undefined");
-    scopeContextExpect("typeof boolean", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })(true), "boolean");
-    scopeContextExpect("typeof number", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })(1), "number");
-    scopeContextExpect("typeof string", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })("value"), "string");
-    scopeContextExpect("typeof function", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })(square), "function");
-    scopeContextExpect("typeof object", (function (__ts2gml_typeof_value) {
-        if (is_undefined(__ts2gml_typeof_value))
-            return "undefined";
-        if (is_bool(__ts2gml_typeof_value))
-            return "boolean";
-        if (is_numeric(__ts2gml_typeof_value))
-            return "number";
-        if (is_string(__ts2gml_typeof_value))
-            return "string";
-        if (is_callable(__ts2gml_typeof_value))
-            return "function";
-        return "object";
-    })({}), "object");
+    scopeContextExpect("typeof undefined", __ts2gml_value_typeof(undefined), "undefined");
+    scopeContextExpect("typeof boolean", __ts2gml_value_typeof(true), "boolean");
+    scopeContextExpect("typeof number", __ts2gml_value_typeof(1), "number");
+    scopeContextExpect("typeof string", __ts2gml_value_typeof("value"), "string");
+    scopeContextExpect("typeof function", __ts2gml_value_typeof(square), "function");
+    scopeContextExpect("typeof object", __ts2gml_value_typeof({}), "object");
     scopeContextExpect("typeof null", "object", "object");
     scopeContextExpect("in operator", variable_struct_exists(clone, "middle"), true);
     var structure = new LoweringMatrixStruct(3);
@@ -335,7 +231,7 @@ function loweringMatrixRun() {
     scopeContextExpect("authored values member", __ts2gml_collection_values(namedMembers, [14]), 20);
     var holey = [1, undefined, 3];
     scopeContextExpect("array hole length", array_length(holey), 3);
-    scopeContextExpect("array hole value", __ts2gml_value_truthy(is_undefined(__ts2gml_value_get(holey, 1))), true);
+    scopeContextExpect("array hole value", is_undefined(__ts2gml_value_get(holey, 1)) != 0, true);
     var nativeValues = [1, 2];
     scopeContextExpect("array push result", __ts2gml_collection_push(nativeValues, [__ts2gml_guard_value(3, ["number"], "number", "push() argument 1")]), 3);
     var runtimeGuardCaught = false;
@@ -343,7 +239,7 @@ function loweringMatrixRun() {
         var wrongValue = "not a number";
         __ts2gml_collection_push(nativeValues, [__ts2gml_guard_value(wrongValue, ["number"], "number", "push() argument 1")]);
     }
-    catch (__ts2gml_caught_1921_13) {
+    catch (__ts2gml_caught_1968_12) {
         runtimeGuardCaught = true;
     }
     scopeContextExpect("maximum array guard", runtimeGuardCaught, true);
@@ -397,7 +293,7 @@ function loweringMatrixRun() {
     try {
         map.set(__ts2gml_guard_value("owned", ["string"], "string", "set() argument 1"), __ts2gml_guard_value(99, ["number"], "number", "set() argument 2"));
     }
-    catch (__ts2gml_caught_1921_14) {
+    catch (__ts2gml_caught_1968_13) {
         destroyedRejected = true;
     }
     scopeContextExpect("destroyed collection rejects reuse", destroyedRejected, true);
@@ -405,7 +301,7 @@ function loweringMatrixRun() {
     replacementMap.destroy();
     var nativeMap = ds_map_create();
     ds_map_set(nativeMap, "ready", 1);
-    scopeContextExpect("native predicate boolean", __ts2gml_value_truthy(ds_map_exists(nativeMap, "ready")), true);
+    scopeContextExpect("native predicate boolean", ds_map_exists(nativeMap, "ready") != 0, true);
     ds_map_destroy(nativeMap);
     var shorthandValue = 6;
     var shorthand = { shorthandValue: shorthandValue };
@@ -414,15 +310,15 @@ function loweringMatrixRun() {
     scopeContextExpect("template string", string_concat("value=", 2), "value=2");
     scopeContextExpect("Math lowering", __ts2gml_value_max(2, power(2, 3)), 8);
     global.loweringMatrixEffect = 0;
-    var nothing = (function (__ts2gml_void_1921_15) {
+    var nothing = (function (__ts2gml_void_1968_14) {
         return undefined;
     })(loweringMatrixSetEffect());
     scopeContextExpect("void result", nothing, undefined);
     scopeContextExpect("void side effect", global.loweringMatrixEffect, 1);
     var switched = 0;
-    for (var index = 0; __ts2gml_value_truthy(index < 3); index++)
+    for (var index = 0; index < 3; index++)
         switched += index;
-    while (__ts2gml_value_truthy(switched < 4))
+    while (switched < 4)
         switched++;
     switch (switched) {
         case 4:

@@ -18,7 +18,7 @@ The levels are:
 
 | Level | Behavior |
 | --- | --- |
-| `off` | Emits no runtime checks. TypeScript checking still runs. |
+| `off` | Emits no runtime type-guard calls or guard runtime asset. TypeScript checking still runs. |
 | `standard` | Emits checks for explicit typed context assertions such as `gm_self<obj_player>()` and `gm_other<obj_enemy>()`. |
 | `maximum` | Includes standard checks and emits validation around values inserted through typed array and compiler collection mutation methods. |
 
@@ -53,13 +53,13 @@ Maximum mode guards `.push()` and `.unshift()` on typed arrays, along with value
 
 Entries under `configurations` use GameMaker configuration names. Either `run` or `build` may be omitted to inherit the profile's base level. Names cannot contain whitespace or a colon.
 
-The selected level is applied while TypeScript is lowered. Generated GML contains the requested checks directly: there is no per-use level test and no runtime guard-level macro. In `off`, the guard calls are absent; in `maximum`, collection values are passed directly through the generated type-checking helper.
+The selected level is applied while TypeScript is lowered. Generated GML contains the requested checks directly: there is no per-use level test and no runtime guard-level macro. In `off`, both guard calls and the `__ts2gml_runtime_guards` asset are absent; in `maximum`, collection values are passed directly through the generated type-checking helper.
 
 ## GameMaker compiler hooks
 
 The first successful build generates `pre_project_step`, `pre_run_step`, and `pre_build_step` hooks in both `.bat` and `.sh` forms beside the `.yyp`. The project hook recompiles the TypeScript lowering before GameMaker loads the generated GML, selecting `run` when no package target is present and `build` for a package target. The later operation-specific hooks verify the same selection. Because GameMaker invokes the build hook after the run hook during F5, the hooks use a short-lived marker to retain the run profile for that test invocation.
 
-Changing levels updates only generated code bodies when the project structure is unchanged. This timing matters: `pre_run_step` and `pre_build_step` alone occur after GameMaker loads project sources, so `pre_project_step` performs the effective in-place rewrite for the current build.
+Changing levels can add or remove the guard runtime asset. Those changes are structural and must happen before GameMaker loads the project. When the required assets are unchanged, changing levels updates only generated code bodies. This timing matters: `pre_run_step` and `pre_build_step` alone occur after GameMaker loads project sources, so `pre_project_step` performs the effective in-place rewrite for the current build.
 
 The pre-project hook also applies pending structural changes to the saved project, including fields, events, resources, source folders, and room creation-code links. Save GameMaker and use Run or Build; no separate watcher confirmation or `build --project-saved` command is needed for that build. IDE-owned object settings and manual variables are merged as in a normal confirmed build. The later hooks still reject structural changes because the asset compiler has already loaded the project. A new package build discards any leftover run marker before selecting its build profile.
 
@@ -68,3 +68,22 @@ These hook names are part of GameMaker's documented [compiler batch-file and she
 Changing `ts2gml.config.json` takes effect on the next GameMaker Run or Build. The hooks match configured GameMaker configuration names against the compiler environment. For command-line workflows, pass `--configuration NAME` to `build` or `watch`; `TS2GML_CONFIGURATION=NAME` is also recognized by the internal hook command. Without a matching override, the base `run` or `build` level is used.
 
 `watch` emits the run profile, while the normal `build` command emits the build profile.
+
+## Value semantics and generated code
+
+`off` removes optional `__ts2gml_guard_*` calls and their unused runtime resource.
+The separate `__ts2gml_value_*` helpers implement JavaScript behavior, including
+unknown-value truthiness, strict equality, missing indexed values, and lazy
+logical expressions. They are not optional type assertions.
+
+The compiler preserves primitive type facts through JavaScript erasure. With
+strict null checking, checker-proven boolean, reference, and string conditions,
+same-kind primitive comparisons, and typed string-dictionary reads use native
+operations. Native boolean APIs normalize numeric 0/1 results with a direct
+comparison. These compiler markers disappear from emitted GML.
+
+Unknown, nullable, or mixed values retain compatible behavior. The value runtime
+includes only helpers referenced by generated code and their dependencies. An
+unused guard plan or a typed collection mutation in `standard` does not emit a
+guard runtime asset. Returning to a checked profile recreates it only when the
+lowered code calls it.

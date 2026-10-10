@@ -21,10 +21,10 @@ scopeContextExpect("top-level local initializer", startupFirst, 10);
 
 scopeContextExpect("top-level local mutation", startupSnapshot.value, 14);
 
-scopeContextExpect("top-level local stays private", __ts2gml_value_truthy(variable_global_exists("startupValue")), false);
+scopeContextExpect("top-level local stays private", variable_global_exists("startupValue") != 0, false);
 
 function scopeContextExpect(label, actual, expected) {
-    if (__ts2gml_value_truthy(!__ts2gml_value_equal(actual, expected))) {
+    if (!__ts2gml_value_equal(actual, expected)) {
         throw string_concat("scope context '", label, "' expected ", expected, ", received ", actual);
     }
 }

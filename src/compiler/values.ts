@@ -4,6 +4,19 @@ export function usesValueRuntime(gml: string): boolean {
   return /\b__ts2gml_value_\w+\b/.test(gml);
 }
 
+// Emit only referenced helpers and their transitive dependencies, in the
+// library's original order. Calls in collections/statics are roots too.
+export function createValueRuntimeGml(source: string): string {
+  const starts = [...valueRuntimeGml.matchAll(/(?:^|\n)function (__ts2gml_value_\w+)\(/g)];
+  const functions = new Map(starts.map((match, index) => [match[1]!,
+    valueRuntimeGml.slice(match.index!, starts[index + 1]?.index ?? valueRuntimeGml.length).trim()]));
+  const needed = new Set(source.match(/\b__ts2gml_value_\w+\b/g));
+  for (const name of needed) {
+    for (const dependency of functions.get(name)?.match(/\b__ts2gml_value_\w+\b/g) ?? []) needed.add(dependency);
+  }
+  return [...functions].filter(([name]) => needed.has(name)).map(([, code]) => code).join("\n\n") + "\n";
+}
+
 export const valueRuntimeGml = `function __ts2gml_value_nullish(_value) {
     return is_undefined(_value) || (is_ptr(_value) && _value == pointer_null);
 }
@@ -25,21 +38,75 @@ function __ts2gml_value_method(_receiver, _function) {
 }
 
 function __ts2gml_value_truthy(_value) {
-    if (__ts2gml_value_nullish(_value)) return false;
     if (is_bool(_value)) return _value;
     if (is_numeric(_value)) return _value != 0 && !is_nan(_value);
     if (is_string(_value)) return string_length(_value) != 0;
-    return true;
+    return !__ts2gml_value_nullish(_value);
+}
+
+// Only side-effect-free primitive fallbacks are passed eagerly by the compiler.
+function __ts2gml_value_coalesce(_left, _right) {
+    return __ts2gml_value_nullish(_left) ? _right : _left;
+}
+
+function __ts2gml_value_or(_left, _right) {
+    return __ts2gml_value_truthy(_left) ? _left : _right;
+}
+
+function __ts2gml_value_and(_left, _right) {
+    return __ts2gml_value_truthy(_left) ? _right : _left;
+}
+
+function __ts2gml_value_typeof(_value) {
+    if (is_undefined(_value)) return "undefined";
+    if (is_bool(_value)) return "boolean";
+    if (is_numeric(_value)) return "number";
+    if (is_string(_value)) return "string";
+    if (is_callable(_value)) return "function";
+    return "object";
 }
 
 function __ts2gml_value_equal(_left, _right) {
-    if (is_undefined(_left) || is_undefined(_right)) return is_undefined(_left) && is_undefined(_right);
-    if (is_bool(_left) != is_bool(_right)) return false;
-    if (is_string(_left) != is_string(_right)) return false;
-    if (is_ptr(_left) != is_ptr(_right)) return false;
-    if (is_numeric(_left) != is_numeric(_right)) return false;
-    if (is_numeric(_left) && (is_nan(_left) || is_nan(_right))) return false;
+    if (is_bool(_left)) return is_bool(_right) && _left == _right;
+    if (is_string(_left)) return is_string(_right) && _left == _right;
+    if (is_numeric(_left)) {
+        return is_numeric(_right) && !is_bool(_right)
+            && !is_nan(_left) && !is_nan(_right) && _left == _right;
+    }
+    if (is_undefined(_left)) return is_undefined(_right);
+    if (is_ptr(_left)) return is_ptr(_right) && _left == _right;
+    if (is_bool(_right) || is_string(_right) || is_numeric(_right)
+        || is_undefined(_right) || is_ptr(_right)) return false;
     return _left == _right;
+}
+
+// The compiler supplies the literal second operand with the stated type.
+function __ts2gml_value_equal_number(_value, _literal) {
+    return is_numeric(_value) && !is_bool(_value) && !is_nan(_value) && _value == _literal;
+}
+
+function __ts2gml_value_equal_string(_value, _literal) {
+    return is_string(_value) && _value == _literal;
+}
+
+function __ts2gml_value_equal_boolean(_value, _literal) {
+    return is_bool(_value) && _value == _literal;
+}
+
+function __ts2gml_value_copy(_parts, _excluded, _ignore_nullish) {
+    var _result = {};
+    for (var _part_index = 0; _part_index < array_length(_parts); _part_index++) {
+        var _part = _parts[_part_index];
+        if (_ignore_nullish && __ts2gml_value_nullish(_part)) continue;
+        var _names = variable_struct_get_names(_part);
+        for (var _name_index = 0; _name_index < array_length(_names); _name_index++) {
+            var _name = _names[_name_index];
+            if (!array_contains(_excluded, _name)) {
+                variable_struct_set(_result, _name, variable_struct_get(_part, _name));
+            }
+        }
+    }
+    return _result;
 }
 
 function __ts2gml_value_round(_value) {

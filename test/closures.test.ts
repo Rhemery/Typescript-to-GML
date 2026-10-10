@@ -187,3 +187,18 @@ test("adapts aliases of native method without rewriting authored member names", 
   assert.match(gml, /function __ts2gml_value_method\(/);
 });
 
+
+test("closure conversion preserves public object keys across parameter aliases", () => {
+  const source = `class Packets {
+    callback(kind: string, name: string) { return (data: unknown) => ({ kind, data: { name, data } }); }
+    register(codec: unknown, handle: unknown) { return { codec, handle }; }
+    mirror(records: unknown[], deaths: number[], snapshots: boolean) {
+      return { records: records, deaths: [], snapshots: false, final: { records: [], deaths, snapshots } };
+    }
+  }`;
+  const { gml } = compileTypeScript(source, "closure-property-keys.ts");
+  assert.match(gml, /codec: _codec, handle: _handle/);
+  assert.match(gml, /records: _records, deaths: \[\], snapshots: false/);
+  assert.match(gml, /records: \[\], deaths: _deaths, snapshots: _snapshots/);
+  assert.doesNotMatch(gml, /\b_(?:kind|name|data|codec|handle|records|deaths|snapshots):/);
+});

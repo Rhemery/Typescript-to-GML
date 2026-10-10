@@ -2,7 +2,7 @@
 
 Assessment date: 2026-09-07. Historical baseline: the working tree, including uncommitted changes, based on commit `4b0033b`, package `0.2.0-beta.4`.
 
-**Implementation update:** the working tree has advanced to `0.2.0-beta.8`. See [implementation status](Implementation-Status.md) for completed fixes, current verification evidence, release gates, measured feedback time, and the remaining roadmap. The findings below preserve the original assessment and its evidence.
+**Implementation update:** the working tree has advanced to `0.2.0-beta.9`. See [implementation status](Implementation-Status.md) for completed fixes, current verification evidence, release gates, measured feedback time, and the remaining roadmap. The findings below preserve the original assessment and its evidence.
 
 ## Recommendation
 
