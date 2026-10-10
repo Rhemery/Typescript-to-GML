@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 ## 0.2.0-beta.9 - 2026-10-10
 
 - Add regression coverage for saved native sprite layers and PNGs across incremental builds, Run/Build hooks, and stale generated-file cleanup. Document native sprite ownership and the boundary with custom project hooks.
+- Cancel unanswered watch-mode structural confirmations when stopping, including during the initial build. Use atomic watch-test edits and release pending confirmations during cleanup so packaging reports test failures instead of hanging.
 - Emit the runtime type-guard asset only when lowered code calls it. `off` removes stale guard code, resources and manifest entries; standard collection-only code no longer emits an unused guard library.
 - Carry checked primitive type facts through JavaScript erasure to emit direct boolean conditions and same-kind primitive comparisons. Normalize native boolean API results with a direct comparison; retain semantic helpers for mixed, nullable and dynamic values.
 - Lower boolean conditions to native short-circuit expressions without allocating operand-returning closures. Reuse normalized native booleans and omit redundant truthiness checks for comparisons.

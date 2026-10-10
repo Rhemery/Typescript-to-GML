@@ -19,6 +19,7 @@ import {
 } from "../src/compiler/project.js";
 import { watchGameMakerProject } from "../src/compiler/watch.js";
 import { generateProjectDeclarations } from "../src/declarations/project.js";
+import { atomicWriteFile } from "../src/files.js";
 import {
   defaultRuntimeGuardConfiguration,
   detectRuntimeGuardConfiguration,
@@ -2309,11 +2310,11 @@ class obj_player extends GMObject { onCreate() { this.x = 1; } }`,
   });
   try {
     await waitFor(async () => results.some((result) => !(result instanceof Error)));
-    await fs.writeFile(outputPath, "function watched_value() { return 99; }");
-    await fs.writeFile(createEventPath, "self.x = 99;");
+    await atomicWriteFile(outputPath, "function watched_value() { return 99; }");
+    await atomicWriteFile(createEventPath, "self.x = 99;");
     const scriptPath = path.join(temporary, "scripts", "watched", "watched.yy");
-    await fs.writeFile(scriptPath, JSON.stringify(JSON.parse(await fs.readFile(scriptPath, "utf8"))));
-    await fs.writeFile(
+    await atomicWriteFile(scriptPath, JSON.stringify(JSON.parse(await fs.readFile(scriptPath, "utf8"))));
+    await atomicWriteFile(
       sourcePath,
       `function watched_value(): number { return 7; }
 class obj_player extends GMObject { onCreate() { this.x = 2; } }`,
@@ -2331,7 +2332,7 @@ class obj_player extends GMObject { onCreate() { this.x = 2; } }`,
     project.resources.push({
       id: { name: "Sprite1", path: "sprites/Sprite1/Sprite1.yy" },
     });
-    await fs.writeFile(projectPath, JSON.stringify(project, null, 2));
+    await atomicWriteFile(projectPath, JSON.stringify(project, null, 2));
     const declarationPath = path.join(
       temporary,
       "datafiles",
@@ -2347,7 +2348,7 @@ class obj_player extends GMObject { onCreate() { this.x = 2; } }`,
 
     const scriptBeforeStructuralChange = await fs.readFile(outputPath, "utf8");
     const createEventBeforeStructuralChange = await fs.readFile(createEventPath, "utf8");
-    await fs.writeFile(
+    await atomicWriteFile(
       sourcePath,
       `function watched_value(): number { return 8; }
 class obj_player extends GMObject {
@@ -2382,7 +2383,7 @@ class obj_player extends GMObject {
     assert.equal(savedObject.persistent, true);
     assert.ok(savedObject.eventList.some((event) => event.eventType === 3));
 
-    await fs.writeFile(
+    await atomicWriteFile(
       sourcePath,
       `function watched_value(): number { return 9; }
 class obj_player extends GMObject {
@@ -2400,6 +2401,7 @@ class obj_player extends GMObject {
       [path.resolve("node_modules", "typescript", "bin", "tsc"), "-p", sourceDirectory],
     );
   } finally {
+    resolveConfirmation(false);
     controller.abort();
     await watching;
   }
@@ -2408,6 +2410,51 @@ class obj_player extends GMObject {
   assert.ok(results.some((result) => result instanceof Error));
   assert.ok(confirmationChanges);
 });
+
+for (const pendingAtStartup of [true, false]) {
+  test(`watch aborts an unanswered structural confirmation ${pendingAtStartup ? "at startup" : "after a source edit"}`, async () => {
+    const temporary = await fs.mkdtemp(path.join(os.tmpdir(), "ts2gml-watch-abort-"));
+    const projectPath = await createEmptyProject(temporary, "AbortConfirmation");
+    await installTool(temporary);
+    const prepared = await prepareTypeScriptProject(projectPath);
+    const sourcePath = path.join(prepared.sourceDirectory, "watched.ts");
+    const original = "class obj_player extends GMObject { onCreate() { this.x = 1; } }";
+    const changed = "class obj_player extends GMObject { onCreate() { this.x = 2; } onStep() { this.x += 1; } }";
+    await fs.writeFile(sourcePath, original);
+    await buildGameMakerProject([], projectPath);
+    if (pendingAtStartup) await atomicWriteFile(sourcePath, changed);
+    const controller = new AbortController();
+    const results: Array<Error | object> = [];
+    let requested = false;
+    let stopped = false;
+    let resolveConfirmation!: (confirmed: boolean) => void;
+    const confirmation = new Promise<boolean>((resolve) => { resolveConfirmation = resolve; });
+    const watching = watchGameMakerProject(projectPath, {
+      debounceMs: 10,
+      saveSettleMs: 0,
+      signal: controller.signal,
+      onBuild: (result) => results.push(result),
+      confirmStructuralChanges: () => { requested = true; return confirmation; },
+    }).then(() => { stopped = true; });
+    try {
+      if (!pendingAtStartup) {
+        await waitFor(async () => results.some((result) => !(result instanceof Error)));
+        await atomicWriteFile(sourcePath, changed);
+      }
+      await waitFor(async () => requested);
+      controller.abort();
+      await waitFor(async () => stopped, 2_000);
+      // Cancellation must leave the unconfirmed structural update unapplied.
+      await assert.rejects(fs.access(path.join(temporary, "objects/obj_player/Step_0.gml")), { code: "ENOENT" });
+      assert.match(await fs.readFile(path.join(temporary, "objects/obj_player/Create_0.gml"), "utf8"), /self\.x = 1/);
+    } finally {
+      controller.abort();
+      resolveConfirmation(false);
+      await watching;
+      await fs.rm(temporary, { recursive: true, force: true });
+    }
+  });
+}
 
 
 test("watch rechecks declarations, TypeScript options, guard configuration, and unmanaged GML", async (context) => {

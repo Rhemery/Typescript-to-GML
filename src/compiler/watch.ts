@@ -81,11 +81,17 @@ export async function watchGameMakerProject(
           } catch (error) {
             const failure = reportFailure(error);
             if (failure instanceof StructuralGameMakerChangesError) {
+              let cancelConfirmation: (() => void) | undefined;
               try {
-                const confirmed = await (
+                const confirmed = await Promise.race([
                   options.confirmStructuralChanges?.(failure.changes) ??
-                  confirmSavedGameMakerProject(options.signal)
-                );
+                  confirmSavedGameMakerProject(options.signal),
+                  new Promise<boolean>((resolve) => {
+                    cancelConfirmation = () => resolve(false);
+                    if (options.signal?.aborted) cancelConfirmation();
+                    else options.signal?.addEventListener("abort", cancelConfirmation, { once: true });
+                  }),
+                ]);
                 if (confirmed && !options.signal?.aborted) {
                   if (saveSettleMs > 0) {
                     await new Promise((resolve) => setTimeout(resolve, saveSettleMs));
@@ -102,6 +108,8 @@ export async function watchGameMakerProject(
                 }
               } catch (confirmationError) {
                 reportFailure(confirmationError);
+              } finally {
+                if (cancelConfirmation) options.signal?.removeEventListener("abort", cancelConfirmation);
               }
             }
           }
